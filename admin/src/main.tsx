@@ -12,6 +12,7 @@ import './styles/ucell-theme.css';
 import './app/navigation.css';
 import './app/contrast.css';
 import './admin-interaction-states.css';
+import './time-sort.css';
 
 initializeUiTheme();
 const client=new QueryClient({defaultOptions:{queries:{retry:1,staleTime:10_000}}});

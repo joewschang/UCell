@@ -9,10 +9,32 @@ const select=(options,value)=>{const n=el('select');for(const [v,t] of options){
 const gameName=k=>model.registry.find(r=>r.id===k)?.name||k;
 const resource=k=>model.resources.find(r=>r.id===k);
 const pct=(n,d)=>d?(100*n/d).toFixed(1)+'%':'—';
+const instant=value=>value==null||value===''?NaN:+new Date(value);
+const localTime=value=>Number.isFinite(instant(value))?new Date(value).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'—';
+function dateOrder(a,b,descending){
+ const left=instant(a),right=instant(b);
+ if(!Number.isFinite(left))return Number.isFinite(right)?1:0;
+ if(!Number.isFinite(right))return -1;
+ return descending?right-left:left-right;
+}
 function numberTable(headings,values){
  if(!values.length)return el('p','目前沒有符合的紀錄。');
- const t=el('table');const head=t.createTHead().insertRow();for(const h of headings)head.append(el('th',h));
- const body=t.createTBody();for(const valuesRow of values){const row=body.insertRow();for(const value of valuesRow)row.append(el('td',String(value)));}
+ const t=el('table'),head=t.createTHead().insertRow(),body=t.createTBody();
+ function draw(rows){
+   body.replaceChildren();
+   for(const rowValues of rows){const row=body.insertRow();for(const value of rowValues)row.append(el('td',value instanceof Date?localTime(value):String(value)));}
+ }
+ headings.forEach((heading,index)=>{
+   const th=el('th',heading);th.scope='col';head.append(th);
+   if(!values.some(row=>row[index] instanceof Date))return;
+   const control=el('button',heading+' ↕','admin-time-sort-button');control.type='button';th.setAttribute('aria-sort','none');th.replaceChildren(control);
+   control.onclick=()=>{
+     const descending=th.getAttribute('aria-sort')==='ascending';
+     th.setAttribute('aria-sort',descending?'descending':'ascending');control.textContent=heading+(descending?' ↓':' ↑');
+     draw([...values].sort((a,b)=>dateOrder(a[index],b[index],descending)));
+   };
+ });
+ draw(values);
  const region=box('div','j-scroll',t);
  region.tabIndex=0;region.setAttribute('role','region');region.setAttribute('aria-label',headings.slice(0,3).join('、')+'等資料');
  return region;
@@ -78,10 +100,23 @@ function render(){
    preview.replaceChildren(box('article','j-preview',img,el('h3',src.name),el('p',g.description),el('strong','我想'+g.interest),...(rows.length?rows.map(r=>el('p',r.kind+' ／ '+r.title+(r.detail?' · '+r.detail:''))):[el('p','此身分目前會看到替代閱讀入口。')])));
    }catch(e){preview.textContent=e.message;}
  }
- const hist=select(model.history.map(v=>[String(v.version),'第 '+v.version+' 版 · '+new Date(v.created_at).toLocaleString('zh-TW')]),String(model.version));
+ const versionOptions=versions=>versions.map(v=>[String(v.version),'第 '+v.version+' 版 · '+localTime(v.created_at)]);
+ const hist=select(versionOptions(model.history),String(model.version));
+ const versionSort=el('button','版本建立時間 ↕','admin-time-sort-button');
+ versionSort.type='button';
+ let versionOrder;
+ function versionSortLabel(){versionSort.setAttribute('aria-label','版本建立時間，切換為'+(versionOrder===false?'降冪':'升冪'));}
+ versionSortLabel();
+ versionSort.onclick=()=>{
+  const selected=hist.value;
+  versionOrder=versionOrder===false;versionSort.textContent='版本建立時間 '+(versionOrder?'↓':'↑');versionSortLabel();
+  const ordered=[...model.history].sort((a,b)=>dateOrder(a.created_at,b.created_at,versionOrder));
+  const options=versionOptions(ordered).map(([value,title])=>{const option=el('option',title);option.value=value;return option;});
+  hist.replaceChildren(...options);hist.value=selected;
+ };
  const note=el('input');note.maxLength=200;note.value=reason;note.oninput=()=>{reason=note.value;};
- const history=box('details','',el('summary','異動紀錄'),numberTable(['修訂','操作','原因','時間','操作者'],model.changes.map(c=>[c.revision,({draft:'儲存',publish:'上架',revoke:'撤銷',restore:'還原'})[c.action],c.reason||'—',new Date(c.created_at).toLocaleString('zh-TW'),c.actor])));
- const snapshots=panel('發布與版本',el('p','目前上架第 '+model.version+' 版。草稿第 '+model.revision+' 次修訂。'),label('本次異動原因',note),history,actions(btn('儲存草稿',()=>save('draft')),model.canPublish?btn('審核並上架',()=>save('publish'),'j-primary'):el('span','儲存後由會員營運或系統管理員審核上架。')),label('歷史版本',hist),actions(btn('回復此版至草稿',()=>save('restore',{version:Number(hist.value)})),model.canPublish?btn('撤銷此遊戲本檔期的邀請',()=>save('revoke',{game:id,campaign:g.campaign})):null),link('全站健康遊戲開關','/health/journey/?view=settings'));
+ const history=box('details','',el('summary','異動紀錄'),numberTable(['修訂','操作','原因','時間','操作者'],model.changes.map(c=>[c.revision,({draft:'儲存',publish:'上架',revoke:'撤銷',restore:'還原'})[c.action],c.reason||'—',new Date(instant(c.created_at)),c.actor])));
+ const snapshots=panel('發布與版本',el('p','目前上架第 '+model.version+' 版。草稿第 '+model.revision+' 次修訂。'),label('本次異動原因',note),history,actions(btn('儲存草稿',()=>save('draft')),model.canPublish?btn('審核並上架',()=>save('publish'),'j-primary'):el('span','儲存後由會員營運或系統管理員審核上架。')),box('div','',label('歷史版本',hist),versionSort),actions(btn('回復此版至草稿',()=>save('restore',{version:Number(hist.value)})),model.canPublish?btn('撤銷此遊戲本檔期的邀請',()=>save('revoke',{game:id,campaign:g.campaign})):null),link('全站健康遊戲開關','/health/journey/?view=settings'));
  const rows=model.metrics.filter(m=>m.game===id);
  const liveGame=model.live.find(x=>x.id===id);
  const scope=select([['game','這支遊戲'],['all','通用健康中心邀請']],'game');

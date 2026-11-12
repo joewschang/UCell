@@ -20,6 +20,7 @@ export function PaperFormalApplicationPage(){
  const [legalEntityName,setLegalEntityName]=useState(''),[legalEntityRegistrationNo,setLegalEntityRegistrationNo]=useState(''),[legalEntityRegisteredAddress,setLegalEntityRegisteredAddress]=useState(''),[legalEntityRegistrationCountryCode,setLegalEntityRegistrationCountryCode]=useState('TW');
  const [representativeLegalName,setRepresentativeLegalName]=useState(''),[representativeNationalityCode,setRepresentativeNationalityCode]=useState('TW'),[representativeIdentityDocumentType,setRepresentativeIdentityDocumentType]=useState<IdentityDocumentType>('NATIONAL_ID'),[representativeIdentityDocumentNumber,setRepresentativeIdentityDocumentNumber]=useState('');
  const [hasSpouse,setHasSpouse]=useState(false),[spouseName,setSpouseName]=useState(''),[spouseNationalityCode,setSpouseNationalityCode]=useState('TW'),[spouseIdentityDocumentType,setSpouseIdentityDocumentType]=useState<IdentityDocumentType>('NATIONAL_ID'),[spouseIdentityDocumentNumber,setSpouseIdentityDocumentNumber]=useState('');
+ const [payoutMethod,setPayoutMethod]=useState('BANK_TRANSFER');
  const [communicationAddress,setCommunicationAddress]=useState(''),[phone,setPhone]=useState(''),[email,setEmail]=useState(''),[bankCode,setBankCode]=useState(''),[bankAccount,setBankAccount]=useState(''),[accountHolder,setAccountHolder]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState<unknown>(null),[created,setCreated]=useState<any>(null);
 
@@ -35,7 +36,7 @@ export function PaperFormalApplicationPage(){
   try{
    const common={
     representativePersonId:representative.id,paperApplicationReference,formalContractVersionId:contractVersionId,applicantType,
-    communicationAddress,phone,email,bankCode,bankAccount,accountHolder,hasSpouse,
+    communicationAddress,phone,email,payoutMethod,...(payoutMethod==='COMPANY_CASH'?{}:{bankCode,bankAccount,accountHolder}),hasSpouse,
     ...(hasSpouse?{spouseName,spouseNationalityCode,spouseIdentityDocumentType,spouseIdentityDocumentNumber}:{})
    };
    const identity=applicantType==='INDIVIDUAL'
@@ -87,9 +88,10 @@ export function PaperFormalApplicationPage(){
     <label>通訊地址<textarea required value={communicationAddress} onChange={e=>setCommunicationAddress(e.target.value)}/></label>
     <label>電話<input required value={phone} onChange={e=>setPhone(e.target.value)}/></label>
     <label>{uiText("Email")}<input required type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label>
-    <label>銀行代碼<input required value={bankCode} onChange={e=>setBankCode(e.target.value)}/></label>
+    <label>獎金領取方式<select value={payoutMethod} onChange={e=>setPayoutMethod(e.target.value)}><option value="BANK_TRANSFER">銀行匯款</option><option value="COMPANY_CASH">至公司領現金</option></select></label>
+    {payoutMethod==='COMPANY_CASH'?<p>免填銀行資料及檢附存摺照片。</p>:<><label>銀行代碼<input required value={bankCode} onChange={e=>setBankCode(e.target.value)}/></label>
     <label>銀行帳號<input required value={bankAccount} onChange={e=>setBankAccount(e.target.value)}/></label>
-    <label>帳戶名<input required value={accountHolder} onChange={e=>setAccountHolder(e.target.value)}/></label>
+    <label>帳戶名<input required value={accountHolder} onChange={e=>setAccountHolder(e.target.value)}/></label></>}
     <p className="muted">紙本建檔後，仍須逐項記錄申請書、身分文件、銀行文件與法人文件的人工核對結果。</p>
     <button className="primary" disabled={busy||!representative||!contractVersionId}>{busy?'建立中…':'建立紙本正式會員申請'}</button>
    </Card>

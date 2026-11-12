@@ -79,7 +79,7 @@ function DailyGreetingAdmin() {
       </select></J></div>
       {list.isLoading?<p role="status">載入中…</p>:list.isError?<p role="alert">無法載入紀錄。 <button onClick={()=>list.refetch()}>重試</button></p>:
       <ul className="greeting-records">{visible.map(row=><li key={row.id}>
-        <div><strong>{row.title}</strong><small>{String(row.greeting_date).slice(0,10)} · {rowStatus(row)}</small></div>
+        <div><strong>{row.title}</strong><small><time data-time-field="greeting_date" dateTime={String(row.greeting_date).slice(0,10)}>問候日期 {String(row.greeting_date).slice(0,10)}</time> · {rowStatus(row)}<br/><time data-time-field="publish_at" dateTime={row.publish_at || undefined}>發布時間 {row.publish_at?new Date(row.publish_at).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'—'}</time></small></div>
         <button disabled={busy} onClick={()=>preview(row)}>預覽</button>
         {reviewedRow?.id===row.id&&<div className="greeting-review">
           <img src={review.url} alt={row.title+'，含 UCell 標誌的發布預覽'}/><p>{row.message}</p>

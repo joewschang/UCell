@@ -21,7 +21,8 @@ it('renders chronological, expandable zero-entitlement evidence and separate per
  const output=JSON.stringify(view.toJSON());
  for(const text of ['GPV 認列 1','可得金額','認列時有效','整期背景（不歸給單筆訂單）','這是重算進度，不能視為已入帳或已付款。','此筆為追回款抵扣，並非現金付款。'])expect(output).toContain(text);
  for(const secret of ['hidden-pv-ref','hidden-award-ref','DO-NOT-RENDER'])expect(output).not.toContain(secret);
- expect(view.root.findAllByType('button')).toHaveLength(1);
+ const actions=view.root.findAllByType('button').filter(b=>b.props.className!=='admin-time-sort-button');
+ expect(actions.map(b=>b.children.join(''))).toEqual(['查詢交易影響']);
  expect(view.root.findAllByType('details').length).toBeGreaterThan(2);
  expect(lineageEvents(fixture).slice(0,3).map(row=>row.title)).toEqual(['PV 認列','零售推薦獎金','期間結算背景']);
  expect(get).toHaveBeenCalledWith('/admin/operations/economic-lineage/orders/123',expect.objectContaining({signal:expect.any(AbortSignal)}));

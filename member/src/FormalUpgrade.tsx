@@ -5,10 +5,10 @@ import {consentFormalContract,getFormalRequiredContracts,saveFormalDraft,uploadF
 import {useResource} from './useResource';
 import {countryOptions} from './countryOptions';
 
-export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,agreementBlocked=false}:{onSubmitted?:()=>void;onSaved?:(id:string)=>void;draftOnly?:boolean;agreementBlocked?:boolean}={}){
+export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,companyCash=false,agreementBlocked=false}:{onSubmitted?:()=>void;onSaved?:(id:string)=>void;draftOnly?:boolean;companyCash?:boolean;agreementBlocked?:boolean}={}){
  const contracts=useResource('formal-contracts',getFormalRequiredContracts);
  const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[submitted,setSubmitted]=useState(false);
- const [saved,setSaved]=useState<{id:string;version:number;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;applicantType:string}|null>(null);
+ const [saved,setSaved]=useState<{id:string;version:number;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string|null;applicantType:string}|null>(null);
  const [files,setFiles]=useState<Partial<Record<FormalDocumentType,File>>>({}),[uploaded,setUploaded]=useState<Partial<Record<FormalDocumentType,string>>>({});
  const key=useRef(crypto.randomUUID());
  const [form,setForm]=useState({
@@ -31,7 +31,7 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,agree
    const common={
     formalContractVersionId:contract.id,applicantType:form.applicantType,
     communicationAddress:form.communicationAddress,phone:form.phone,email:form.email,
-    bankCode:form.bankCode,bankAccount:form.bankAccount,accountHolder:form.accountHolder,
+    ...(companyCash?{}:{bankCode:form.bankCode,bankAccount:form.bankAccount,accountHolder:form.accountHolder}),
     hasSpouse:form.hasSpouse,
     ...(form.hasSpouse?{spouseName:form.spouseName,spouseNationalityCode:form.spouseNationalityCode,spouseIdentityDocumentType:form.spouseIdentityDocumentType,spouseIdentityDocumentNumber:form.spouseIdentityDocumentNumber}:{})
    };
@@ -40,6 +40,7 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,agree
    setSaved(result);
    const nextUploaded:Partial<Record<FormalDocumentType,string>>={...uploaded};
    for(const type of ['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'] as FormalDocumentType[]){
+    if(companyCash&&type==='BANKBOOK_COVER')continue;
     const file=files[type];if(!file)continue;
     const doc=await uploadFormalDocument(result.id,type,file);
     nextUploaded[type]=doc.scanStatus;
@@ -68,21 +69,21 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,agree
   <small>夫妻於婚姻關係存續期間視為單一正式經營單位；配偶仍可保有一般會員／消費者資格，但不得另行取得獨立正式傳銷經營權。</small>
  </fieldset>
  <fieldset><legend>身分與銀行文件</legend>
-  <p>{uiText("線上正式會員送審前必須完成身分證明文件正面、反面及存摺封面上傳。JPG/PNG，單檔上限 10 MB。")}</p>
+  <p>{companyCash?'至公司領現金，請上傳身分證明正反面，免附存摺照片。':uiText("線上正式會員送審前必須完成身分證明文件正面、反面及存摺封面上傳。JPG/PNG，單檔上限 10 MB。")}</p>
   <label>身分證明文件正面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('IDENTITY_FRONT',e.target.files?.[0])}/>{uploaded.IDENTITY_FRONT&&<small>已上傳 · 安全檢查 {uploaded.IDENTITY_FRONT}</small>}</label>
   <label>身分證明文件反面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('IDENTITY_BACK',e.target.files?.[0])}/>{uploaded.IDENTITY_BACK&&<small>已上傳 · 安全檢查 {uploaded.IDENTITY_BACK}</small>}</label>
-  <label>存摺封面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('BANKBOOK_COVER',e.target.files?.[0])}/>{uploaded.BANKBOOK_COVER&&<small>已上傳 · 安全檢查 {uploaded.BANKBOOK_COVER}</small>}</label>
+  {!companyCash&&<label>存摺封面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('BANKBOOK_COVER',e.target.files?.[0])}/>{uploaded.BANKBOOK_COVER&&<small>已上傳 · 安全檢查 {uploaded.BANKBOOK_COVER}</small>}</label>}
   <small>上傳後由後台進行文件與資料比對；在安全檢查與審核完成前不會核准正式會員。</small>
  </fieldset>
 
  <label>通訊地址<textarea required maxLength={500} autoComplete="street-address" value={form.communicationAddress} onChange={e=>set('communicationAddress',e.target.value)}/></label>
  <label>電話<input required maxLength={32} autoComplete="tel" value={form.phone} onChange={e=>set('phone',e.target.value)}/></label>
  <label>{uiText("Email")}<input required type="email" maxLength={254} autoComplete="email" value={form.email} onChange={e=>set('email',e.target.value)}/></label>
- <label>銀行別／代碼<input required maxLength={16} value={form.bankCode} onChange={e=>set('bankCode',e.target.value)}/></label>
+ {!companyCash&&<><label>銀行別／代碼<input required maxLength={16} value={form.bankCode} onChange={e=>set('bankCode',e.target.value)}/></label>
  <label>銀行帳號<input required maxLength={34} autoComplete="off" value={form.bankAccount} onChange={e=>set('bankAccount',e.target.value)}/></label>
- <label>帳戶名<input required maxLength={120} value={form.accountHolder} onChange={e=>set('accountHolder',e.target.value)}/></label>
+ <label>帳戶名<input required maxLength={120} value={form.accountHolder} onChange={e=>set('accountHolder',e.target.value)}/></label></>}
  <button className="primary" disabled={busy||agreementBlocked||!(accepted||!!contract.acceptedAt)}>{busy?'儲存／上傳中…':'儲存資料與文件'}</button>
- {saved&&<p role="status">已保存第 {saved.version} 版自然人草稿；身分證明號碼 {saved.identityDocumentNumberMasked??'未提供'}{saved.spouseIdentityDocumentNumberMasked?'，配偶身分證明號碼 '+saved.spouseIdentityDocumentNumberMasked:''}，帳號 {saved.bankAccountMasked}。</p>}
+ {saved&&<p role="status">已保存第 {saved.version} 版自然人草稿；身分證明號碼 {saved.identityDocumentNumberMasked??'未提供'}{saved.spouseIdentityDocumentNumberMasked?'，配偶身分證明號碼 '+saved.spouseIdentityDocumentNumberMasked:''}{companyCash?'，至公司領現金':'，帳號 '+saved.bankAccountMasked}。</p>}
  {saved&&!draftOnly&&<button type="button" disabled={busy||submitted} onClick={async()=>{setBusy(true);setError('');try{await submitFormalEnrollment(saved.id,key.current);setSubmitted(true);onSubmitted?.();}catch(e){setError(e instanceof Error?e.message:'送出失敗');}finally{setBusy(false);}}}>{submitted?'申請已送出，等待審核':'送出正式會員申請'}</button>}
  {error&&<p role="alert">{error}</p>}</form>;
 }

@@ -1,0 +1,78 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {chromium,webkit}=require('playwright-core');
+const {mount,origin}=require('../../admin-interaction/qa/fixtures.cjs');
+const site=process.argv[2],engine=process.argv[3]||'chromium';
+const all=Array.from({length:31},(_,i)=>({id:'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'),name:'排序案例'+String(i+1).padStart(2,'0'),reference:'QA'+i,status:'SUBMITTED',state:'SUBMITTED',since:null,targetPath:'/applications'}));
+all.forEach((r,i)=>r.since=i===0?null:new Date(Date.UTC(2026,10,13,14,0)-i*3600000).toISOString());
+const calls=[];
+(async()=>{
+ const browser=await (engine==='webkit'?webkit.launch():chromium.launch({channel:'msedge'}));
+ try{
+  const page=await browser.newPage({viewport:{width:engine==='webkit'?390:1280,height:880},colorScheme:engine==='webkit'?'dark':'light'});
+  const errors=[];page.on('pageerror',e=>errors.push(e.stack));
+  page.setDefaultTimeout(12000);
+  await mount(page,site,'DARK');
+  await page.route('**/api/v1/admin/daily-operations/items*',async r=>{
+    const u=new URL(r.request().url()),pg=Number(u.searchParams.get('page')||1);
+    calls.push([pg,u.searchParams.get('category')]);const rows=all.slice((pg-1)*25,pg*25);
+    await r.fulfill({headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},json:{data:{rows,total:all.length,path:'/applications',latestTargetPath:'/applications'},meta:{}}});
+  });
+  await page.goto(origin+'/daily-operations');
+  const sort=page.getByRole('button',{name:/待處理起點，/}),tbody=page.locator('.daily-table tbody');
+  await sort.click();
+  await page.waitForFunction(()=>document.querySelector('.daily-table tbody tr')?.textContent.includes('排序案例31'));
+  assert(await tbody.locator('tr').count()===25);
+  await sort.click();await page.waitForFunction(()=>document.querySelector('.daily-table tbody tr')?.textContent.includes('排序案例02'));
+  await page.getByRole('button',{name:'下一頁',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('.daily-table tbody tr:last-child')?.textContent.includes('排序案例01'));
+  assert(await tbody.locator('tr').count()===6);
+  assert(calls.some(([pg])=>pg===2));
+  assert.equal(new Set(calls.map(c=>c[1])).size,1);
+  const orderRows=all.map((r,i)=>({orderId:r.id,orderNo:String(6001+i),displayOrderNo:'SL-SORT-'+String(i+1).padStart(2,'0'),status:'PAID',purpose:'RETAIL',currency:'TWD',netAmount:'600',createdAt:r.since || '2025-01-01T00:00:00Z',purchaser:{legalName:r.name}}));
+  await page.route('**/api/v1/admin/orders?*',async route=>{
+    const u=new URL(route.request().url()),pg=Number(u.searchParams.get('page')||1),take=Number(u.searchParams.get('take')||25);
+    const rows=orderRows.slice((pg-1)*take,pg*take);
+    await route.fulfill({headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},json:{data:rows,meta:{page:pg,take,total:orderRows.length,hasNext:pg*take<orderRows.length}}});
+  });
+  await page.goto(origin+'/orders');
+  const orderSort=page.getByRole('button',{name:/建立時間，/});
+  await orderSort.click();
+  await page.waitForFunction(()=>document.querySelector('.ow-order')?.textContent.includes('排序案例01') && document.querySelectorAll('.ow-order')[1]?.textContent.includes('排序案例31'));
+  await page.waitForLoadState('networkidle');
+  await orderSort.click();
+  await page.waitForFunction(()=>document.querySelector('.ow-order')?.textContent.includes('排序案例02'));
+  await page.waitForLoadState('networkidle');
+  const apiReply=(r,data)=>r.fulfill({headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},json:{data,meta:{}}});
+  await page.route('**/api/v1/admin/notification-hub',r=>apiReply(r,{totals:[],attention:[]}));
+  const notifications=all.slice(0,3).map((row,i)=>({id:row.id,source:'HUB',status:'SENT',channel:'LINE',name:row.name,title:'測試通知',created_at:['2026-08-13T04:00:41Z','2026-08-13T04:00:03Z','2026-08-14T04:00:00Z'][i],sent_at:[null,'2026-08-14T01:00:11Z','2026-08-13T22:57:02Z'][i]}));
+  await page.route('**/api/v1/admin/notification-hub/records*',r=>apiReply(r,{rows:notifications,total:3,page:1,pageSize:25}));
+  await page.goto(origin+'/notification-hub');
+  await page.getByRole('button',{name:'建立，切換為升冪',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('.notification-hub tbody tr')?.textContent.includes('排序案例02'));
+  await page.getByRole('button',{name:'接受，切換為升冪',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('.notification-hub tbody tr')?.textContent.includes('排序案例03'));
+  assert((await page.locator('.notification-hub tbody tr').last().innerText()).includes('排序案例01'));
+  const placements=all.slice(0,3).map((r,i)=>({qualificationId:r.id,ballNo:'QA-'+(i+1),memberName:r.name,status:'PLACED',requestedAt:['2026-11-12T11:00:00Z','2026-11-12T12:00:00Z',null][i],dueAt:['2026-11-17T11:00:00Z',null,'2026-11-15T12:00:00Z'][i],placedAt:r.since}));
+  await page.route('**/api/v1/admin/qualification-placements/dashboard*',r=>{
+    const after=new URL(r.request().url()).searchParams.get('after');
+    return apiReply(r,{items:after?placements.slice(2):placements.slice(0,2),total:3,nextCursor:after?null:'second',counts:{pending:3,overdue:0,placed:0},observedAt:'2026-11-13T00:00:00Z'});
+  });
+  await page.goto(origin+'/admin/organization/trees');
+  await page.getByRole('button',{name:'截止，切換為升冪',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('.ct-monitor tbody tr')?.textContent.includes('排序案例03'));
+  await page.getByRole('button',{name:'起始，切換為升冪',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('.ct-monitor tbody tr')?.textContent.includes('排序案例01'));
+  const greetings=all.slice(0,3).map((r,i)=>({id:r.id,title:r.name,status:'DRAFT',greeting_date:['2026-11-03','2026-11-01','2026-11-02'][i],publish_at:['2026-11-01T03:00:41Z','2026-11-01T03:00:03Z',null][i]}));
+  await page.route('**/api/v1/admin/daily-greetings',r=>apiReply(r,greetings));
+  await page.goto(origin+'/content/greetings');
+  const greetingDate=page.getByRole('button',{name:/^問候日期，/}),publishTime=page.getByRole('button',{name:/^發布時間，/});
+  const titles=page.locator('.greeting-records strong');
+  await greetingDate.click();assert.deepEqual(await titles.allTextContents(),['排序案例02','排序案例03','排序案例01']);
+  await greetingDate.click();assert.deepEqual(await titles.allTextContents(),['排序案例01','排序案例03','排序案例02']);
+  await publishTime.click();assert.deepEqual(await titles.allTextContents(),['排序案例02','排序案例01','排序案例03']);
+  await publishTime.click();assert.deepEqual(await titles.allTextContents(),['排序案例01','排序案例02','排序案例03']);
+  assert.deepEqual(errors,[]);
+  console.log(engine,'passed daily queue, order cards, dual notification fields and placement cursor across pages, plus greeting date and publication time');
+ } finally {await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1});

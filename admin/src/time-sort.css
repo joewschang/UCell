@@ -1,0 +1,7 @@
+.admin-time-sort-button {display:inline-flex;align-items:center;justify-content:flex-start;gap:.35em;min-height:36px;padding:.25rem .4rem;border:1px solid transparent;border-radius:.4rem;background:transparent;color:inherit;font:inherit;font-weight:600;text-align:start;cursor:pointer}
+.admin-time-sort-button:hover,.admin-time-sort-button:focus-visible {color:var(--ucell-text-primary,currentColor);background:var(--ucell-surface-secondary,Canvas);border-color:var(--ucell-primary,currentColor)}
+.admin-time-sort-button:focus-visible {outline:2px solid var(--ucell-primary,currentColor);outline-offset:2px}
+.admin-time-sort-button[aria-pressed=true],th:is([aria-sort=ascending],[aria-sort=descending])>.admin-time-sort-button {border-color:var(--ucell-primary,currentColor)}
+.admin-time-sort-tools {display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-block:.25rem .5rem;list-style:none}
+.admin-time-sort-group {display:block}
+.admin-time-sort-status {font-size:.875rem;display:block}

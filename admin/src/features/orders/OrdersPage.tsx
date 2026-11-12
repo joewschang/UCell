@@ -18,12 +18,13 @@ import './order-workspace.css';
 
 export function OrdersPage(){
  const route=useOrderRoute(),[params]=useSearchParams(),{user}=useAuth(),qc=useQueryClient();
- const [section,setSection]=useState(params.has('feeRefund')?'管理':'商品');
+ const initialSection=params.has('feeRefund')?'管理':params.get('daily')==='PAYMENT'?'收款':'商品';
+ const [section,setSection]=useState(initialSection);
  const [busy,setBusy]=useState(false),[error,setError]=useState<unknown>(null),[refundRef,setRefundRef]=useState(''),[refundReason,setRefundReason]=useState('');
  const canRefund=['SUPER_ADMIN','FINANCE'].includes(user?.role??'');
  const detail=useQuery({queryKey:['order',route.id],enabled:!!route.id,queryFn:({signal})=>get<any>('/admin/orders/'+route.id,{signal})});
  const o=detail.data?.data;
- useEffect(()=>{setSection(params.has('feeRefund')?'管理':'商品');setError(null);setRefundRef('');setRefundReason('');},[route.id,params.has('feeRefund')]);
+ useEffect(()=>{setSection(initialSection);setError(null);setRefundRef('');setRefundReason('');},[route.id,initialSection]);
  useEffect(()=>{if(params.has('feeRefund')&&o){const el=document.getElementById('qualification-fee-refund');el?.focus();}},[o?.orderId,params.has('feeRefund')]);
  return <OrdersWorkbench route={route} role={user?.role} busy={busy} displayState={domainLabel}>
  <ErrorBox error={error}/><Card title="訂單作業">{detail.isError?<p role="alert">無法讀取這筆訂單。 <button onClick={()=>void detail.refetch()}>重試</button></p>:!o?<p role="status">正在載入所選訂單…</p>:<><section className="order-workspace"><header><strong>{orderNumber(o)}</strong><div>{o.purchaser?.legalName||o.qualification?.currentHolder?.legalName||o.qualification?.currentHolderLegalEntity?.registeredName} · {domainLabel(o.status)} · {money(o.netAmount)}</div></header>

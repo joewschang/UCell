@@ -4,7 +4,7 @@ import * as validate from './validation';
 import { type Dashboard, type Qualification, type Scoped, type Person, type Organization, type Binary, type Performance, type Bonus, type Ledger, type Product, type Orders } from './api';
 import { memberApi as api } from './memberApi';
 export const isMock = import.meta.env.VITE_ENABLE_MOCK === 'true';
-export type FormalEnrollmentState={bundlePayment?:import('./enrollment-bundle/api').BundlePaymentSummary|null;pendingPackages?:{orderId:string;packageName:string;total:string;paymentDeadline:string;couponCode:string|null;qualificationFee:string;goodsAmount:string;selectableProductQuantity:number}[];membershipState:string|null;feeAmount:string;currency:string;stagePaymentEnabled:boolean;feeReceipt:{orderId:string;amount:string;paidAt:string|null}|null;application:{id:string;status:string;sourceChannel?:string;applicantType?:string}|null;paidPackages:{orderId:string;packageName:string}[]};
+export type FormalEnrollmentState={bundlePayment?:import('./enrollment-bundle/api').BundlePaymentSummary|null;pendingPackages?:{orderId:string;packageName:string;total:string;paymentDeadline:string;couponCode:string|null;qualificationFee:string;goodsAmount:string;selectableProductQuantity:number}[];membershipState:string|null;feeAmount:string;currency:string;stagePaymentEnabled:boolean;feeReceipt:{orderId:string;amount:string;paidAt:string|null}|null;application:{id:string;status:string;sourceChannel?:string;applicantType?:string;payoutMethod?:string}|null;paidPackages:{orderId:string;packageName:string}[]};
 export async function getFormalEnrollment(signal?:AbortSignal){return api<FormalEnrollmentState>('/member/formal-enrollment',{signal});}
 export async function payFormalEnrollmentFee(key:string){return api('/member/formal-enrollment/fee-payment',{method:'POST',headers:{'Idempotency-Key':key}});}
 export async function payEnrollmentPackage(orderId:string,key:string){return api(`/member/formal-enrollment/package-payments/${encodeURIComponent(orderId)}`,{method:'POST',headers:{'Idempotency-Key':key}});}
@@ -45,14 +45,14 @@ export async function getFormalRequiredContracts(signal:AbortSignal){const rows=
 export async function consentFormalContract(versionId:string,key:string){const result=await api<{contractVersionId:string;acceptedAt:string}>(`/member/contracts/${encodeURIComponent(versionId)}/consent`,{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({accepted:true,channel:'MEMBER_WEB'})});if(result?.contractVersionId!==versionId||!Number.isFinite(Date.parse(result.acceptedAt)))throw new Error('正式會員合約同意結果異常');return result;}
 export type FormalDraftInput={
  formalContractVersionId:string;applicantType:'INDIVIDUAL';
- communicationAddress:string;phone:string;email:string;bankCode:string;bankAccount:string;accountHolder:string;
+ communicationAddress:string;phone:string;email:string;bankCode?:string;bankAccount?:string;accountHolder?:string;
  legalName:string;gender:string;birthDate:string;nationalityCode:string;
  identityDocumentType:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber:string;
  hasSpouse:boolean;spouseName?:string;spouseNationalityCode?:string;spouseIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';spouseIdentityDocumentNumber?:string;
 };
 export async function saveFormalDraft(input:FormalDraftInput,key:string){
- const result=await api<{id:string;status:string;version:number;applicantType:string;nationalityCode:string|null;identityDocumentType:string|null;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;replayed:boolean}>('/member/formal-applications',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});
- if(!result||typeof result.id!=='string'||result.status!=='DRAFT'||!Number.isInteger(result.version)||result.applicantType!=='INDIVIDUAL'||!(result.identityDocumentNumberMasked===null||result.identityDocumentNumberMasked.startsWith('***'))||!(result.spouseIdentityDocumentNumberMasked===null||result.spouseIdentityDocumentNumberMasked.startsWith('***'))||!result.bankAccountMasked.startsWith('***'))throw new Error('正式會員草稿結果異常');
+ const result=await api<{id:string;status:string;version:number;applicantType:string;nationalityCode:string|null;identityDocumentType:string|null;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string|null;payoutMethod?:string;replayed:boolean}>('/member/formal-applications',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});
+ if(!result||typeof result.id!=='string'||result.status!=='DRAFT'||!Number.isInteger(result.version)||result.applicantType!=='INDIVIDUAL'||!(result.identityDocumentNumberMasked===null||result.identityDocumentNumberMasked.startsWith('***'))||!(result.spouseIdentityDocumentNumberMasked===null||result.spouseIdentityDocumentNumberMasked.startsWith('***'))||!(result.bankAccountMasked?.startsWith('***') || (!result.bankAccountMasked && (result.payoutMethod==='COMPANY_CASH' || input.bankCode===undefined))))throw new Error('正式會員草稿結果異常');
  return result;
 }export type FormalDocumentType='IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER';
 export async function uploadFormalDocument(applicationId:string,documentType:FormalDocumentType,file:File){

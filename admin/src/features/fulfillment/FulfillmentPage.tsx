@@ -1,3 +1,4 @@
+import {taskValue,focusTaskElement} from '../operations-control/daily-task.js';
 import {uiValue,uiText} from "../../../../shared/design-system/i18n";
 import {useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
@@ -33,7 +34,7 @@ export function FulfillmentPage(){
   <ErrorBox error={error||query.error}/>{query.isFetching&&<p role="status">正在載入出貨資料…</p>}{notice&&<p role="status">{notice}</p>}
   {!orderNo&&<p>輸入或掃描訂單號開始核對。</p>}
   {query.data&&!query.error&&query.data.data.fulfillments.length===0&&<Card><p>此訂單尚無出貨配置。</p>{canWrite&&query.data.data.status==='PAID'?<button disabled={busy||query.isFetching} onClick={()=>run('','prepare')}>依付款明細建立出貨配置</button>:<p>完成付款後，由倉務人員建立出貨配置。</p>}</Card>}
-  {!query.error&&query.data?.data.fulfillments.map(f=><Card key={f.fulfillmentKey} title={`出貨單 ${f.fulfillmentKey}`}>
+  {!query.error&&query.data?.data.fulfillments.map(f=><Card key={f.fulfillmentKey} title={`出貨單 ${f.fulfillmentKey}`}>{taskValue("SHIPMENT","fulfillment")===f.fulfillmentKey&&<p ref={focusTaskElement} tabIndex={-1}>已選取這筆待辦出貨單。</p>}
    <p>狀態：{statuses[f.status]??'待確認'}{f.packVerification?' · 裝箱驗證完成':''}</p>
    {f.sources.map(s=><SourceScan key={s.sourceReference} source={s} disabled={busy||query.isFetching||!canWrite||!!f.packVerification||!!f.erpHandoff} scan={body=>run(f.fulfillmentKey,'scans',body)}/>)}
    {!canWrite&&<p>目前為唯讀檢視；掃描與交付需倉務權限。</p>}

@@ -5,14 +5,16 @@ const {chromium,webkit}=require('playwright-core'),eng=process.argv[3]||'chromiu
 const base=path.resolve(process.argv[2]);
 const prev='00000002-1111-4111-8111-111111111111',curr='00000003-1111-4111-8111-111111111111',app='00000001-1111-4111-8111-111111111111';
 const stamp='2026-11-12T09:00:00Z',oldHash='a'.repeat(64),newHash='b'.repeat(64),current={id:curr,title:'正式會員申請協議',version:'QA-NEXT',content:'測試新版正式會員協議全文',contentHash:'c'.repeat(64),acceptedAt:null},old={...current,id:prev,version:'QA-OLD'};
-const docs=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
+const standardDocs=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
 const payload={applicantType:'INDIVIDUAL',legalName:'示範會員',gender:'UNDISCLOSED',birthDate:'1990-01-01',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',identityDocumentNumber:'A123456789',communicationAddress:'臺北市中正區示範路10號',phone:'0900000000',email:'before@example.com',bankCode:'004',bankAccount:'123456789',accountHolder:'示範會員',formalContractVersionId:prev};
 const heads={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'POST,GET,OPTIONS'};
 function api(r,data){return r.fulfill({headers:heads,json:{data,meta:{api_version:'v1',timestamp:stamp,request_id:'qa'}}});}
 async function scenario(browser,mode){
  const page=await browser.newPage({serviceWorkers:'block'});page.setDefaultTimeout(5500);
+ const docs=mode==='cash'?standardDocs.slice(0,2):standardDocs;
+ const method=mode==='cash'?'COMPANY_CASH':'BANK_TRANSFER';
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- const signed=['signedSame','signedEdit','wrongHash','wrongId','emptyText'].includes(mode);let version=1,active=false,renewals=0,saves=0,consents=0,uploads=0,savedEmail=null;
+ const signed=['signedSame','signedEdit','wrongHash','wrongId','emptyText'].includes(mode);let version=1,active=mode==='cash',renewals=0,saves=0,consents=0,uploads=0,savedEmail=null;
  const header={...current};delete header.content;
  const view=()=>({version,current:!active&&!signed?current:header,requiresRefresh:!active&&!signed,preservedSignature:!active&&signed,canRefresh:mode!=='paper',snapshotHash:active?newHash:oldHash});
  await page.addInitScript(()=>sessionStorage.setItem('ucell_member_token','test'));
@@ -30,13 +32,13 @@ async function scenario(browser,mode){
   if(p==='/member/me')return api(r,{name:payload.legalName,alias:null,memberNo:'TW0900000000',phone:payload.phone,email:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:stamp,emailVerifiedAt:null});
   if(['/member/qualifications','/member/represented-legal-entities'].includes(p))return api(r,[]);
   if(p==='/member/messages')return api(r,{items:[],asOf:stamp,dataThrough:stamp,nextCursor:null});
-  if(p==='/member/formal-enrollment')return api(r,{membershipState:'NETWORK_MEMBER',feeAmount:'0',currency:'TWD',stagePaymentEnabled:false,feeReceipt:null,application:{id:app,status:mode==='crossRace'?'DRAFT':'NEEDS_MORE_INFO',sourceChannel:mode==='paper'?'ADMIN_PAPER':'MEMBER_WEB',applicantType:'INDIVIDUAL'},paidPackages:[],pendingPackages:[],draft:{version,documents:signed?[...docs,'SIGNED_APPLICATION_AGREEMENT']:docs,payload:{...payload,email:savedEmail||payload.email,formalContractVersionId:active?curr:prev}},bundlePayment:null});
+  if(p==='/member/formal-enrollment')return api(r,{membershipState:'NETWORK_MEMBER',feeAmount:'0',currency:'TWD',stagePaymentEnabled:false,feeReceipt:null,application:{id:app,payoutMethod:method,status:mode==='crossRace'?'DRAFT':'NEEDS_MORE_INFO',sourceChannel:mode==='paper'?'ADMIN_PAPER':'MEMBER_WEB',applicantType:'INDIVIDUAL'},paidPackages:[],pendingPackages:[],draft:{version,payoutMethod:method,documents:signed?[...docs,'SIGNED_APPLICATION_AGREEMENT']:docs,payload:{...payload,...(mode==='cash'?{bankCode:null,bankAccount:null,accountHolder:null}:{}),email:savedEmail||payload.email,formalContractVersionId:active?curr:prev}},bundlePayment:null});
   if(p==='/member/contracts/formal-required')return api(r,[mode==='wrongHash'?{...current,contentHash:'f'.repeat(64)}:mode==='wrongId'?{...current,id:prev}:mode==='emptyText'?{...current,content:'   '}:current]);
   if(p.endsWith('/contract-renewal')){if(req.method()==='POST'){const body=req.postDataJSON();assert.deepEqual(body,{confirmed:true,expectedSnapshotHash:oldHash,contractVersionId:curr,contentHash:current.contentHash});assert(!active);active=true;version++;renewals++;}return api(r,view());}
   if(p.endsWith('/documents')&&req.method()==='POST'){assert.equal(req.postDataJSON().documentType,'BANKBOOK_COVER');assert.equal(savedEmail,'edited@example.com');uploads++;return api(r,{scanStatus:'PRESENT'});}
-  if(p.endsWith('/documents')){if(mode==='crossRace'&&!active)version=2;return api(r,{applicationId:app,documents:(signed?[...docs,'SIGNED_APPLICATION_AGREEMENT']:docs).map(type=>({type,status:'PRESENT'})),paperReviewed:[],contractRenewal:view(),signingContext:{version,snapshotHash:active?newHash:oldHash,name:payload.legalName,contract:active?current:old}});}
+  if(p.endsWith('/documents')){if(mode==='crossRace'&&!active)version=2;return api(r,{applicationId:app,payoutMethod:method,documents:(signed?[...docs,'SIGNED_APPLICATION_AGREEMENT']:docs).map(type=>({type,status:'PRESENT'})),paperReviewed:[],contractRenewal:view(),signingContext:{version,snapshotHash:active?newHash:oldHash,name:payload.legalName,contract:active?current:old}});}
   if(p==='/member/contracts/'+curr+'/consent'){consents++;return api(r,{contractVersionId:curr,acceptedAt:stamp});}
-  if(p==='/member/formal-applications'&&req.method()==='POST'){const body=req.postDataJSON();assert.equal(body.expectedVersion,version);assert.equal(body.formalContractVersionId,curr);savedEmail=body.email;saves++;active=true;version++;return api(r,{id:app,status:'DRAFT',version,applicantType:'INDIVIDUAL',identityDocumentNumberMasked:'***6789',bankAccountMasked:'***6789'});}
+  if(p==='/member/formal-applications'&&req.method()==='POST'){const body=req.postDataJSON();assert.equal(body.expectedVersion,version);assert.equal(body.formalContractVersionId,curr);if(mode==='cash')for(const key of ['bankAccount','bankCode','accountHolder'])assert(!Object.hasOwn(body,key));savedEmail=body.email;saves++;active=true;version++;return api(r,{id:app,status:'DRAFT',version,applicantType:'INDIVIDUAL',identityDocumentNumberMasked:'***6789',payoutMethod:method,bankAccountMasked:mode==='cash'?null:'***6789'});}
   return api(r,null);
  });
  try{
@@ -45,8 +47,10 @@ async function scenario(browser,mode){
   await form.getByText('此手機已完成簡訊驗證，可繼續申請。').waitFor();
   if(mode!=='signedSame')await form.getByLabel(/Email/).fill('edited@example.com');
   const next=form.getByRole('button',{name:'確認，下一步'});await next.click();await next.click();await next.click();
+  if(mode==='cash'){await form.getByText(/至公司領現金，免填銀行資料/).waitFor();assert.equal(await form.getByLabel(/銀行帳號/).count(),0);}
   if(mode==='file'){const blob=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=180;c.height=100;const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,180,100);return c.toDataURL('image/png').split(',')[1];});await form.locator('fieldset:visible input[type=file]').last().setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from(blob,'base64')});await form.getByRole('button',{name:'向右旋轉'}).waitFor();}
   const save=form.getByRole('button',{name:'儲存資料，前往合約簽名'});await save.click();
+  if(mode==='cash'){await page.locator('.membership-signature:visible').first().waitFor();assert.equal(saves,1);assert.equal(uploads,0);}
   if(mode==='crossRace'){await form.getByText(/申請已由其他畫面更新/).first().waitFor();assert.equal(saves,0);}
   if(['wrongHash','wrongId','emptyText'].includes(mode)){await form.getByText(/請重新取得有效的協議全文/).first().waitFor();assert.equal(await form.getByRole('button',{name:'同意新版並儲存修改，重新簽名'}).count(),0);assert.equal(saves+consents+renewals,0);}
   if(mode==='signedSame'){await page.locator('.membership-signature:visible').first().waitFor();assert.equal(saves+renewals+consents,0);}
@@ -64,4 +68,4 @@ async function scenario(browser,mode){
   assert.deepEqual(errors,[]);console.log(eng,mode,'pass');
  }catch(e){console.error(mode,errors,(await page.locator('main').innerText().catch(()=>'' )).slice(-2300));throw e;}finally{await page.close();}
 }
-(async()=>{const b=eng==='webkit'?await webkit.launch():await chromium.launch({channel:'msedge'});try{for(const x of (process.argv.slice(4).length?process.argv.slice(4):['unsigned','signedSame','signedEdit','paper','race','file','crossRace','wrongHash','wrongId','emptyText']))await scenario(b,x);}finally{await b.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
+(async()=>{const b=eng==='webkit'?await webkit.launch():await chromium.launch({channel:'msedge'});try{for(const x of (process.argv.slice(4).length?process.argv.slice(4):['unsigned','signedSame','signedEdit','paper','race','file','crossRace','wrongHash','wrongId','emptyText','cash']))await scenario(b,x);}finally{await b.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

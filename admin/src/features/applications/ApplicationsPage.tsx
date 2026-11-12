@@ -1,3 +1,4 @@
+import {createReviewPayoutMethod} from './review-payout-method.mjs';
 import {EnrollmentReview} from './EnrollmentReview';
 import {uiValue,uiText,domainLabel} from "../../../../shared/design-system/i18n";
 import {ConfirmAction} from '../../components/ConfirmAction';
@@ -10,6 +11,7 @@ import {MembershipApplication} from '../../types/domain';
 import {Badge,Card,ErrorBox,PageHeader} from '../../components/ui';
 import {dateTime,holderName} from '../../lib/format';
 import {Link} from 'react-router-dom';
+import {taskValue,focusTaskElement} from '../operations-control/daily-task.js';
 import {useAuth} from '../auth/auth';
 import {canOpen} from '../auth/permissions';
 import {AdminTable} from '../../components/AdminTable';
@@ -17,11 +19,12 @@ import {openPrivateDocument} from '../../lib/privateDocument';
 
 function tone(s:string){return s==='EFFECTIVE'?'ok':s==='SUBMITTED'?'warn':s==='DRAFT'?'neutral':'danger'}
 
+const ReviewPayoutMethod=createReviewPayoutMethod(React);
 const ContractRenewal=createContractRenewal(React);
 export function ApplicationsPage(){
  const {user}=useAuth();
  const qc=useQueryClient();const [status,setStatus]=useState('SUBMITTED'),[search,setSearch]=useState('');
- const [formalStatus,setFormalStatus]=useState(''),[selectedFormal,setSelectedFormal]=useState<string|null>(null);
+ const [formalStatus,setFormalStatus]=useState(''),[selectedFormal,setSelectedFormal]=useState<string|null>(()=>taskValue("REVIEW|SUPPLEMENT","applicationId"));
  const [directory,setDirectory]=useState(true),[formalQuery,setFormalQuery]=useState(''),[appliedQuery,setAppliedQuery]=useState(''),[formalPage,setFormalPage]=useState(1);
  const [selected,setSelected]=useState<string|null>(null);const [error,setError]=useState<unknown>(null);const [busy,setBusy]=useState(false);
  const list=useQuery({queryKey:['applications',status,search],queryFn:()=>get<any>('/admin/membership-applications'+qs({status:status||undefined,q:search,take:100}))});
@@ -92,9 +95,11 @@ export function ApplicationsPage(){
    {!formalList.isLoading&&!formalRows.length&&<p>{formalList.error?null:appliedQuery?"沒有符合條件的會員主檔申請。":"本頁目前沒有正式會員申請。"}</p>}
   </Card>
   {selectedFormal&&<Card title="正式會員審查詳情">
+   {selectedFormal===taskValue("REVIEW|SUPPLEMENT","applicationId")&&<p tabIndex={-1} ref={focusTaskElement}>已開啟待辦指定的會員申請。</p>}
    <ErrorBox error={formalDetail.error}/><ErrorBox error={formalDocuments.error}/>
    {!formalDetail.data?.data?<p className="muted">{uiText("正在載入受保護 KYC 詳情…")}</p>:(()=>{const d=formalDetail.data.data,p=d.payload??{},docs=formalDocuments.data?.data??[];return <>
     <div className="status-strip"><Badge tone={d.status==='APPROVED'?'ok':d.status==='UNDER_REVIEW'?'warn':'neutral'}>{domainLabel(d.status)}</Badge><span>{d.applicantType} · {d.sourceChannel}</span></div>
+    <ReviewPayoutMethod key={d.id+'-'+d.payoutMethodVersion} detail={d} canEdit={['SUPER_ADMIN','MEMBERSHIP_OPS'].includes(user?.role??'')} blocked={busy} setBusy={setBusy} save={command} reload={async()=>{await Promise.all([formalDetail.refetch(),formalDocuments.refetch()]);}}/>
     {canRenew&&<><ErrorBox error={renewal.error}/><ContractRenewal admin state={renewal.data?.data} disabled={busy} save={(body,key)=>command(renewalPath,body,key)} reload={async()=>{await Promise.all([renewal.refetch(),formalDetail.refetch(),formalDocuments.refetch()]);}}/></>}
     {d.enrollmentBundle&&<EnrollmentReview group={d.enrollmentBundle} status={d.status} blocked={busy} onBusy={setBusy} refresh={()=>formalDetail.refetch()}/>}
     <dl className="detail-grid">
@@ -108,7 +113,7 @@ export function ApplicationsPage(){
      <dt>配偶核驗</dt><dd>{domainLabel(d.spouseVerificationStatus)}</dd>
      <dt>跨線審查</dt><dd>{domainLabel(d.crossLineReviewStatus)}{d.crossLineConflictCode?' · '+d.crossLineConflictCode:''}</dd>
     </dl>
-    {d.sourceChannel==='ADMIN_PAPER'?<section><h3>{uiText("紙本 Evidence")}</h3>{(d.paperEvidence??[]).map((x:any)=><p key={x.id}>{x.type} · <Badge tone={x.status==='REVIEWED'?'ok':x.status==='REJECTED'?'danger':'warn'}>{domainLabel(x.status)}</Badge> {x.status==='PENDING'&&<button disabled={busy} onClick={()=>reviewPaperEvidence(x.type)}>確認已核對</button>}</p>)}</section>:<section><h3>{uiText("線上 KYC 文件")}</h3>{docs.map((x:any)=><div className="list-row" key={x.id}><strong>{x.type}</strong><span>{domainLabel(x.status)} · 安全檢查 <Badge tone={x.scanStatus==='CLEAN'?'ok':x.scanStatus==='INFECTED'?'danger':'warn'}>{domainLabel(x.scanStatus)}</Badge></span><small>{x.mimeType??'—'} · {x.sizeBytes??'—'} {uiText(" bytes")}</small><div className="button-row"><button disabled={busy||x.status!=='PRESENT'||x.scanStatus!=='CLEAN'} onClick={()=>viewKycDocument(x.id)}>檢視文件</button></div>{x.scanStatus!=='CLEAN'&&<small>文件尚未通過安全掃描，系統不得進入正式審查。</small>}</div>)}</section>}
+    {d.sourceChannel==='ADMIN_PAPER'?<section><h3>{uiText("紙本 Evidence")}</h3>{(d.paperEvidence??[]).filter((x:any)=>d.payoutMethod!=='COMPANY_CASH'||!['BANKBOOK_COVER','CORPORATE_BANK_PROOF'].includes(x.type)).map((x:any)=><p key={x.id}>{x.type} · <Badge tone={x.status==='REVIEWED'?'ok':x.status==='REJECTED'?'danger':'warn'}>{domainLabel(x.status)}</Badge> {x.status==='PENDING'&&<button disabled={busy} onClick={()=>reviewPaperEvidence(x.type)}>確認已核對</button>}</p>)}</section>:<section><h3>{uiText("線上 KYC 文件")}</h3>{docs.filter((x:any)=>d.payoutMethod!=='COMPANY_CASH'||x.type!=='BANKBOOK_COVER').map((x:any)=><div className="list-row" key={x.id}><strong>{x.type}</strong><span>{domainLabel(x.status)} · 安全檢查 <Badge tone={x.scanStatus==='CLEAN'?'ok':x.scanStatus==='INFECTED'?'danger':'warn'}>{domainLabel(x.scanStatus)}</Badge></span><small>{x.mimeType??'—'} · {x.sizeBytes??'—'} {uiText(" bytes")}</small><div className="button-row"><button disabled={busy||x.status!=='PRESENT'||x.scanStatus!=='CLEAN'} onClick={()=>viewKycDocument(x.id)}>檢視文件</button></div>{x.scanStatus!=='CLEAN'&&<small>文件尚未通過安全掃描，系統不得進入正式審查。</small>}</div>)}</section>}
     <div className="sticky-actions button-row">
      {p.hasSpouse&&d.spouseVerificationStatus!=='VERIFIED'&&<button disabled={busy} onClick={()=>formalAction('spouse-verification')}>確認配偶資料</button>}
      {d.crossLineReviewStatus!=='CLEAR'&&<button disabled={busy} onClick={()=>formalAction('cross-line-review')}>執行跨線審查</button>}

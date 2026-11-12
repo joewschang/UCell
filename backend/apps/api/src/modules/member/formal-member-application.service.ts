@@ -1,3 +1,4 @@
+import { requireBank, requiredEvidence, lockChoice, payoutChoice, saveApprovedMethod, setChoice, snapshotBankErrors, PayoutMethod } from './formal-payout-method';
 import { checkContract,priorUnchanged } from './contract-renewal';
 import {adminEnrollmentReview} from '../member-bundle/admin-bundle-review';
 import {activateEnrollmentBundleIfReady} from '../member-bundle/excellence-activation';
@@ -25,6 +26,7 @@ export type FormalDraftInput={
  spouseIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';spouseIdentityDocumentNumber?:string;
 };
 export type AdminPaperFormalInput=FormalDraftInput&{
+ payoutMethod?:PayoutMethod;
  representativePersonId:string;
  paperApplicationReference:string;
 };
@@ -54,9 +56,9 @@ export class FormalMemberApplicationService {
    communicationAddress:this.required(input.communicationAddress,'FORMAL_COMMUNICATION_ADDRESS_REQUIRED'),
    phone:this.required(input.phone,'FORMAL_PHONE_REQUIRED'),
    email:this.required(input.email,'FORMAL_EMAIL_REQUIRED').toLowerCase(),
-   bankCode:this.required(input.bankCode,'FORMAL_BANK_CODE_REQUIRED'),
-   bankAccount:this.required(input.bankAccount,'FORMAL_BANK_ACCOUNT_REQUIRED').replace(/\s+/g,''),
-   accountHolder:this.required(input.accountHolder,'FORMAL_ACCOUNT_HOLDER_REQUIRED'),
+   bankCode:(input.bankCode?.trim()??''),
+   bankAccount:(input.bankAccount?.trim()??'').replace(/\s+/g,''),
+   accountHolder:(input.accountHolder?.trim()??''),
    hasSpouse,
    spouseName:hasSpouse?this.required(input.spouseName,'FORMAL_SPOUSE_NAME_REQUIRED'):undefined,
    spouseNationalityCode:hasSpouse?this.required(input.spouseNationalityCode,'FORMAL_SPOUSE_NATIONALITY_REQUIRED').toUpperCase():undefined,
@@ -131,9 +133,10 @@ export class FormalMemberApplicationService {
     const now=new Date(),contract=await tx.contractDocumentVersion.findFirst({where:{contractDocumentVersionId:normalized.formalContractVersionId,required:true,audience:{in:['FORMAL_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},include:{consentEvidence:{where:{personId},take:1}}});
     if(!contract||!contract.consentEvidence.length)throw new UnprocessableEntityException({code:'FORMAL_CONTRACT_CONSENT_REQUIRED'});
     const current=await tx.formalMemberApplication.findFirst({where:{personId,status:{in:['DRAFT','SUBMITTED','UNDER_REVIEW','NEEDS_MORE_INFO'] as any}},include:{snapshots:{orderBy:{version:'desc'},take:1}}});
+    const method=current?(await lockChoice(tx,current.formalMemberApplicationId)).method:'BANK_TRANSFER';requireBank(normalized,method);
     if(current&&current.status!=='DRAFT'&&current.status!=='NEEDS_MORE_INFO')throw new ConflictException({code:'FORMAL_APPLICATION_LOCKED'});
     if(current&&current.applicantType!==normalized.applicantType)throw new ConflictException({code:'FORMAL_APPLICANT_TYPE_LOCKED'});
-    const unchanged=await priorUnchanged(tx,current,normalized);if(unchanged&&current)return this.view(current,unchanged as any,current.snapshots[0].version);
+    const unchanged=await priorUnchanged(tx,current,normalized);if(unchanged&&current)return {...this.view(current,unchanged as any,current.snapshots[0].version),payoutMethod:method};
     const encrypted=this.pii.encrypt(normalized),version=(current?.snapshots[0]?.version??0)+1;
     const metadata={
      applicantType:normalized.applicantType,
@@ -154,7 +157,7 @@ export class FormalMemberApplicationService {
     const correlationId=randomUUID();
     await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_APPLICATION_DRAFT_SAVED',entityType:'FormalMemberApplication',entityId:application.formalMemberApplicationId,afterData:{version,payloadHash:hash,formalContractVersionId:normalized.formalContractVersionId,applicantType:normalized.applicantType,hasSpouse:normalized.hasSpouse,fieldsComplete:true},requestId,correlationId});
     await tx.outboxEvent.create({data:{eventType:'FORMAL_APPLICATION_DRAFT_SAVED',aggregateType:'Person',aggregateId:personId,payload:{schemaVersion:2,personId,applicationId:application.formalMemberApplicationId,applicationVersion:version,payloadHash:hash,applicantType:normalized.applicantType,hasSpouse:normalized.hasSpouse},correlationId}});
-    return this.view(application,normalized,version);
+    return {...this.view(application,normalized,version),payoutMethod:method};
    });
    return {...result.value,replayed:result.replayed};
   }catch(error){
@@ -166,6 +169,7 @@ export class FormalMemberApplicationService {
  async createPaper(input:AdminPaperFormalInput,actorId:string,key:string,requestId:string){
   if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
   const normalized=this.normalize(input) as any;
+  const method=input.payoutMethod??'BANK_TRANSFER';requireBank(normalized,method);
   const paperReference=this.required(input.paperApplicationReference,'PAPER_APPLICATION_REFERENCE_REQUIRED');
   const representative=await this.db.person.findUnique({where:{personId:input.representativePersonId}});
   if(!representative)throw new NotFoundException({code:'REPRESENTATIVE_PERSON_NOT_FOUND'});
@@ -174,7 +178,7 @@ export class FormalMemberApplicationService {
   const primaryDocumentType=normalized.applicantType==='LEGAL_ENTITY'?normalized.representativeIdentityDocumentType:normalized.identityDocumentType;
   const applicantIdentityFingerprint=this.fingerprint.fingerprintIdentityDocument(primaryNationality,primaryDocumentType,primaryId);
   const spouseIdentityFingerprint=normalized.hasSpouse?this.fingerprint.fingerprintIdentityDocument(normalized.spouseNationalityCode,normalized.spouseIdentityDocumentType,normalized.spouseIdentityDocumentNumber):null;
-  const safeRequest={paperReference,representativePersonId:input.representativePersonId,applicantType:normalized.applicantType,applicantIdentityFingerprint,spouseIdentityFingerprint,legalEntityRegistrationNo:normalized.legalEntityRegistrationNo??null};
+  const safeRequest={...(method==='COMPANY_CASH'?{payoutMethod:method}:{}),paperReference,representativePersonId:input.representativePersonId,applicantType:normalized.applicantType,applicantIdentityFingerprint,spouseIdentityFingerprint,legalEntityRegistrationNo:normalized.legalEntityRegistrationNo??null};
   return this.idempotency.execute('admin:formal-paper:create:'+actorId,key,safeRequest,async tx=>{
    const now=new Date();
    const contract=await tx.contractDocumentVersion.findFirst({where:{contractDocumentVersionId:normalized.formalContractVersionId,required:true,audience:{in:['FORMAL_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}});
@@ -199,12 +203,13 @@ export class FormalMemberApplicationService {
     spouseVerificationStatus:normalized.hasSpouse?'PENDING':'NOT_APPLICABLE',crossLineReviewStatus:'NOT_EVALUATED',currentSnapshotHash:payloadHash,status:'DRAFT'
    }});
    await tx.formalMemberApplicationSnapshot.create({data:{formalMemberApplicationId:app.formalMemberApplicationId,version:1,payloadCiphertext:encrypted.ciphertext,keyVersion:encrypted.keyVersion,payloadHash}});
+   if(method==='COMPANY_CASH')await setChoice(tx,app.formalMemberApplicationId,method,actorId);
    const required=normalized.applicantType==='LEGAL_ENTITY'
     ?['SIGNED_APPLICATION_AGREEMENT','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF']
     :['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
    await tx.formalPaperEvidence.createMany({data:required.map((evidenceType:any)=>({formalMemberApplicationId:app.formalMemberApplicationId,evidenceType,status:'PENDING'}))});
    const correlationId=randomUUID();
-   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_PAPER_APPLICATION_ENTERED',entityType:'FormalMemberApplication',entityId:app.formalMemberApplicationId,afterData:{applicantType:normalized.applicantType,sourceChannel:'ADMIN_PAPER',paperApplicationReference:paperReference,legalEntityId},requestId,correlationId});
+   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_PAPER_APPLICATION_ENTERED',entityType:'FormalMemberApplication',entityId:app.formalMemberApplicationId,afterData:{applicantType:normalized.applicantType,sourceChannel:'ADMIN_PAPER',payoutMethod:method,paperApplicationReference:paperReference,legalEntityId},requestId,correlationId});
    return {id:app.formalMemberApplicationId,status:app.status,applicantType:app.applicantType,sourceChannel:app.sourceChannel,legalEntityId,memberNo:legalEntityId?(await tx.legalEntity.findUniqueOrThrow({where:{legalEntityId}})).memberNo:representative.memberNo,paperApplicationReference:paperReference};
   });
  }
@@ -235,6 +240,8 @@ export class FormalMemberApplicationService {
  private async evidenceGate(applicationId:string,db:Prisma.TransactionClient|PrismaService=this.db){
   const app=await db.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
   if(!app)throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
+  const choice=await payoutChoice(db,applicationId);
+  const fields=await snapshotBankErrors(db,applicationId,choice);if(fields.length)return {ready:false,codes:fields};
   if(app.spouseIdentityFingerprint&&app.spouseVerificationStatus!=='VERIFIED')return {ready:false,codes:['SPOUSE_VERIFICATION_REQUIRED']};
   if(app.crossLineReviewStatus!=='CLEAR')return {ready:false,codes:['CROSS_LINE_REVIEW_CLEAR_REQUIRED']};
 
@@ -244,12 +251,12 @@ export class FormalMemberApplicationService {
     :['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
    const rows=await db.formalPaperEvidence.findMany({where:{formalMemberApplicationId:applicationId,evidenceType:{in:required as any}}});
    const status=new Map(rows.map(row=>[row.evidenceType,row.status]));
-   const codes=required.filter(type=>status.get(type as any)!=='REVIEWED').map(type=>type+'_REVIEW_REQUIRED');
+   const codes=requiredEvidence(required,choice.method).filter(type=>status.get(type as any)!=='REVIEWED').map(type=>type+'_REVIEW_REQUIRED');
    return {ready:codes.length===0,codes};
   }
 
   if(app.applicantType!=='INDIVIDUAL')return {ready:false,codes:['LEGAL_ENTITY_PAPER_APPLICATION_REQUIRED']};
-  const required=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
+  const required=requiredEvidence(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'],choice.method);
   const docs=await db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:required as any}}});
   const status=new Map(docs.map(row=>[row.documentType,row.malwareScanStatus]));
   const codes=required.flatMap(type=>!status.has(type as any)?[type+'_MISSING']:status.get(type as any)!=='CLEAN'?[type+'_SCAN_CLEAN_REQUIRED']:[]);
@@ -307,6 +314,7 @@ export class FormalMemberApplicationService {
     await tx.legalEntityRepresentative.updateMany({where:{legalEntityId:app.legalEntityId,personId:app.personId,effectiveTo:null,roleCode:'PRIMARY_OPERATING_REPRESENTATIVE'},data:{verifiedAt:now,verifiedBy:actorId}});
    }
 
+   await saveApprovedMethod(tx,app);
    const updated=await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'APPROVED',reviewedAt:now,reviewerId:actorId}});
    const correlationId=randomUUID();
    const activation=group?await activateEnrollmentBundleIfReady(tx,applicationId,requestId):null;
@@ -379,7 +387,9 @@ export class FormalMemberApplicationService {
   if(!application||!application.snapshots[0])throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
   const snapshot=application.snapshots[0],payload=this.pii.decrypt<any>(snapshot.payloadCiphertext,snapshot.keyVersion);
   await this.db.$transaction(tx=>this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_PII_VIEWED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{version:snapshot.version,applicantType:application.applicantType,sourceChannel:application.sourceChannel},requestId,correlationId:randomUUID()}));
+  const choice=await payoutChoice(this.db,applicationId);
   return {
+   payoutMethod:choice.method,payoutMethodVersion:choice.version,
    id:application.formalMemberApplicationId,status:application.status,applicantType:application.applicantType,sourceChannel:application.sourceChannel,
    enrollmentBundle:application.applicantType==='INDIVIDUAL'&&application.sourceChannel==='MEMBER_WEB'?await adminEnrollmentReview(this.db,applicationId,application.personId):null,
    paperApplicationReference:application.paperApplicationReference,enteredAt:application.enteredAt?.toISOString()??null,
