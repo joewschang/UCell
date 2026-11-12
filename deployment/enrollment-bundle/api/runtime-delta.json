@@ -1,0 +1,2262 @@
+{
+ "base": "sha256:b7bec1e5ed474f4ff8678ca138dc2c307c2c5e55f2bc6ee1e773563753d664d7",
+ "source": {
+  "backend/apps/api/src/common/idempotency/idempotency.service.ts": "de44b98930f729e72f3b4d2eea856a738b2ffd08f79186f9f20b5648cd7ad5d4",
+  "backend/apps/api/src/modules/binary-tree/binary-tree.service.ts": "2526086e8a10ecfea5bada114c31379a9af406dd62cb86c10607c4180ba7799d",
+  "backend/apps/api/src/modules/member/enrollment-bundle-payment.ts": "6c3f5045a8f93d351eb74afeebd071b576e14524a867791f4bf39534e93ded9a",
+  "backend/apps/api/src/modules/member/enrollment-bundle-report.ts": "7fbfa2c123006782bc95a2949f4c2eb39ff1e4452ed3d83b0baf2d86b470c601",
+  "backend/apps/api/src/modules/member/formal-enrollment.controller.ts": "4fbd6cdd5d409ffd956d4826c3e01dbdd1217b006972d61b077953d05823232a",
+  "backend/apps/api/src/modules/member/formal-enrollment.service.ts": "736afec6f3ca6f03fbaf959b4129ed8d8c75d7af9534e8772b000d102b97914b",
+  "backend/apps/api/src/modules/member/formal-member-application.service.ts": "2b645ec7f5146dc3e9900613ac1605a58512bbbf2b1fe569ce3a17642f627d7f",
+  "backend/apps/api/src/modules/member-bundle/admin-bundle-review.ts": "9a600e58d15544067f78a97d4fb1e21b57a467000b4b7495860cb9b48d3a32ff",
+  "backend/apps/api/src/modules/member-bundle/bundle-order-guards.ts": "be68226c1ad8d9c1b0511fefd783a495726e1d7fa4dbaf8c70a9055dccf3c885",
+  "backend/apps/api/src/modules/member-bundle/bundle-read.ts": "568591750e9b82860fec9f5deb9ce2acbaaaf80cf4169fc584aa3909cc9035c4",
+  "backend/apps/api/src/modules/member-bundle/enrollment-bundle.controller.ts": "9ea8169083c1decd0e25481e1909090f2cff77f7f25c57f2fe89dda1a674c458",
+  "backend/apps/api/src/modules/member-bundle/enrollment-bundle.dto.ts": "d812c54f9d0e2acaf05972fd616fad58e113b1ec0d4f6f67235e75f2d1a2dbb5",
+  "backend/apps/api/src/modules/member-bundle/enrollment-bundle.service.ts": "8635cef57eb7d5e344e85950fe25b396d1a1c4e8bb511391c5cfa0eed17ef9d7",
+  "backend/apps/api/src/modules/member-bundle/excellence-activation.ts": "0e4e49a70e0b076c520f6890b8a72471a67fd2fdc3251c1cb75785216550c163",
+  "backend/apps/api/src/modules/member-bundle/excellence-plan.ts": "e87416e64c72e39b915c13cd54355a3c673bdda28fc1774c092426c646da288c",
+  "backend/apps/api/src/modules/order/enrollment-bundle-receipt.ts": "b8713cb3658873df983497e0935304727c201ae4c4b4e9bd4a81e052828a403e",
+  "backend/apps/api/src/modules/order/order.controller.ts": "997345a08c430c7371c1c35caecc54c143c8a1570322a35cd6b57e75fc0eda83",
+  "backend/apps/api/src/modules/order/order.module.ts": "8f90c60b701f754193a17c1aa8e0033d386d3e2369d2227204969336302bb570",
+  "backend/apps/api/src/modules/order/order.service.ts": "bbdb7b61bd206e8be6054b31e882f8218d075e29cdf9f63a672be8ff05562795",
+  "backend/apps/api/src/modules/qualification/enrollment-bundle-placement.ts": "ca311a31c8750b81d7e5daf28779db6464c2662ed87ce1b99354acbeb4955324",
+  "backend/apps/api/src/modules/qualification/place-deferred-qualification.ts": "e2afbeceb5bfdaf49931595e84f1a5b9b3a2aeacbbb19326761debeb2a994495",
+  "backend/apps/api/src/modules/qualification/qualification-placement.service.ts": "d13ea02940297bf4ea9ddc43861cc7d07d6c4af8823c46c13db36d62f1e39796",
+  "backend/apps/api/src/modules/qualification/sponsor-resolver.controller.ts": "e90e30268b099d80f4d9c678a7336004e5857c3d4ba172411de1bf7eecdad7bd",
+  "backend/apps/api/src/modules/qualification/sponsor-resolver.service.ts": "110620cc6e47a6f91bf1e033ae16b3dd44b2f3717d8d36b12432cb4fdf086258",
+  "backend/packages/database/prisma/migrations/20261112040000_enrollment_bundle/migration.sql": "cdeef0bfa6cf582e47ae579dd0378ef231138626955be09027545407f2348448",
+  "backend/packages/database/prisma/migrations/20261112040100_enrollment_bundle_topology_guards/migration.sql": "174d1c683312c928516a5d9e4bf410e768d173f95c39af668f09e159e33d21da",
+  "backend/packages/database/prisma/migrations/20261112040200_enrollment_bundle_receipt/migration.sql": "3dd9b2c471d4301b72f91366e1ba38386ae14ec90d063cc298e98d2fbc8d1241",
+  "backend/packages/database/prisma/migrations/20261112040300_enrollment_bundle_payment_guards/migration.sql": "67a01118d3257bccdfa92e11c252670621f52d69b4dd3b32945bfbc5e222ecf9",
+  "backend/packages/database/prisma/migrations/20261112100000_excellence_enrollment/migration.sql": "4f7c7fa8d3c849b336e72977c67e809273dd7c86680293f9cfb9369258ebc98e",
+  "deployment/enrollment-bundle/admin/patch-review-api.cjs": "84d58cf58c5149394a4f12e6f2d3eef7c3dbbb11414fdbd8c080dbd2dd0fb753"
+ },
+ "files": [
+  {
+   "file": "common/idempotency/idempotency.service.js",
+   "before": "7b54728f697902a87364b6542c371ee21b25aa0f928de2e5612442a3606641f6",
+   "after": "468d88e09c1be7daf5be23a119559dc0e35de3e31169813f8ca2bcf96094ea1f",
+   "changes": [
+    [
+     21,
+     1,
+     [
+      "    async execute(actorScope, key, request, work, options = {}) {"
+     ]
+    ],
+    [
+     49,
+     1,
+     [
+      "        const transact = () => this.prisma.$transaction(async (tx) => {"
+     ]
+    ],
+    [
+     85,
+     2,
+     [
+      "        }, { isolationLevel: database_1.Prisma.TransactionIsolationLevel.Serializable, timeout: options.timeout });",
+      "        for (let attempt = 0;; attempt++) {",
+      "            try {",
+      "                return await transact();",
+      "            }",
+      "            catch (error) {",
+      "                const dbError = error;",
+      "                const conflict = ['P2034', 'P2002', '23505', '40001', '40P01'].includes(dbError.code ?? '') || ['23505', '40001', '40P01'].includes(dbError.meta?.code ?? '');",
+      "                if (!options.retryOnConflict || !conflict)",
+      "                    throw error;",
+      "                if (attempt >= 2)",
+      "                    throw new common_1.ConflictException({ code: 'RETRYABLE_CONFLICT', message: '另一筆操作正在更新資料，請使用原操作再試一次。' });",
+      "            }",
+      "        }"
+     ]
+    ],
+    [
+     94,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "common/utils/placement-ready.js",
+   "before": "4b1eb59edb6c40470bca970b0880c7b078d80ea8e02edddaa3fbe9f45df7f87a",
+   "after": "be81f83ada7347a60e6ae3b10bcb49043cd260160fb63113a84a66bf759cb624",
+   "changes": [
+    [
+     5,
+     1,
+     [
+      "    const rows = await db.$queryRaw `SELECT q.qualification_id AS id FROM membership.qualification q LEFT JOIN identity.person p ON p.person_id=q.current_holder_person_id LEFT JOIN identity.legal_entity entity ON entity.legal_entity_id=q.current_holder_legal_entity_id JOIN membership.qualification_setup s ON s.qualification_id=q.qualification_id JOIN commerce.\"order\" o ON o.order_id=s.qualifying_order_id WHERE q.kind='MEMBER_ORIGIN' AND q.status IN ('DRAFT','EFFECTIVE') AND (p.membership_state='FORMAL_MEMBER' OR (entity.membership_state='FORMAL_MEMBER' AND entity.status='ACTIVE')) AND s.setup_status IN ('PLACEMENT_PENDING','PLACEMENT_OVERDUE') AND o.status IN ('PAID','FULFILLED','PARTIAL_RETURN') AND o.paid_at IS NOT NULL AND NOT EXISTS(SELECT 1 FROM membership.enrollment_bundle_ball b WHERE b.qualification_id=q.qualification_id AND b.position>1)`;"
+     ]
+    ],
+    [
+     8,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/binary-tree/binary-tree.service.js",
+   "before": "a7439c28457fdae4c4b631a12bc568f17ea706ba29202d141fc179e57d046e52",
+   "after": "f765243bfcb77e1388ffa77da6b6102d409310fe71bf3ef636beebf679e53c87",
+   "changes": [
+    [
+     12,
+     0,
+     [
+      "const enrollment_bundle_placement_1 = require(\"../qualification/enrollment-bundle-placement\");",
+      "const place_deferred_qualification_1 = require(\"../qualification/place-deferred-qualification\");",
+      "const qualification_activation_gate_1 = require(\"../qualification/qualification-activation-gate\");",
+      "const audit_service_1 = require(\"../../common/audit/audit.service\");"
+     ]
+    ],
+    [
+     58,
+     1,
+     [
+      "                return await this.idempotency.execute(`tree:${scope}:${actor}`, key, body, async (tx) => { await this.authorize(p, true, tx); const result = await work(tx, actor); await this.authorize(p, true, tx); return result; }, scope.startsWith('place:') ? { timeout: 120000 } : undefined);"
+     ]
+    ],
+    [
+     210,
+     0,
+     [
+      "            const descendants = await (0, enrollment_bundle_placement_1.bundleDescendantsForPlacement)(tx, input.qualificationId);"
+     ]
+    ],
+    [
+     212,
+     2,
+     [
+      "            let edge;",
+      "            if (descendants) {",
+      "                const audit = new audit_service_1.AuditService(), requestId = (0, node_crypto_1.randomUUID)();",
+      "                await (0, place_deferred_qualification_1.placeDeferredQualification)(tx, this.organization, audit, actorId, 'ADMIN_OVERRIDE', { ...input, reasonCode: reason }, requestId, true);",
+      "                await (0, place_deferred_qualification_1.placePlannedDescendants)(tx, this.organization, audit, descendants, requestId);",
+      "                edge = await tx.binaryPlacement.findUniqueOrThrow({ where: { childQualificationId: input.qualificationId } });",
+      "            }",
+      "            else {",
+      "                edge = await this.organization.createBinaryPlacement(tx, { parentQualificationId: input.binaryParentQualificationId, childQualificationId: input.qualificationId, side: input.side, effectiveFrom: at }, { sourceType: 'TREE_PLACEMENT_CONSOLE', actorId, reason, correlationId: (0, node_crypto_1.randomUUID)() });",
+      "            }",
+      "            if (setup && !descendants) {"
+     ]
+    ],
+    [
+     224,
+     1,
+     [
+      "            return { binaryTreeId: treeId, treeCode: tree.treeCode, ballNo: placed.ballNo, parentBallNo: parentBall.ballNo, binaryPositionNo: membership.binaryPositionNo.toString(), path: (0, database_1.binaryPath)(membership.binaryPositionNo), binaryPlacementId: edge.binaryPlacementId, topologyVersion: tree.topologyVersion + 1 + (descendants?.length ?? 0), effectiveAt: edge.effectiveFrom.toISOString() };"
+     ]
+    ],
+    [
+     245,
+     0,
+     [
+      "            const descendants = await (0, enrollment_bundle_placement_1.bundleDescendantsForPlacement)(tx, target.qualificationId);",
+      "            if (descendants && setup)",
+      "                await (0, qualification_activation_gate_1.assertQualificationActivation)(tx, setup);"
+     ]
+    ],
+    [
+     272,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member/enrollment-bundle-payment.js",
+   "before": null,
+   "after": "2ca86dfcee1e69bb80797b08db17fb8f0ca721295112d90f6a3c630dfbb6a920",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.enrollmentBundlePayment = enrollmentBundlePayment;",
+      "exports.requirePaidBundleRoot = requirePaidBundleRoot;",
+      "const common_1 = require(\"@nestjs/common\");",
+      "async function enrollmentBundlePayment(db, applicationId, personId) {",
+      "    const [row] = await db.$queryRaw `",
+      "    SELECT bundle.bundle_id AS \"bundleId\", root.qualification_order_id AS \"rootOrderId\",",
+      "           bundle.payment_policy AS \"paymentPolicy\",",
+      "           (sum(orders.net_amount)+CASE WHEN bundle.payment_policy='COMBINED' THEN coalesce(sum(rep.net_amount),0) ELSE 0 END)::text AS \"payableTotal\",",
+      "           CASE WHEN bundle.payment_policy='COMBINED' THEN EXISTS(SELECT 1 FROM commerce.enrollment_bundle_payment r WHERE r.bundle_id=bundle.bundle_id)",
+      "             ELSE bool_or(ball.position = 1 AND orders.status IN ('PAID','FULFILLED')) END AS \"rootPaid\",",
+      "           EXISTS(SELECT 1 FROM commerce.enrollment_bundle_payment_report report WHERE report.bundle_id=bundle.bundle_id) AS \"paymentReported\",",
+      "           count(*)::int AS \"qualificationCount\",",
+      "           count(*) FILTER (WHERE orders.status IN ('PAID','FULFILLED') OR allocation.order_id IS NOT NULL)::int AS \"paidQualifications\",",
+      "           sum(orders.net_amount)::text AS \"qualificationTotal\",",
+      "           coalesce(sum(orders.net_amount) FILTER (WHERE orders.status = 'CONFIRMED' AND allocation.order_id IS NULL), 0)::text AS \"outstandingQualificationTotal\"",
+      "    FROM membership.enrollment_bundle bundle",
+      "    JOIN membership.enrollment_bundle_ball root ON root.bundle_id = bundle.bundle_id AND root.position = 1",
+      "    JOIN membership.enrollment_bundle_ball ball ON ball.bundle_id = bundle.bundle_id",
+      "    JOIN commerce.\"order\" orders ON orders.order_id = ball.qualification_order_id",
+      "    LEFT JOIN commerce.enrollment_bundle_allocation allocation ON allocation.order_id=orders.order_id",
+      "    LEFT JOIN commerce.\"order\" rep ON rep.order_id = ball.repurchase_order_id",
+      "    WHERE bundle.application_id = ${applicationId}::uuid AND bundle.person_id = ${personId}::uuid AND bundle.superseded_at IS NULL",
+      "    GROUP BY bundle.bundle_id, root.qualification_order_id`;",
+      "    return row ? { ...row, currency: 'TWD' } : null;",
+      "}",
+      "function requirePaidBundleRoot(summary) {",
+      "    if (summary && !summary.rootPaid) {",
+      "        throw new common_1.ConflictException({ code: 'FORMAL_ENROLLMENT_BUNDLE_ROOT_UNPAID', message: '第 1 球的資格套組尚未確認收款。' });",
+      "    }",
+      "}"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member/enrollment-bundle-report.js",
+   "before": null,
+   "after": "c79d10287623a8518ceb5550e23f6defb41e861e0012c2bc9f994675fcb5cff9",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {",
+      "    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;",
+      "    if (typeof Reflect === \"object\" && typeof Reflect.decorate === \"function\") r = Reflect.decorate(decorators, target, key, desc);",
+      "    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;",
+      "    return c > 3 && r && Object.defineProperty(target, key, r), r;",
+      "};",
+      "var __metadata = (this && this.__metadata) || function (k, v) {",
+      "    if (typeof Reflect === \"object\" && typeof Reflect.metadata === \"function\") return Reflect.metadata(k, v);",
+      "};",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.EnrollmentBundleTransferDto = void 0;",
+      "exports.readBundleTransfer = readBundleTransfer;",
+      "exports.reportBundleTransfer = reportBundleTransfer;",
+      "const common_1 = require(\"@nestjs/common\");",
+      "const database_1 = require(\"@ucell/database\");",
+      "const swagger_1 = require(\"@nestjs/swagger\");",
+      "const class_validator_1 = require(\"class-validator\");",
+      "const enrollment_bundle_payment_1 = require(\"./enrollment-bundle-payment\");",
+      "class EnrollmentBundleTransferDto {",
+      "    amount;",
+      "    paidAt;",
+      "    accountLastFive;",
+      "}",
+      "exports.EnrollmentBundleTransferDto = EnrollmentBundleTransferDto;",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)(),",
+      "    (0, class_validator_1.Matches)(/^\\d{1,14}(\\.\\d{1,2})?$/),",
+      "    __metadata(\"design:type\", String)",
+      "], EnrollmentBundleTransferDto.prototype, \"amount\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)(),",
+      "    (0, class_validator_1.IsISO8601)(),",
+      "    __metadata(\"design:type\", String)",
+      "], EnrollmentBundleTransferDto.prototype, \"paidAt\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)(),",
+      "    (0, class_validator_1.Matches)(/^\\d{5}$/),",
+      "    __metadata(\"design:type\", String)",
+      "], EnrollmentBundleTransferDto.prototype, \"accountLastFive\", void 0);",
+      "async function readBundleTransfer(tx, applicationId, personId) {",
+      "    const [record] = await tx.$queryRaw `SELECT r.bundle_id AS \"bundleId\",r.amount::text,r.account_last_five AS \"accountLastFive\",r.paid_at AS \"paidAt\",r.created_at AS \"actorReportedAt\"",
+      "    FROM commerce.enrollment_bundle_payment_report r JOIN membership.enrollment_bundle b ON b.bundle_id=r.bundle_id",
+      "    WHERE b.application_id=${applicationId}::uuid AND b.person_id=${personId}::uuid AND b.superseded_at IS NULL`;",
+      "    return record ?? null;",
+      "}",
+      "async function reportBundleTransfer(tx, applicationId, personId, body) {",
+      "    const [group] = await tx.$queryRaw `SELECT bundle_id AS id FROM membership.enrollment_bundle",
+      "    WHERE application_id=${applicationId}::uuid AND person_id=${personId}::uuid AND superseded_at IS NULL FOR UPDATE`;",
+      "    if (!group)",
+      "        throw new common_1.NotFoundException({ code: 'ENROLLMENT_BUNDLE_NOT_FOUND' });",
+      "    const at = new Date(body.paidAt), prior = await readBundleTransfer(tx, applicationId, personId);",
+      "    if (prior) {",
+      "        if (new database_1.Prisma.Decimal(prior.amount).eq(body.amount) && prior.accountLastFive === body.accountLastFive && prior.paidAt.getTime() === at.getTime())",
+      "            return prior;",
+      "        throw new common_1.ConflictException({ code: 'BUNDLE_TRANSFER_ALREADY_REPORTED', message: '已收到這組資格的匯款回報。資料需要更正時請聯絡客服核對。' });",
+      "    }",
+      "    const summary = await (0, enrollment_bundle_payment_1.enrollmentBundlePayment)(tx, applicationId, personId);",
+      "    const [window] = await tx.$queryRaw `",
+      "    SELECT max(o.created_at) AS start,min(s.payment_deadline) AS deadline,bool_and(o.status='CONFIRMED') AS payable",
+      "    FROM membership.enrollment_bundle_ball b JOIN commerce.\"order\" o ON o.order_id=b.qualification_order_id",
+      "    JOIN commerce.package_purchase_snapshot s ON s.order_id=o.order_id WHERE b.bundle_id=${group.id}::uuid`;",
+      "    if (!summary || !window.payable || !window.deadline || window.deadline.getTime() <= Date.now())",
+      "        throw new common_1.ConflictException({ code: 'BUNDLE_NOT_PAYABLE' });",
+      "    const amount = new database_1.Prisma.Decimal(body.amount);",
+      "    // The member reports the minute shown on the transfer slip. Finance records the actual receipt separately.",
+      "    const firstReportableMinute = Math.floor(window.start.getTime() / 60000) * 60000;",
+      "    if (!amount.isPositive() || !amount.eq(summary.payableTotal) || !Number.isFinite(at.getTime()) || at.getTime() < firstReportableMinute || at >= window.deadline || at.getTime() > Date.now() + 60000)",
+      "        throw new common_1.UnprocessableEntityException({ code: 'BUNDLE_TRANSFER_INVALID', message: '請核對整組應付金額及實際匯款時間。' });",
+      "    await tx.$executeRaw `INSERT INTO commerce.enrollment_bundle_payment_report(bundle_id,amount,account_last_five,paid_at)",
+      "    VALUES (${group.id}::uuid,${amount},${body.accountLastFive},${at})`;",
+      "    return readBundleTransfer(tx, applicationId, personId);",
+      "}"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member/formal-enrollment.controller.js",
+   "before": "4f7104af40bcec1dd1c3b8b563baeadf5c3e326945f6619ea21256b11c9288c9",
+   "after": "8ceb7541ca29ee18d6fd6eae2dbf4cc74046ca1a6f4a4b3d7596b6bcc3a76f53",
+   "changes": [
+    [
+     15,
+     0,
+     [
+      "const enrollment_bundle_report_1 = require(\"./enrollment-bundle-report\");"
+     ]
+    ],
+    [
+     40,
+     0,
+     [
+      "    bundleReport(req, id) { return this.enrollment.bundleReport(req.user.personId, id); }",
+      "    reportBundle(req, id, dto, key) { return this.enrollment.reportBundle(req.user.personId, id, dto, key); }"
+     ]
+    ],
+    [
+     47,
+     0,
+     [
+      "__decorate([",
+      "    (0, common_1.Get)('applications/:id/bundle/payment-report'),",
+      "    (0, swagger_1.ApiOperation)({ operationId: 'memberReadEnrollmentBundleTransfer', summary: '查詢本人多球資格合併匯款回報' }),",
+      "    __param(0, (0, common_1.Req)()),",
+      "    __param(1, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),",
+      "    __metadata(\"design:type\", Function),",
+      "    __metadata(\"design:paramtypes\", [Object, String]),",
+      "    __metadata(\"design:returntype\", void 0)",
+      "], FormalEnrollmentController.prototype, \"bundleReport\", null);",
+      "__decorate([",
+      "    (0, common_1.Post)('applications/:id/bundle/payment-report'),",
+      "    (0, common_1.UseGuards)(idempotency_guard_1.IdempotencyGuard),",
+      "    (0, swagger_1.ApiHeader)({ name: 'Idempotency-Key', required: true }),",
+      "    (0, swagger_1.ApiOperation)({ operationId: 'memberReportEnrollmentBundleTransfer', summary: '回報本人多球資格合計匯款，等待財務確認' }),",
+      "    __param(0, (0, common_1.Req)()),",
+      "    __param(1, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),",
+      "    __param(2, (0, common_1.Body)()),",
+      "    __param(3, (0, common_1.Headers)('idempotency-key')),",
+      "    __metadata(\"design:type\", Function),",
+      "    __metadata(\"design:paramtypes\", [Object, String, enrollment_bundle_report_1.EnrollmentBundleTransferDto, String]),",
+      "    __metadata(\"design:returntype\", void 0)",
+      "], FormalEnrollmentController.prototype, \"reportBundle\", null);"
+     ]
+    ],
+    [
+     111,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member/formal-enrollment.service.js",
+   "before": "f5bc5ca597291a07f73322a48c9ed99e82f47b36bacdff737a5e5fd1e59a98a5",
+   "after": "5db5411b1a68fb2014585196359e7b1778f6d24959d82da31131b7f63992ee4b",
+   "changes": [
+    [
+     12,
+     0,
+     [
+      "const enrollment_bundle_payment_1 = require(\"./enrollment-bundle-payment\");",
+      "const enrollment_bundle_report_1 = require(\"./enrollment-bundle-report\");"
+     ]
+    ],
+    [
+     36,
+     0,
+     [
+      "    }",
+      "    async bundleReport(personId, applicationId) {",
+      "        return { data: await (0, enrollment_bundle_report_1.readBundleTransfer)(this.db, applicationId, personId) };",
+      "    }",
+      "    async reportBundle(personId, applicationId, body, key) {",
+      "        const result = await this.idempotency.execute('member:enrollment-bundle-report:' + personId + ':' + applicationId, key, body, tx => (0, enrollment_bundle_report_1.reportBundleTransfer)(tx, applicationId, personId, body), { retryOnConflict: true });",
+      "        return { data: result.value, meta: { replayed: result.replayed } };"
+     ]
+    ],
+    [
+     72,
+     1,
+     [
+      "            this.db.formalMemberApplication.findFirst({ where: { personId, ...(entity?{legalEntityId:entity.id,applicantType:'LEGAL_ENTITY'}:{OR:[{applicantType:'INDIVIDUAL'},{sourceChannel:'MEMBER_WEB',applicantType:'LEGAL_ENTITY'}]}) }, select: { formalMemberApplicationId: true, status: true, sourceChannel: true, applicantType:true, decisionReasonCode: true }, orderBy: { updatedAt: 'desc' } }),"
+     ]
+    ],
+    [
+     77,
+     1,
+     [
+      "        const bundlePayment = application ? await (0, enrollment_bundle_payment_1.enrollmentBundlePayment)(this.db, application.formalMemberApplicationId, personId) : null;",
+      "        return { bundlePayment, prefill: this.registrationPrefill(person), draft: application ? await this.draft(personId, application.formalMemberApplicationId) : null, pendingPackages: pendingPackages.filter(p => pendingOrders.some(o => o.orderId === p.orderId)).map(p => ({ orderId: p.orderId, orderNo: pendingOrders.find(o => o.orderId === p.orderId)?.publicOrderNo, packageName: p.packageName, total: pendingOrders.find(o => o.orderId === p.orderId).netAmount.toString(), paymentDeadline: p.paymentDeadline.toISOString(), couponCode: p.couponCode, qualificationFee: p.qualificationFee.toString(), goodsAmount: p.priceAmount.toString(), selectableProductQuantity: p.selectableProductQuantity })), membershipState: entity?.state ?? person.membershipState, feeAmount: FEE, currency: 'TWD', stagePaymentEnabled: this.stagePaymentEnabled(), feeReceipt: fee ? this.receipt(fee) : null, application: application ? { id: application.formalMemberApplicationId, status: application.status, sourceChannel: application.sourceChannel, applicantType: application.applicantType, reviewNote: application.decisionReasonCode } : null, paidPackages: packages };"
+     ]
+    ],
+    [
+     149,
+     2,
+     [
+      "            const bundle = await (0, enrollment_bundle_payment_1.enrollmentBundlePayment)(tx, applicationId, personId);",
+      "            if (bundle && !bundle.paymentReported)",
+      "                (0, enrollment_bundle_payment_1.requirePaidBundleRoot)(bundle);",
+      "            let purchase = bundle ? { orderId: bundle.rootOrderId, packageName: '多球資格合併付款' } : (await this.paidPackages(tx, personId))[0];",
+      "            const paymentConfirmed = bundle ? bundle.rootPaid : !!purchase;"
+     ]
+    ],
+    [
+     167,
+     1,
+     [
+      "            await this.audit.write(tx, { actorType: 'MEMBER', actorId: personId, action: 'FORMAL_ENROLLMENT_SUBMITTED', entityType: 'FormalMemberApplication', entityId: applicationId, afterData: { status: 'SUBMITTED', paymentOrderId: purchase.orderId, paymentConfirmed, paymentMethod: paymentConfirmed ? null : bundle ? 'BANK_TRANSFER' : input.paymentMethod, scanApprovalGranted: false }, requestId, correlationId: (0, node_crypto_1.randomUUID)() });"
+     ]
+    ],
+    [
+     177,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member/formal-member-application.service.js",
+   "before": "6402d3766c4d022692875d33c96fbe78f7ca6cb50e893d0fe7fdcddecb965124",
+   "after": "a86a338bdffe9de84cc56f1f043f1e422595bd688b2d1eac50266de9e9069167",
+   "changes": [
+    [
+     12,
+     0,
+     [
+      "const {adminEnrollmentReview}=require(\"../member-bundle/admin-bundle-review\");",
+      "const {activateEnrollmentBundleIfReady}=require(\"../member-bundle/excellence-activation\");",
+      "const enrollment_bundle_payment_1 = require(\"./enrollment-bundle-payment\");"
+     ]
+    ],
+    [
+     330,
+     0,
+     [
+      "                const group=app.applicantType==='INDIVIDUAL' && app.sourceChannel==='MEMBER_WEB' ? await enrollment_bundle_payment_1.enrollmentBundlePayment(tx,applicationId,app.personId) : null;",
+      "                enrollment_bundle_payment_1.requirePaidBundleRoot(group);"
+     ]
+    ],
+    [
+     356,
+     2,
+     [
+      "                const activation=group?await activateEnrollmentBundleIfReady(tx,applicationId,requestId):null;",
+      "                await this.audit.write(tx, { actorType: 'ADMIN', actorId, action: 'FORMAL_APPLICATION_APPROVED', entityType: 'FormalMemberApplication', entityId: applicationId, afterData: { status: 'APPROVED', applicantType: app.applicantType, personId: app.personId, legalEntityId: app.legalEntityId , ...(group?{bundleId:group.bundleId,qualificationCount:group.qualificationCount,activationStatus:activation?.status}:{}) }, requestId, correlationId });",
+      "                return { applicationId, status: updated.status, applicantType: app.applicantType, personId: app.personId, legalEntityId: app.legalEntityId, qualificationCreated: false, ...(group?{bundleId:group.bundleId,approvedQualifications:group.qualificationCount,activationStatus:activation?.status}:{}) };"
+     ]
+    ],
+    [
+     461,
+     0,
+     [
+      "            enrollmentBundle:application.applicantType===\"INDIVIDUAL\"&&application.sourceChannel===\"MEMBER_WEB\"?await adminEnrollmentReview(this.db,applicationId,application.personId):null,"
+     ]
+    ],
+    [
+     548,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member/member-order-cancellation.js",
+   "before": "460b6768e043a8af05ec72d98629c9ac517b9de742c76ee62a207de694918b9d",
+   "after": "5372a04f82dcf3a5351681ac80d9b4a9fc43dbf08c36e6d02aeb26e31585982b",
+   "changes": [
+    [
+     25,
+     1,
+     [
+      "        db.$queryRaw `SELECT DISTINCT order_id FROM commerce.order_payment_report WHERE order_id IN (${database_1.Prisma.join(ids.map((id) => database_1.Prisma.sql `${id}::uuid`))})",
+      "         UNION SELECT b.qualification_order_id AS order_id FROM membership.enrollment_bundle_ball b",
+      "             JOIN membership.enrollment_bundle g USING(bundle_id) WHERE g.superseded_at IS NULL AND b.qualification_order_id IN (${database_1.Prisma.join(ids.map((id) => database_1.Prisma.sql `${id}::uuid`))})",
+      "         UNION SELECT b.repurchase_order_id AS order_id FROM membership.enrollment_bundle_ball b",
+      "             JOIN membership.enrollment_bundle g USING(bundle_id) WHERE g.superseded_at IS NULL AND g.payment_policy='COMBINED' AND b.repurchase_order_id IN (${database_1.Prisma.join(ids.map((id) => database_1.Prisma.sql `${id}::uuid`))})`"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member-bundle/admin-bundle-review.js",
+   "before": null,
+   "after": "ce830660da79bf7cfd7c4e34f87df639e141bf55d606277dd2625935e8c505c4",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.adminEnrollmentReview = adminEnrollmentReview;",
+      "const database_1 = require(\"@ucell/database\");",
+      "const bundle_read_1 = require(\"./bundle-read\");",
+      "const enrollment_bundle_payment_1 = require(\"../member/enrollment-bundle-payment\");",
+      "async function adminEnrollmentReview(db, applicationId, personId) {",
+      "    return db.$transaction(async (tx) => {",
+      "        const group = await (0, bundle_read_1.activeBundle)(tx, applicationId);",
+      "        if (!group)",
+      "            return null;",
+      "        const receipt = await (0, bundle_read_1.bundleReceipt)(tx, group.bundleId, applicationId);",
+      "        const payment = await (0, enrollment_bundle_payment_1.enrollmentBundlePayment)(tx, applicationId, personId);",
+      "        return { ...receipt, paymentVerified: payment?.rootPaid === true };",
+      "    }, { isolationLevel: database_1.Prisma.TransactionIsolationLevel.RepeatableRead });",
+      "}"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member-bundle/bundle-order-guards.js",
+   "before": null,
+   "after": "b08ed30805f6ca353d6e62510521efdd3efa95804fe4067a08c7683ef946144c",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.assertSingleApplicationCheckout = assertSingleApplicationCheckout;",
+      "exports.assertRepurchaseBallEffective = assertRepurchaseBallEffective;",
+      "const common_1 = require(\"@nestjs/common\");",
+      "async function assertSingleApplicationCheckout(tx, personId) {",
+      "    const [found] = await tx.$queryRaw `",
+      "    SELECT b.bundle_id FROM membership.enrollment_bundle b",
+      "    JOIN identity.formal_member_application a ON a.formal_member_application_id=b.application_id",
+      "    WHERE b.superseded_at IS NULL AND b.person_id=${personId}::uuid AND a.status IN ('DRAFT','NEEDS_MORE_INFO','SUBMITTED','UNDER_REVIEW') LIMIT 1`;",
+      "    if (found)",
+      "        throw new common_1.ConflictException({ code: 'ENROLLMENT_BUNDLE_EXISTS', message: '本次申請已有多球訂單，請返回申請頁查看。' });",
+      "}",
+      "async function assertRepurchaseBallEffective(tx, orderId, occurredAt = new Date()) {",
+      "    const [target] = await tx.$queryRaw `",
+      "    SELECT q.status::text AS status,q.effective_at AS \"effectiveAt\" FROM membership.enrollment_bundle_ball b",
+      "    JOIN membership.qualification q ON q.qualification_id=b.qualification_id",
+      "    WHERE b.repurchase_order_id=${orderId}::uuid`;",
+      "    if (target && (target.status !== 'EFFECTIVE' || !target.effectiveAt || target.effectiveAt > occurredAt))",
+      "        throw new common_1.ConflictException({",
+      "            code: 'BUNDLE_REPURCHASE_AWAITS_PLACEMENT', message: '請先完成這顆球的資格審核與安置，再確認其重銷付款。'",
+      "        });",
+      "}"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member-bundle/bundle-read.js",
+   "before": null,
+   "after": "17ca4b8bf6d2a6e22db645524ef257c2a310ff531c0014477d4d82a5c4541d1e",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.ownedApplication = ownedApplication;",
+      "exports.activeBundle = activeBundle;",
+      "exports.sponsorLabel = sponsorLabel;",
+      "exports.bundleReceipt = bundleReceipt;",
+      "const common_1 = require(\"@nestjs/common\");",
+      "const database_1 = require(\"@ucell/database\");",
+      "const repurchase_display_1 = require(\"../../common/utils/repurchase-display\");",
+      "async function ownedApplication(tx, personId, applicationId, lock = false) {",
+      "    const [app] = await tx.$queryRaw `",
+      "    SELECT a.status,p.membership_state::text AS \"membershipState\",p.status::text AS \"personStatus\",p.security_status::text AS \"securityStatus\"",
+      "    FROM identity.formal_member_application a JOIN identity.person p ON p.person_id=a.person_id",
+      "    WHERE a.formal_member_application_id=${applicationId}::uuid AND a.person_id=${personId}::uuid",
+      "      AND a.applicant_type='INDIVIDUAL' AND a.source_channel='MEMBER_WEB' AND a.legal_entity_id IS NULL",
+      "    ${lock ? database_1.Prisma.sql `FOR UPDATE OF a,p` : database_1.Prisma.empty}`;",
+      "    if (!app)",
+      "        throw new common_1.NotFoundException({ code: 'FORMAL_APPLICATION_NOT_FOUND' });",
+      "    return app;",
+      "}",
+      "async function activeBundle(tx, applicationId) {",
+      "    const [row] = await tx.$queryRaw `",
+      "    SELECT bundle_id::text AS \"bundleId\",request_hash AS \"requestHash\"",
+      "    FROM membership.enrollment_bundle WHERE application_id=${applicationId}::uuid AND superseded_at IS NULL`;",
+      "    return row ?? null;",
+      "}",
+      "async function restartEligible(tx, bundleId, orders, balls) {",
+      "    const economic = await tx.order.findFirst({ where: { orderId: { in: orders }, OR: [",
+      "                { paidAt: { not: null } }, { status: { notIn: ['CONFIRMED', 'VOIDED'] } }, { paymentEvents: { some: {} } }, { payments: { some: {} } },",
+      "                { paperReceiptEvidence: { some: {} } }, { returns: { some: {} } }, { invoices: { some: {} } }, { fulfillments: { some: {} } }, { inventoryReservations: { some: {} } }",
+      "            ] }, select: { orderId: true } });",
+      "    if (economic || await tx.qualificationSetup.count({ where: { qualificationId: { in: balls } } }))",
+      "        return false;",
+      "    const [reports] = await tx.$queryRaw `",
+      "    SELECT EXISTS (SELECT 1 FROM commerce.enrollment_bundle_payment_report WHERE bundle_id=${bundleId}::uuid)",
+      "        OR EXISTS (SELECT 1 FROM commerce.enrollment_bundle_payment WHERE bundle_id=${bundleId}::uuid) AS recorded,",
+      "      to_regclass('commerce.order_payment_report') IS NOT NULL AS \"individualTable\"`;",
+      "    if (reports.recorded)",
+      "        return false;",
+      "    if (reports.individualTable) {",
+      "        const [report] = await tx.$queryRaw `SELECT EXISTS(SELECT 1 FROM commerce.order_payment_report WHERE order_id IN",
+      "      (${database_1.Prisma.join(orders.map(id => database_1.Prisma.sql `${id}::uuid`))})) AS recorded`;",
+      "        if (report.recorded)",
+      "            return false;",
+      "    }",
+      "    return true;",
+      "}",
+      "async function sponsorLabel(tx, qualification) {",
+      "    const [row] = await tx.$queryRaw `",
+      "    SELECT q.ball_no AS \"ballNo\",coalesce(cp.display_name,e.registered_name,p.legal_name) AS name",
+      "    FROM membership.qualification q LEFT JOIN identity.person p ON p.person_id=q.current_holder_person_id",
+      "    LEFT JOIN identity.legal_entity e ON e.legal_entity_id=q.current_holder_legal_entity_id",
+      "    LEFT JOIN membership.company_principal cp ON cp.company_principal_id=q.current_company_principal_id",
+      "    WHERE q.qualification_id=${qualification}`;",
+      "    return row ?? null;",
+      "}",
+      "async function bundleReceipt(tx, bundleId, applicationId) {",
+      "    const [policy] = await tx.$queryRaw `",
+      "    SELECT plan_code AS \"planCode\",payment_policy AS \"paymentPolicy\" FROM membership.enrollment_bundle WHERE bundle_id=${bundleId}::uuid`;",
+      "    const rows = await tx.$queryRaw `",
+      "    SELECT b.position,b.qualification_id::text AS \"qualificationId\",q.ball_no AS \"ballNo\",q.status::text AS \"qualificationStatus\",",
+      "      setup.setup_status AS \"placementStatus\",o.currency,o.order_id::text AS \"orderId\",o.order_no::text AS \"orderNo\",",
+      "      to_jsonb(o)->>'public_order_no' AS \"publicOrderNo\",",
+      "      snap.package_name AS \"packageName\",snap.package_code AS \"packageCode\",o.net_amount AS amount,o.status::text AS status,snap.payment_deadline AS deadline,o.purpose::text AS kind",
+      "    FROM membership.enrollment_bundle_ball b JOIN membership.qualification q ON q.qualification_id=b.qualification_id",
+      "    LEFT JOIN membership.qualification_setup setup ON setup.qualification_id=b.qualification_id",
+      "    JOIN commerce.\"order\" o ON o.order_id IN (b.qualification_order_id,b.repurchase_order_id)",
+      "    JOIN commerce.package_purchase_snapshot snap ON snap.order_id=o.order_id",
+      "    WHERE b.bundle_id=${bundleId}::uuid ORDER BY b.position,o.purpose`;",
+      "    if (!rows.length)",
+      "        throw new common_1.ConflictException({ code: 'ENROLLMENT_BUNDLE_INCOMPLETE' });",
+      "    for (const row of rows)",
+      "        if (row.kind === 'REPURCHASE')",
+      "            (0, repurchase_display_1.formatRepurchaseNames)(row);",
+      "    const purchase = (r) => ({ orderId: r.orderId, orderNo: r.orderNo, publicOrderNo: r.publicOrderNo, packageName: r.packageName, total: r.amount.toFixed(2), status: r.status, paymentDeadline: r.deadline?.toISOString() ?? null });",
+      "    const reps = new Map(rows.filter(r => r.kind === 'REPURCHASE').map(r => [r.position, purchase(r)]));",
+      "    const entries = rows.filter(r => r.kind === 'ENTRY');",
+      "    const balls = entries.map(r => ({ position: r.position, parentPosition: r.position === 1 ? null : Math.floor(r.position / 2), side: r.position === 1 ? null : r.position % 2 ? 'RIGHT' : 'LEFT',",
+      "        qualificationId: r.qualificationId, ballNo: r.ballNo, qualificationStatus: r.qualificationStatus, placementStatus: r.placementStatus,",
+      "        qualification: purchase(r), repurchase: reps.get(r.position) ?? null,",
+      "        repurchasePayable: policy.paymentPolicy === 'QUALIFICATION_ONLY' && r.qualificationStatus === 'EFFECTIVE' && reps.get(r.position)?.status === 'CONFIRMED' }));",
+      "    const root = balls[0];",
+      "    const sponsor = await sponsorLabel(tx, database_1.Prisma.sql `coalesce(",
+      "      (SELECT sponsor_qualification_id FROM organization.sponsor_relationship WHERE child_qualification_id=${root.qualificationId}::uuid AND effective_to IS NULL),",
+      "      (SELECT selected_sponsor_qualification_id FROM organization.qualification_sponsor_selection_evidence",
+      "        WHERE qualification_id=${root.qualificationId}::uuid ORDER BY selected_at DESC LIMIT 1))`);",
+      "    const total = (kind) => rows.filter(r => r.kind === kind).reduce((sum, r) => sum.plus(r.amount), new database_1.Prisma.Decimal(0));",
+      "    const qualification = total('ENTRY'), repurchase = total('REPURCHASE');",
+      "    if (rows.some(r => r.currency !== rows[0].currency))",
+      "        throw new common_1.ConflictException({ code: 'BUNDLE_CURRENCY_MISMATCH' });",
+      "    const expired = entries.some(r => r.status === 'VOIDED' || r.deadline && r.deadline.getTime() <= Date.now());",
+      "    const mayRestart = expired && balls.every(b => ['DRAFT', 'VOIDED'].includes(b.qualificationStatus)) &&",
+      "        await restartEligible(tx, bundleId, rows.map(r => r.orderId), balls.map(b => b.qualificationId));",
+      "    return { bundleId, applicationId, ...policy, payableTotal: (policy.paymentPolicy === 'COMBINED' ? qualification.plus(repurchase) : qualification).toFixed(2),",
+      "        currency: rows[0].currency, qualificationTotal: qualification.toFixed(2), repurchaseTotal: repurchase.toFixed(2),",
+      "        total: qualification.plus(repurchase).toFixed(2), rootSponsor: sponsor ?? null, mayRestart, balls };",
+      "}"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member-bundle/enrollment-bundle.controller.js",
+   "before": null,
+   "after": "124fe2f69f559158dcb72137a6a1f85c9ca7220042ac2a6ead9ea69be4b225b2",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {",
+      "    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;",
+      "    if (typeof Reflect === \"object\" && typeof Reflect.decorate === \"function\") r = Reflect.decorate(decorators, target, key, desc);",
+      "    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;",
+      "    return c > 3 && r && Object.defineProperty(target, key, r), r;",
+      "};",
+      "var __metadata = (this && this.__metadata) || function (k, v) {",
+      "    if (typeof Reflect === \"object\" && typeof Reflect.metadata === \"function\") return Reflect.metadata(k, v);",
+      "};",
+      "var __param = (this && this.__param) || function (paramIndex, decorator) {",
+      "    return function (target, key) { decorator(target, key, paramIndex); }",
+      "};",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.EnrollmentBundleController = void 0;",
+      "const common_1 = require(\"@nestjs/common\");",
+      "const swagger_1 = require(\"@nestjs/swagger\");",
+      "const member_authentication_guard_1 = require(\"../auth/member-authentication.guard\");",
+      "const idempotency_guard_1 = require(\"../../common/guards/idempotency.guard\");",
+      "const enrollment_bundle_dto_1 = require(\"./enrollment-bundle.dto\");",
+      "const enrollment_bundle_service_1 = require(\"./enrollment-bundle.service\");",
+      "let EnrollmentBundleController = class EnrollmentBundleController {",
+      "    bundles;",
+      "    constructor(bundles) {",
+      "        this.bundles = bundles;",
+      "    }",
+      "    async sponsorCandidate(req, id, query) {",
+      "        return { data: await this.bundles.sponsorCandidate(req.user.personId, id, query.code) };",
+      "    }",
+      "    async read(req, id) {",
+      "        return { data: await this.bundles.read(req.user.personId, id) };",
+      "    }",
+      "    async create(req, id, input, key) {",
+      "        const result = await this.bundles.create(req.user.personId, id, input, key, req.requestId);",
+      "        return { data: result.value, meta: { replayed: result.replayed } };",
+      "    }",
+      "    async selectSponsor(req, id, input, key) {",
+      "        const result = await this.bundles.setRootSponsor(req.user.personId, id, input.sponsorCode, key, req.requestId);",
+      "        return { data: result.value, meta: { replayed: result.replayed } };",
+      "    }",
+      "    async release(req, id, bundleId, key) {",
+      "        const result = await this.bundles.release(req.user.personId, id, bundleId, key, req.requestId);",
+      "        return { data: result.value, meta: { replayed: result.replayed } };",
+      "    }",
+      "};",
+      "exports.EnrollmentBundleController = EnrollmentBundleController;",
+      "__decorate([",
+      "    (0, common_1.Get)('sponsor-candidate'),",
+      "    (0, common_1.Header)('Cache-Control', 'private, no-store'),",
+      "    (0, swagger_1.ApiOperation)({ operationId: 'memberEnrollmentSponsorCandidate', summary: '依完整推薦代碼核對此申請的推薦球與名稱' }),",
+      "    __param(0, (0, common_1.Req)()),",
+      "    __param(1, (0, common_1.Param)('applicationId', common_1.ParseUUIDPipe)),",
+      "    __param(2, (0, common_1.Query)()),",
+      "    __metadata(\"design:type\", Function),",
+      "    __metadata(\"design:paramtypes\", [Object, String, enrollment_bundle_dto_1.BundleSponsorQuery]),",
+      "    __metadata(\"design:returntype\", Promise)",
+      "], EnrollmentBundleController.prototype, \"sponsorCandidate\", null);",
+      "__decorate([",
+      "    (0, common_1.Get)(),",
+      "    (0, swagger_1.ApiOperation)({ operationId: 'memberReadEnrollmentBundle', summary: '讀取本次申請的多球訂單與安置狀態' }),",
+      "    __param(0, (0, common_1.Req)()),",
+      "    __param(1, (0, common_1.Param)('applicationId', common_1.ParseUUIDPipe)),",
+      "    __metadata(\"design:type\", Function),",
+      "    __metadata(\"design:paramtypes\", [Object, String]),",
+      "    __metadata(\"design:returntype\", Promise)",
+      "], EnrollmentBundleController.prototype, \"read\", null);",
+      "__decorate([",
+      "    (0, common_1.Post)(),",
+      "    (0, common_1.UseGuards)(idempotency_guard_1.IdempotencyGuard),",
+      "    (0, swagger_1.ApiHeader)({ name: 'Idempotency-Key', required: true }),",
+      "    (0, swagger_1.ApiOperation)({ operationId: 'memberCreateEnrollmentBundle', summary: '一次建立多個資格及逐球重銷訂單' }),",
+      "    __param(0, (0, common_1.Req)()),",
+      "    __param(1, (0, common_1.Param)('applicationId', common_1.ParseUUIDPipe)),",
+      "    __param(2, (0, common_1.Body)()),",
+      "    __param(3, (0, common_1.Headers)('idempotency-key')),",
+      "    __metadata(\"design:type\", Function),",
+      "    __metadata(\"design:paramtypes\", [Object, String, enrollment_bundle_dto_1.EnrollmentBundleInput, String]),",
+      "    __metadata(\"design:returntype\", Promise)",
+      "], EnrollmentBundleController.prototype, \"create\", null);",
+      "__decorate([",
+      "    (0, common_1.Post)('root-sponsor'),",
+      "    (0, common_1.UseGuards)(idempotency_guard_1.IdempotencyGuard),",
+      "    (0, swagger_1.ApiHeader)({ name: 'Idempotency-Key', required: true }),",
+      "    (0, swagger_1.ApiOperation)({ operationId: 'memberSetEnrollmentBundleRootSponsor', summary: '為待核款的多球申請補填第一顆球的推薦球號' }),",
+      "    __param(0, (0, common_1.Req)()),",
+      "    __param(1, (0, common_1.Param)('applicationId', common_1.ParseUUIDPipe)),",
+      "    __param(2, (0, common_1.Body)()),",
+      "    __param(3, (0, common_1.Headers)('idempotency-key')),",
+      "    __metadata(\"design:type\", Function),",
+      "    __metadata(\"design:paramtypes\", [Object, String, enrollment_bundle_dto_1.BundleRootSponsorInput, String]),",
+      "    __metadata(\"design:returntype\", Promise)",
+      "], EnrollmentBundleController.prototype, \"selectSponsor\", null);",
+      "__decorate([",
+      "    (0, common_1.Post)(':bundleId/release-expired'),",
+      "    (0, common_1.UseGuards)(idempotency_guard_1.IdempotencyGuard),",
+      "    (0, swagger_1.ApiHeader)({ name: 'Idempotency-Key', required: true }),",
+      "    (0, swagger_1.ApiOperation)({ operationId: 'memberReleaseExpiredEnrollmentBundle', summary: '作廢未收款且已逾期的整組訂單以重新選購' }),",
+      "    __param(0, (0, common_1.Req)()),",
+      "    __param(1, (0, common_1.Param)('applicationId', common_1.ParseUUIDPipe)),",
+      "    __param(2, (0, common_1.Param)('bundleId', common_1.ParseUUIDPipe)),",
+      "    __param(3, (0, common_1.Headers)('idempotency-key')),",
+      "    __metadata(\"design:type\", Function),",
+      "    __metadata(\"design:paramtypes\", [Object, String, String, String]),",
+      "    __metadata(\"design:returntype\", Promise)",
+      "], EnrollmentBundleController.prototype, \"release\", null);",
+      "exports.EnrollmentBundleController = EnrollmentBundleController = __decorate([",
+      "    (0, swagger_1.ApiTags)('Member - Formal enrollment'),",
+      "    (0, swagger_1.ApiBearerAuth)('memberBearer'),",
+      "    (0, common_1.UseGuards)(member_authentication_guard_1.MemberAuthenticationGuard),",
+      "    (0, common_1.Controller)('member/formal-enrollment/applications/:applicationId/bundle'),",
+      "    __metadata(\"design:paramtypes\", [enrollment_bundle_service_1.EnrollmentBundleService])",
+      "], EnrollmentBundleController);"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member-bundle/enrollment-bundle.dto.js",
+   "before": null,
+   "after": "a92457693a5051da1c09444ae46c047bcca81d47daf483d40c32899fdea6e73d",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {",
+      "    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;",
+      "    if (typeof Reflect === \"object\" && typeof Reflect.decorate === \"function\") r = Reflect.decorate(decorators, target, key, desc);",
+      "    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;",
+      "    return c > 3 && r && Object.defineProperty(target, key, r), r;",
+      "};",
+      "var __metadata = (this && this.__metadata) || function (k, v) {",
+      "    if (typeof Reflect === \"object\" && typeof Reflect.metadata === \"function\") return Reflect.metadata(k, v);",
+      "};",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.EnrollmentBundleInput = exports.BundlePackage = exports.BundleSponsorQuery = exports.BundleRootSponsorInput = void 0;",
+      "const class_transformer_1 = require(\"class-transformer\");",
+      "const class_validator_1 = require(\"class-validator\");",
+      "const swagger_1 = require(\"@nestjs/swagger\");",
+      "const sponsor_resolver_service_1 = require(\"../qualification/sponsor-resolver.service\");",
+      "class BundleRootSponsorInput {",
+      "    sponsorCode;",
+      "}",
+      "exports.BundleRootSponsorInput = BundleRootSponsorInput;",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)(),",
+      "    (0, class_validator_1.IsString)(),",
+      "    (0, class_validator_1.Matches)(sponsor_resolver_service_1.SPONSOR_CODE),",
+      "    __metadata(\"design:type\", String)",
+      "], BundleRootSponsorInput.prototype, \"sponsorCode\", void 0);",
+      "class BundleSponsorQuery {",
+      "    code;",
+      "}",
+      "exports.BundleSponsorQuery = BundleSponsorQuery;",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)(),",
+      "    (0, class_validator_1.IsString)(),",
+      "    (0, class_validator_1.Matches)(sponsor_resolver_service_1.SPONSOR_CODE),",
+      "    __metadata(\"design:type\", String)",
+      "], BundleSponsorQuery.prototype, \"code\", void 0);",
+      "class SelectedProduct {",
+      "    productRuleProfileId;",
+      "    quantity;",
+      "}",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)(),",
+      "    (0, class_validator_1.IsUUID)(),",
+      "    __metadata(\"design:type\", String)",
+      "], SelectedProduct.prototype, \"productRuleProfileId\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)({ minimum: 1 }),",
+      "    (0, class_validator_1.IsInt)(),",
+      "    (0, class_validator_1.Min)(1),",
+      "    __metadata(\"design:type\", Number)",
+      "], SelectedProduct.prototype, \"quantity\", void 0);",
+      "class BundlePackage {",
+      "    packageVersionId;",
+      "    quoteHash;",
+      "    couponCode;",
+      "    selections;",
+      "}",
+      "exports.BundlePackage = BundlePackage;",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)(),",
+      "    (0, class_validator_1.IsUUID)(),",
+      "    __metadata(\"design:type\", String)",
+      "], BundlePackage.prototype, \"packageVersionId\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)(),",
+      "    (0, class_validator_1.Matches)(/^[a-f0-9]{64}$/),",
+      "    __metadata(\"design:type\", String)",
+      "], BundlePackage.prototype, \"quoteHash\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiPropertyOptional)(),",
+      "    (0, class_validator_1.IsOptional)(),",
+      "    (0, class_validator_1.Matches)(/^[a-zA-Z0-9_-]{3,40}$/),",
+      "    __metadata(\"design:type\", String)",
+      "], BundlePackage.prototype, \"couponCode\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)({ type: [SelectedProduct] }),",
+      "    (0, class_validator_1.IsArray)(),",
+      "    (0, class_validator_1.ValidateNested)({ each: true }),",
+      "    (0, class_transformer_1.Type)(() => SelectedProduct),",
+      "    __metadata(\"design:type\", Array)",
+      "], BundlePackage.prototype, \"selections\", void 0);",
+      "class BundleBallInput {",
+      "    qualification;",
+      "    repurchase;",
+      "}",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)({ type: BundlePackage }),",
+      "    (0, class_validator_1.IsDefined)(),",
+      "    (0, class_validator_1.IsObject)(),",
+      "    (0, class_validator_1.ValidateNested)(),",
+      "    (0, class_transformer_1.Type)(() => BundlePackage),",
+      "    __metadata(\"design:type\", BundlePackage)",
+      "], BundleBallInput.prototype, \"qualification\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiPropertyOptional)({ type: BundlePackage }),",
+      "    (0, class_validator_1.IsOptional)(),",
+      "    (0, class_validator_1.IsObject)(),",
+      "    (0, class_validator_1.ValidateNested)(),",
+      "    (0, class_transformer_1.Type)(() => BundlePackage),",
+      "    __metadata(\"design:type\", BundlePackage)",
+      "], BundleBallInput.prototype, \"repurchase\", void 0);",
+      "class EnrollmentBundleInput {",
+      "    planCode;",
+      "    sponsorCode;",
+      "    fulfillmentMethod;",
+      "    deliveryUpdatedAt;",
+      "    balls;",
+      "}",
+      "exports.EnrollmentBundleInput = EnrollmentBundleInput;",
+      "__decorate([",
+      "    (0, swagger_1.ApiPropertyOptional)({ enum: ['EXCELLENCE'] }),",
+      "    (0, class_validator_1.IsOptional)(),",
+      "    (0, class_validator_1.IsIn)(['EXCELLENCE']),",
+      "    __metadata(\"design:type\", String)",
+      "], EnrollmentBundleInput.prototype, \"planCode\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiPropertyOptional)(),",
+      "    (0, class_validator_1.IsOptional)(),",
+      "    (0, class_validator_1.IsString)(),",
+      "    (0, class_validator_1.MaxLength)(80),",
+      "    __metadata(\"design:type\", String)",
+      "], EnrollmentBundleInput.prototype, \"sponsorCode\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiPropertyOptional)({ enum: ['DELIVERY', 'COMPANY_PICKUP'] }),",
+      "    (0, class_validator_1.IsOptional)(),",
+      "    (0, class_validator_1.IsIn)(['DELIVERY', 'COMPANY_PICKUP']),",
+      "    __metadata(\"design:type\", String)",
+      "], EnrollmentBundleInput.prototype, \"fulfillmentMethod\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiPropertyOptional)(),",
+      "    (0, class_validator_1.IsOptional)(),",
+      "    (0, class_validator_1.IsISO8601)(),",
+      "    __metadata(\"design:type\", String)",
+      "], EnrollmentBundleInput.prototype, \"deliveryUpdatedAt\", void 0);",
+      "__decorate([",
+      "    (0, swagger_1.ApiProperty)({ type: [BundleBallInput], minItems: 2, maxItems: 63 }),",
+      "    (0, class_validator_1.IsArray)(),",
+      "    (0, class_validator_1.ArrayMinSize)(2),",
+      "    (0, class_validator_1.ArrayMaxSize)(63),",
+      "    (0, class_validator_1.ValidateNested)({ each: true }),",
+      "    (0, class_transformer_1.Type)(() => BundleBallInput),",
+      "    __metadata(\"design:type\", Array)",
+      "], EnrollmentBundleInput.prototype, \"balls\", void 0);"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member-bundle/enrollment-bundle.service.js",
+   "before": null,
+   "after": "d403f1412aebe6e2704edbd14ad256b8d63337d10454615c3f12cef0422a2357",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {",
+      "    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;",
+      "    if (typeof Reflect === \"object\" && typeof Reflect.decorate === \"function\") r = Reflect.decorate(decorators, target, key, desc);",
+      "    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;",
+      "    return c > 3 && r && Object.defineProperty(target, key, r), r;",
+      "};",
+      "var __metadata = (this && this.__metadata) || function (k, v) {",
+      "    if (typeof Reflect === \"object\" && typeof Reflect.metadata === \"function\") return Reflect.metadata(k, v);",
+      "};",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.EnrollmentBundleService = void 0;",
+      "const common_1 = require(\"@nestjs/common\");",
+      "const database_1 = require(\"@ucell/database\");",
+      "const node_crypto_1 = require(\"node:crypto\");",
+      "const audit_service_1 = require(\"../../common/audit/audit.service\");",
+      "const idempotency_service_1 = require(\"../../common/idempotency/idempotency.service\");",
+      "const hash_1 = require(\"../../common/utils/hash\");",
+      "const order_service_1 = require(\"../order/order.service\");",
+      "const sponsor_resolver_service_1 = require(\"../qualification/sponsor-resolver.service\");",
+      "const excellence_plan_1 = require(\"./excellence-plan\");",
+      "const excellence_activation_1 = require(\"./excellence-activation\");",
+      "const bundle_read_1 = require(\"./bundle-read\");",
+      "function assertMutable(app) {",
+      "    if (!['DRAFT', 'NEEDS_MORE_INFO'].includes(app.status) || !['NETWORK_MEMBER', 'FORMAL_PENDING'].includes(app.membershipState)",
+      "        || app.personStatus !== 'EFFECTIVE' || app.securityStatus !== 'NORMAL') {",
+      "        throw new common_1.ConflictException({ code: 'FORMAL_APPLICATION_NOT_EDITABLE', message: '此申請目前無法變更資格訂單，請重新查詢申請進度。' });",
+      "    }",
+      "}",
+      "let EnrollmentBundleService = class EnrollmentBundleService {",
+      "    db;",
+      "    orders;",
+      "    idem;",
+      "    audit;",
+      "    constructor(db, orders, idem, audit) {",
+      "        this.db = db;",
+      "        this.orders = orders;",
+      "        this.idem = idem;",
+      "        this.audit = audit;",
+      "    }",
+      "    read(personId, applicationId) {",
+      "        return this.db.$transaction(async (tx) => {",
+      "            await (0, bundle_read_1.ownedApplication)(tx, personId, applicationId);",
+      "            const existing = await (0, bundle_read_1.activeBundle)(tx, applicationId);",
+      "            return existing ? (0, bundle_read_1.bundleReceipt)(tx, existing.bundleId, applicationId) : null;",
+      "        }, { isolationLevel: 'RepeatableRead' });",
+      "    }",
+      "    async create(personId, applicationId, input, key, requestId) {",
+      "        const operation = { applicationId, ...JSON.parse(JSON.stringify(input)) }, hash = (0, hash_1.requestHash)(operation);",
+      "        try {",
+      "            return await this.idem.execute('member:enrollment-bundle:' + personId, key, operation, async (tx) => {",
+      "                const app = await (0, bundle_read_1.ownedApplication)(tx, personId, applicationId, true);",
+      "                const existing = await (0, bundle_read_1.activeBundle)(tx, applicationId);",
+      "                if (existing) {",
+      "                    if (existing.requestHash !== hash)",
+      "                        throw new common_1.ConflictException({ code: 'ENROLLMENT_BUNDLE_EXISTS', message: '本次申請已送出一組訂單，請查看原訂單。' });",
+      "                    return (0, bundle_read_1.bundleReceipt)(tx, existing.bundleId, applicationId);",
+      "                }",
+      "                assertMutable(app);",
+      "                if (input.planCode === 'EXCELLENCE')",
+      "                    await (0, excellence_plan_1.validateExcellencePlan)(tx, input);",
+      "                const [prior] = await tx.$queryRaw `",
+      "          SELECT o.order_id AS \"orderId\" FROM commerce.package_purchase_snapshot s",
+      "          JOIN commerce.\"order\" o ON o.order_id=s.order_id",
+      "          WHERE s.person_id=${personId}::uuid AND s.package_class='QUALIFICATION'",
+      "            AND (o.status IN ('PAID','FULFILLED','PARTIAL_RETURN') OR",
+      "              (o.status='CONFIRMED' AND (s.payment_deadline IS NULL OR s.payment_deadline>now())))",
+      "          LIMIT 1`;",
+      "                if (prior)",
+      "                    throw new common_1.ConflictException({ code: 'FORMAL_ENROLLMENT_ORDER_EXISTS', message: '此申請已有資格套組訂單，請先處理原訂單。' });",
+      "                const bundleId = (0, node_crypto_1.randomUUID)();",
+      "                await tx.$executeRaw `INSERT INTO membership.enrollment_bundle(bundle_id,application_id,person_id,request_hash,plan_code,payment_policy)",
+      "          VALUES(${bundleId}::uuid,${applicationId}::uuid,${personId}::uuid,${hash},${input.planCode ?? 'CUSTOM'},'COMBINED')`;",
+      "                const shipping = { fulfillmentMethod: input.fulfillmentMethod, deliveryUpdatedAt: input.deliveryUpdatedAt };",
+      "                let rootTree;",
+      "                for (const [index, ball] of input.balls.entries()) {",
+      "                    const position = index + 1;",
+      "                    const qualification = await this.orders.createPackageInTransaction(tx, { ...ball.qualification, ...shipping,",
+      "                        sponsorCode: index === 0 ? input.sponsorCode?.trim() : undefined }, requestId, personId, undefined, 'QUALIFICATION');",
+      "                    const qualificationId = qualification.qualificationId;",
+      "                    if (!qualificationId)",
+      "                        throw new common_1.ConflictException({ code: 'PACKAGE_ORDER_QUALIFICATION_MISSING' });",
+      "                    if (position === 1) {",
+      "                        rootTree = (await tx.ballNoAllocation.findUnique({ where: { qualificationId }, select: { binaryTreeId: true } }))?.binaryTreeId;",
+      "                    }",
+      "                    else if (rootTree) {",
+      "                        const [allocated] = await tx.$queryRaw `SELECT organization.allocate_ball_no(${rootTree}::uuid,${qualificationId}::uuid) AS \"ballNo\"`;",
+      "                        await tx.qualification.update({ where: { qualificationId }, data: { ballNo: allocated.ballNo } });",
+      "                    }",
+      "                    const repurchase = ball.repurchase ? await this.orders.createPackageInTransaction(tx, { ...ball.repurchase, ...shipping,",
+      "                        targetQualificationId: qualificationId }, requestId, personId, undefined, 'ACTIVE_DURATION') : null;",
+      "                    await tx.$executeRaw `INSERT INTO membership.enrollment_bundle_ball(bundle_id,position,qualification_id,qualification_order_id,repurchase_order_id)",
+      "            VALUES(${bundleId}::uuid,${position},${qualificationId}::uuid,${qualification.orderId}::uuid,${repurchase?.orderId ?? null}::uuid)`;",
+      "                }",
+      "                await this.audit.write(tx, { actorType: 'MEMBER', actorId: personId, action: 'ENROLLMENT_BUNDLE_CREATED', entityType: 'ENROLLMENT_BUNDLE',",
+      "                    entityId: bundleId, requestId, correlationId: bundleId, afterData: { applicationId, ballCount: input.balls.length, requestHash: hash } });",
+      "                return (0, bundle_read_1.bundleReceipt)(tx, bundleId, applicationId);",
+      "            }, { timeout: 120000, retryOnConflict: true });",
+      "        }",
+      "        catch (error) {",
+      "            if (['P2002', 'P2034', '23505', '40001'].includes(error.code) || ['23505', '40001'].includes(error.meta?.code)) {",
+      "                throw new common_1.ConflictException({ code: 'RETRYABLE_CONFLICT', message: '訂單正在更新，請以原訂單再試一次。' });",
+      "            }",
+      "            throw error;",
+      "        }",
+      "    }",
+      "    sponsorCandidate(personId, applicationId, code) {",
+      "        return this.db.$transaction(async (tx) => {",
+      "            const app = await (0, bundle_read_1.ownedApplication)(tx, personId, applicationId);",
+      "            if (!['DRAFT', 'NEEDS_MORE_INFO', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED'].includes(app.status) || app.personStatus !== 'EFFECTIVE' || app.securityStatus !== 'NORMAL')",
+      "                throw new common_1.ConflictException({ code: 'BUNDLE_SPONSOR_UNAVAILABLE' });",
+      "            const evidence = await new sponsor_resolver_service_1.SponsorResolver(this.db).resolveWithin(tx, { code });",
+      "            const label = await (0, bundle_read_1.sponsorLabel)(tx, database_1.Prisma.sql `${evidence.sponsorQualificationId}::uuid`);",
+      "            return { ballNo: evidence.kind === 'COMPANY_ALIAS' ? code.trim().toUpperCase() : label?.ballNo, name: label?.name ?? evidence.displayLabel ?? null };",
+      "        }, { isolationLevel: 'RepeatableRead' });",
+      "    }",
+      "    setRootSponsor(personId, applicationId, sponsorCode, key, requestId) {",
+      "        const code = sponsorCode.trim().toUpperCase();",
+      "        return this.idem.execute('member:enrollment-bundle:sponsor:' + personId, key, { applicationId, code }, async (tx) => {",
+      "            const app = await (0, bundle_read_1.ownedApplication)(tx, personId, applicationId, true);",
+      "            if (!['DRAFT', 'NEEDS_MORE_INFO', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED'].includes(app.status) ||",
+      "                app.personStatus !== 'EFFECTIVE' || app.securityStatus !== 'NORMAL')",
+      "                throw new common_1.ConflictException({ code: 'FORMAL_APPLICATION_NOT_EDITABLE' });",
+      "            const [root] = await tx.$queryRaw `",
+      "        SELECT b.bundle_id AS \"bundleId\",r.qualification_id AS \"qualificationId\",report.paid_at AS \"reportedAt\",b.payment_policy AS policy",
+      "        FROM membership.enrollment_bundle b JOIN membership.enrollment_bundle_ball r ON r.bundle_id=b.bundle_id AND r.position=1",
+      "        JOIN membership.qualification q ON q.qualification_id=r.qualification_id",
+      "        LEFT JOIN commerce.enrollment_bundle_payment_report report ON report.bundle_id=b.bundle_id",
+      "        WHERE b.application_id=${applicationId}::uuid AND b.superseded_at IS NULL AND q.status='DRAFT'",
+      "          AND (b.payment_policy='COMBINED' OR NOT EXISTS (SELECT 1 FROM commerce.enrollment_bundle_payment p WHERE p.bundle_id=b.bundle_id))",
+      "          AND (b.payment_policy='COMBINED' AND EXISTS(SELECT 1 FROM commerce.enrollment_bundle_payment p WHERE p.bundle_id=b.bundle_id) OR",
+      "          NOT EXISTS (SELECT 1 FROM membership.enrollment_bundle_ball row JOIN commerce.\"order\" o ON o.order_id=row.qualification_order_id",
+      "            JOIN commerce.package_purchase_snapshot s ON s.order_id=o.order_id",
+      "            WHERE row.bundle_id=b.bundle_id AND (o.status<>'CONFIRMED' OR o.paid_at IS NOT NULL OR s.payment_deadline<=coalesce(report.paid_at,now()))))",
+      "        FOR UPDATE OF b,q`;",
+      "            if (!root || app.status === 'APPROVED' && root.policy !== 'COMBINED')",
+      "                throw new common_1.ConflictException({ code: 'BUNDLE_SPONSOR_UNAVAILABLE', message: '目前無法補填推薦球，請聯絡承辦人核對。' });",
+      "            const at = new Date(), resolver = new sponsor_resolver_service_1.SponsorResolver(this.db);",
+      "            const sponsor = await resolver.resolveWithin(tx, { code, effectiveAt: at });",
+      "            if (root.reportedAt && root.policy !== 'COMBINED') {",
+      "                const asOfTransfer = await resolver.resolveWithin(tx, { code, effectiveAt: root.reportedAt });",
+      "                if (asOfTransfer.sponsorQualificationId !== sponsor.sponsorQualificationId)",
+      "                    throw new common_1.ConflictException({ code: 'SPONSOR_CODE_INELIGIBLE' });",
+      "            }",
+      "            const setup = await tx.qualificationSetup.findUnique({ where: { qualificationId: root.qualificationId } });",
+      "            const relation = await tx.sponsorRelationship.findUnique({ where: { childQualificationId: root.qualificationId } });",
+      "            const evidence = await tx.qualificationSponsorSelectionEvidence.findFirst({ where: { qualificationId: root.qualificationId }, orderBy: { selectedAt: 'desc' }, select: { selectedSponsorQualificationId: true } });",
+      "            const bound = [relation?.sponsorQualificationId, setup?.finalSponsorQualificationId, evidence?.selectedSponsorQualificationId].filter(Boolean);",
+      "            if (bound.length) {",
+      "                if (bound.every(id => id === sponsor.sponsorQualificationId))",
+      "                    return (0, bundle_read_1.bundleReceipt)(tx, root.bundleId, applicationId);",
+      "                throw new common_1.ConflictException({ code: 'BUNDLE_ROOT_SPONSOR_EXISTS', message: '本組已有推薦球，請回到訂單核對。' });",
+      "            }",
+      "            const allocation = await tx.ballNoAllocation.findUnique({ where: { qualificationId: root.qualificationId } });",
+      "            if (allocation) {",
+      "                const member = await tx.binaryTreeMembership.findUnique({ where: { qualificationId: sponsor.sponsorQualificationId } });",
+      "                if (allocation.binaryTreeId !== member?.binaryTreeId)",
+      "                    throw new common_1.ConflictException({ code: 'BALL_ALLOCATION_TREE_MISMATCH', message: '推薦球與已編號的根球位於不同組織樹。' });",
+      "            }",
+      "            await (0, sponsor_resolver_service_1.saveSponsorSelection)(tx, { qualificationId: root.qualificationId, sponsorId: sponsor.sponsorQualificationId,",
+      "                ownerId: sponsor.sponsorOwnerPersonId, personId, at, policyVersion: sponsor.policyVersion ?? sponsor.ruleVersion, correlationId: root.bundleId });",
+      "            await this.audit.write(tx, { actorType: 'MEMBER', actorId: personId, action: 'ENROLLMENT_BUNDLE_ROOT_SPONSOR_SET',",
+      "                entityType: 'ENROLLMENT_BUNDLE', entityId: root.bundleId, requestId, correlationId: root.bundleId,",
+      "                afterData: { applicationId, qualificationId: root.qualificationId, sponsorKind: sponsor.kind } });",
+      "            if (root.policy === 'COMBINED')",
+      "                await (0, excellence_activation_1.activateEnrollmentBundleIfReady)(tx, applicationId, requestId);",
+      "            return (0, bundle_read_1.bundleReceipt)(tx, root.bundleId, applicationId);",
+      "        }, { retryOnConflict: true });",
+      "    }",
+      "    release(personId, applicationId, bundleId, key, requestId) {",
+      "        return this.idem.execute('member:enrollment-bundle:release:' + personId, key, { applicationId, bundleId }, async (tx) => {",
+      "            const app = await (0, bundle_read_1.ownedApplication)(tx, personId, applicationId, true);",
+      "            assertMutable(app);",
+      "            const existing = await (0, bundle_read_1.activeBundle)(tx, applicationId);",
+      "            if (existing?.bundleId !== bundleId)",
+      "                throw new common_1.ConflictException({ code: 'ENROLLMENT_BUNDLE_CHANGED', message: '訂單已變更，請重新查詢。' });",
+      "            await tx.$queryRaw `SELECT bundle_id FROM membership.enrollment_bundle WHERE bundle_id=${bundleId}::uuid FOR UPDATE`;",
+      "            await tx.$queryRaw `SELECT o.order_id FROM commerce.\"order\" o JOIN membership.enrollment_bundle_ball b",
+      "        ON o.order_id IN (b.qualification_order_id,b.repurchase_order_id) WHERE b.bundle_id=${bundleId}::uuid ORDER BY o.order_id FOR UPDATE OF o`;",
+      "            const receipt = await (0, bundle_read_1.bundleReceipt)(tx, bundleId, applicationId);",
+      "            if (!receipt.mayRestart)",
+      "                throw new common_1.ConflictException({ code: 'ENROLLMENT_BUNDLE_CANNOT_RELEASE', message: '本組尚未到期或已有付款、配貨紀錄，請聯絡承辦人核對。' });",
+      "            const ids = receipt.balls.flatMap(b => b.repurchase ? [b.qualification.orderId, b.repurchase.orderId] : [b.qualification.orderId]);",
+      "            const at = new Date();",
+      "            for (const ball of receipt.balls.filter(b => b.qualificationStatus === 'DRAFT')) {",
+      "                await tx.qualification.update({ where: { qualificationId: ball.qualificationId }, data: { status: 'VOIDED', activeFlag: false } });",
+      "                await tx.qualificationStatusHistory.updateMany({ where: { qualificationId: ball.qualificationId, effectiveTo: null }, data: { effectiveTo: at } });",
+      "                await tx.qualificationStatusHistory.create({ data: { qualificationId: ball.qualificationId, status: 'VOIDED', effectiveFrom: at, sourceType: 'ENROLLMENT_BUNDLE_EXPIRED', sourceId: bundleId } });",
+      "            }",
+      "            const coupons = await tx.couponRedemption.findMany({ where: { orderId: { in: ids }, order: { status: 'CONFIRMED' } }, select: { orderId: true } });",
+      "            await tx.order.updateMany({ where: { orderId: { in: ids }, status: 'CONFIRMED' }, data: { status: 'VOIDED' } });",
+      "            if (coupons.length)",
+      "                await tx.couponUsageEvent.createMany({ data: coupons.map(c => ({ orderId: c.orderId, kind: 'VOIDED' })) });",
+      "            await tx.$executeRaw `UPDATE membership.enrollment_bundle SET superseded_at=${at} WHERE bundle_id=${bundleId}::uuid AND superseded_at IS NULL`;",
+      "            await this.audit.write(tx, { actorType: 'MEMBER', actorId: personId, action: 'ENROLLMENT_BUNDLE_RELEASED', entityType: 'ENROLLMENT_BUNDLE',",
+      "                entityId: bundleId, requestId, correlationId: bundleId, afterData: { applicationId, orderIds: ids, reason: 'UNPAID_EXPIRED' } });",
+      "            return { bundleId, status: 'RELEASED' };",
+      "        }, { timeout: 120000, retryOnConflict: true });",
+      "    }",
+      "};",
+      "exports.EnrollmentBundleService = EnrollmentBundleService;",
+      "exports.EnrollmentBundleService = EnrollmentBundleService = __decorate([",
+      "    (0, common_1.Injectable)(),",
+      "    __metadata(\"design:paramtypes\", [database_1.PrismaService, order_service_1.OrderService, idempotency_service_1.IdempotencyService,",
+      "        audit_service_1.AuditService])",
+      "], EnrollmentBundleService);"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member-bundle/excellence-activation.js",
+   "before": null,
+   "after": "9c498b94a2502ca4a6c3e8154d5feafac5e8870ffbfe103484585c4f00274f96",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.activateEnrollmentBundleIfReady = activateEnrollmentBundleIfReady;",
+      "exports.activateBundleForQualification = activateBundleForQualification;",
+      "const common_1 = require(\"@nestjs/common\");",
+      "const database_1 = require(\"@ucell/database\");",
+      "const order_service_1 = require(\"../order/order.service\");",
+      "/** Apply a reconciled prepayment only to the confirmed member, version, and organization.",
+      " * The bank receipt keeps its real transfer date. Order payments record application of",
+      " * that receipt when the intended recipient is known, so historical snapshots remain true. */",
+      "async function activateEnrollmentBundleIfReady(tx, applicationId, requestId) {",
+      "    const [group] = await tx.$queryRaw `",
+      "    SELECT b.bundle_id AS id,a.status::text AS review,p.membership_state::text AS member,r.receipt_id AS \"receiptId\",",
+      "      r.actor_id AS actor,r.payment_method AS method,r.reference_no AS reference,r.received_at AS received",
+      "    FROM membership.enrollment_bundle b JOIN identity.formal_member_application a ON a.formal_member_application_id=b.application_id",
+      "    JOIN identity.person p ON p.person_id=b.person_id LEFT JOIN commerce.enrollment_bundle_payment r USING(bundle_id)",
+      "    WHERE b.application_id=${applicationId}::uuid AND b.superseded_at IS NULL AND b.payment_policy='COMBINED' FOR UPDATE OF b`;",
+      "    if (!group)",
+      "        return { status: 'NOT_APPLICABLE' };",
+      "    if (!group.receiptId)",
+      "        return { status: 'AWAITING_PAYMENT' };",
+      "    if (group.review !== 'APPROVED' || group.member !== 'FORMAL_MEMBER')",
+      "        return { status: 'AWAITING_APPROVAL' };",
+      "    const [root] = await tx.$queryRaw `SELECT EXISTS(SELECT 1 FROM organization.qualification_sponsor_selection_evidence e",
+      "    WHERE e.qualification_id=p.qualification_id AND e.selected_sponsor_qualification_id IS NOT NULL) AS selected",
+      "    FROM membership.enrollment_bundle_ball p WHERE p.bundle_id=${group.id}::uuid AND p.position=1`;",
+      "    if (!root?.selected)",
+      "        return { status: 'AWAITING_PLACEMENT' };",
+      "    const lines = await tx.$queryRaw `SELECT o.order_id AS id,o.purpose::text AS kind,o.status::text AS status,",
+      "      q.status::text AS \"ballStatus\",q.effective_at AS placed,a.amount::text AS amount",
+      "    FROM membership.enrollment_bundle_ball p JOIN membership.qualification q ON q.qualification_id=p.qualification_id",
+      "    JOIN commerce.enrollment_bundle_allocation a ON a.bundle_id=p.bundle_id AND a.order_id IN (p.qualification_order_id,p.repurchase_order_id)",
+      "    JOIN commerce.\"order\" o ON o.order_id=a.order_id WHERE p.bundle_id=${group.id}::uuid ORDER BY p.position,o.purpose",
+      "    FOR UPDATE OF o`;",
+      "    const at = new Date(Math.max(Date.now(), group.received.getTime()));",
+      "    for (const line of lines) {",
+      "        if (line.kind === 'REPURCHASE' && line.ballStatus !== 'EFFECTIVE')",
+      "            continue;",
+      "        if (line.status === 'CONFIRMED') {",
+      "            await order_service_1.OrderService.applyEnrollmentAllocation(tx, line.id, { amount: line.amount, paymentMethod: new database_1.Prisma.Decimal(line.amount).isZero() ? 'COUPON_WAIVER' : group.method,",
+      "                referenceNo: group.reference, occurredAt: at.toISOString() }, 'enrollment-allocation:' + line.id, requestId, group.actor);",
+      "            if (line.kind === 'REPURCHASE') {",
+      "                const { subscription } = await (0, database_1.preparePackageMonthlySchedule)(tx, line.id, group.receiptId);",
+      "                if (subscription.status === 'PENDING') {",
+      "                    await tx.subscription.update({ where: { subscriptionId: subscription.subscriptionId }, data: { status: 'ACTIVE', activatedAt: at } });",
+      "                    await tx.auditEvent.create({ data: { actorType: 'SYSTEM', action: 'PACKAGE_MONTHLY_SUBSCRIPTION_ACTIVATED', entityType: 'SUBSCRIPTION',",
+      "                            entityId: subscription.subscriptionId, requestId, correlationId: group.receiptId, afterData: { orderId: line.id, bundleId: group.id,",
+      "                                volumePolicyReference: database_1.approvedRepurchaseVolumeReference, calendarReference: database_1.approvedRepurchaseCalendarReference } } });",
+      "                }",
+      "            }",
+      "        }",
+      "        else if (!['PAID', 'FULFILLED', 'PARTIAL_RETURN', 'RETURNED'].includes(line.status)) {",
+      "            throw new common_1.ConflictException({ code: 'BUNDLE_ALLOCATION_ORDER_CHANGED', message: '訂單狀態已變更，請核對整組收款。' });",
+      "        }",
+      "    }",
+      "    return { status: lines.length && lines.every(line => line.ballStatus === 'EFFECTIVE') ? 'ACTIVE' : 'AWAITING_PLACEMENT' };",
+      "}",
+      "async function activateBundleForQualification(tx, qualificationId, requestId) {",
+      "    const [row] = await tx.$queryRaw `SELECT b.application_id AS \"applicationId\"",
+      "    FROM membership.enrollment_bundle_ball p JOIN membership.enrollment_bundle b USING(bundle_id)",
+      "    WHERE p.qualification_id=${qualificationId}::uuid AND b.payment_policy='COMBINED' AND b.superseded_at IS NULL`;",
+      "    if (row)",
+      "        return activateEnrollmentBundleIfReady(tx, row.applicationId, requestId);",
+      "}"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/member-bundle/excellence-plan.js",
+   "before": null,
+   "after": "54cabb66f55c60ecf3094db2cc9846f5fdb3bb97af17a7244bb37f4bc2de071d",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.validateExcellencePlan = validateExcellencePlan;",
+      "const common_1 = require(\"@nestjs/common\");",
+      "async function validateExcellencePlan(tx, input) {",
+      "    const invalid = () => new common_1.UnprocessableEntityException({",
+      "        code: 'EXCELLENCE_SELECTION_INVALID', message: '卓越方案需選三組啟航資格，每球各搭配一組重銷（三個月）。'",
+      "    });",
+      "    if (input.balls.length !== 3 || input.balls.some(ball => !ball.repurchase))",
+      "        throw invalid();",
+      "    const versions = await tx.packageProfileVersion.findMany({ where: { packageProfileVersionId: { in: input.balls.flatMap(ball => [ball.qualification.packageVersionId, ball.repurchase.packageVersionId])",
+      "            } }, select: { packageProfileVersionId: true, profile: { select: { stableCode: true } }, activeDurationUnit: true, activeDurationValue: true } });",
+      "    const selected = new Map(versions.map(version => [version.packageProfileVersionId, version]));",
+      "    for (const ball of input.balls) {",
+      "        const entry = selected.get(ball.qualification.packageVersionId), repurchase = selected.get(ball.repurchase.packageVersionId);",
+      "        if (entry?.profile.stableCode !== 'STARTER' || repurchase?.profile.stableCode !== 'ACTIVE_QUARTER' ||",
+      "            repurchase.activeDurationUnit !== 'MONTH' || repurchase.activeDurationValue !== 3)",
+      "            throw invalid();",
+      "    }",
+      "}"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/order/enrollment-bundle-receipt.js",
+   "before": null,
+   "after": "bc6191c7051f8b3804462ff20cf8ca3f80d5baad9b727e63de38f06f4b9b0822",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.bundleForQualificationOrder = bundleForQualificationOrder;",
+      "exports.adminBundlePayment = adminBundlePayment;",
+      "exports.guardSinglePayment = guardSinglePayment;",
+      "exports.confirmBundlePayment = confirmBundlePayment;",
+      "const common_1 = require(\"@nestjs/common\");",
+      "const database_1 = require(\"@ucell/database\");",
+      "const node_crypto_1 = require(\"node:crypto\");",
+      "const manual_payment_review_1 = require(\"./manual-payment-review\");",
+      "async function receiptFor(tx, bundleId) {",
+      "    const [receipt] = await tx.$queryRaw `SELECT receipt_id AS \"receiptId\",amount::text, payment_method AS \"paymentMethod\",",
+      "    reference_no AS \"referenceNo\", received_at AS \"receivedAt\" FROM commerce.enrollment_bundle_payment WHERE bundle_id=${bundleId}::uuid`;",
+      "    return receipt ?? null;",
+      "}",
+      "async function bundleForQualificationOrder(tx, orderId) {",
+      "    const rows = await tx.$queryRaw `SELECT b.bundle_id AS \"bundleId\"",
+      "    FROM membership.enrollment_bundle_ball p JOIN membership.enrollment_bundle b USING(bundle_id)",
+      "    WHERE p.qualification_order_id=${orderId}::uuid OR (b.payment_policy='COMBINED' AND p.repurchase_order_id=${orderId}::uuid)`;",
+      "    return rows[0]?.bundleId ?? null;",
+      "}",
+      "async function linesFor(tx, bundleId) {",
+      "    return tx.$queryRaw `SELECT o.order_id AS \"orderId\", o.order_no::text AS \"orderNo\",to_jsonb(o)->>'public_order_no' AS \"publicOrderNo\",ball.position::int,o.purpose::text AS kind,",
+      "    o.net_amount::text AS amount,o.status::text AS status,o.created_at AS \"createdAt\",s.payment_deadline AS \"paymentDeadline\"",
+      "    FROM membership.enrollment_bundle_ball ball",
+      "    JOIN membership.enrollment_bundle b USING(bundle_id)",
+      "    JOIN commerce.\"order\" o ON o.order_id=ball.qualification_order_id OR (b.payment_policy='COMBINED' AND o.order_id=ball.repurchase_order_id)",
+      "    JOIN commerce.package_purchase_snapshot s ON s.order_id=o.order_id",
+      "    WHERE ball.bundle_id=${bundleId}::uuid ORDER BY ball.position,o.purpose`;",
+      "}",
+      "async function adminBundlePayment(tx, orderId) {",
+      "    const bundleId = await bundleForQualificationOrder(tx, orderId);",
+      "    if (!bundleId)",
+      "        return null;",
+      "    const lines = await linesFor(tx, bundleId);",
+      "    const total = lines.reduce((sum, line) => sum.plus(line.amount), new database_1.Prisma.Decimal(0)).toFixed(2);",
+      "    const [report] = await tx.$queryRaw `SELECT account_last_five AS \"accountLastFive\",paid_at AS \"paidAt\",amount::text FROM commerce.enrollment_bundle_payment_report WHERE bundle_id=${bundleId}::uuid`;",
+      "    const [policy] = await tx.$queryRaw `SELECT payment_policy AS \"paymentPolicy\" FROM membership.enrollment_bundle WHERE bundle_id=${bundleId}::uuid`;",
+      "    return { bundleId, total, ...policy, currency: 'TWD', lines, report: report ?? null, receipt: await receiptFor(tx, bundleId) };",
+      "}",
+      "async function lockEvidence(tx, method, reference) {",
+      "    const identity = method.trim().toUpperCase() + '|' + reference.trim().toUpperCase();",
+      "    await tx.$queryRaw `SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${identity},62112))`;",
+      "}",
+      "async function guardSinglePayment(tx, orderId, dto) {",
+      "    if (await bundleForQualificationOrder(tx, orderId))",
+      "        throw new common_1.ConflictException({",
+      "            code: 'BUNDLE_SINGLE_PAYMENT_NOT_ALLOWED', message: '這張資格訂單屬於多球申請，請改用「確認整組資格收款」。'",
+      "        });",
+      "    await lockEvidence(tx, dto.paymentMethod, dto.referenceNo);",
+      "    const [used] = await tx.$queryRaw `SELECT EXISTS(",
+      "    SELECT 1 FROM commerce.enrollment_bundle_payment",
+      "    WHERE upper(btrim(payment_method))=upper(btrim(${dto.paymentMethod})) AND upper(btrim(reference_no))=upper(btrim(${dto.referenceNo}))",
+      "  ) AS used`;",
+      "    if (used?.used)",
+      "        throw new common_1.ConflictException({ code: 'BUNDLE_RECEIPT_ALREADY_USED', message: '這筆收款憑證已用於另一筆多球申請。' });",
+      "}",
+      "async function confirmBundlePayment(tx, bundleId, dto, actor, requestId, write) {",
+      "    const [group] = await tx.$queryRaw `SELECT bundle_id AS id,payment_policy AS policy FROM membership.enrollment_bundle",
+      "    WHERE bundle_id=${bundleId}::uuid AND superseded_at IS NULL FOR UPDATE`;",
+      "    if (!group)",
+      "        throw new common_1.ConflictException({ code: 'ENROLLMENT_BUNDLE_NOT_ACTIVE' });",
+      "    const reference = dto.referenceNo.trim(), method = dto.paymentMethod.trim().toUpperCase(), at = new Date(dto.occurredAt);",
+      "    if (!actor || !reference || reference.length > 180 || !['BANK_TRANSFER', 'CASH', 'COUPON_WAIVER'].includes(method))",
+      "        throw new common_1.UnprocessableEntityException({ code: 'BUNDLE_RECEIPT_INVALID' });",
+      "    const prior = await receiptFor(tx, bundleId);",
+      "    if (prior) {",
+      "        if (prior.paymentMethod === method && prior.referenceNo === reference && new database_1.Prisma.Decimal(prior.amount).eq(dto.amount) && prior.receivedAt.getTime() === at.getTime())",
+      "            return prior;",
+      "        throw new common_1.ConflictException({ code: 'BUNDLE_ALREADY_PAID', message: '整組資格已完成收款，請核對原始收款紀錄。' });",
+      "    }",
+      "    const lines = await linesFor(tx, bundleId);",
+      "    const entries = lines.filter(line => line.kind === 'ENTRY');",
+      "    if (entries.length < 2 || entries.some((line, index) => line.position !== index + 1) || lines.some(line => line.status !== 'CONFIRMED'))",
+      "        throw new common_1.ConflictException({ code: 'BUNDLE_NOT_PAYABLE', message: '整組訂單狀態已變動，請重新載入並核對。' });",
+      "    const sum = lines.reduce((value, line) => value.plus(line.amount), new database_1.Prisma.Decimal(0));",
+      "    if (!sum.eq(dto.amount))",
+      "        throw new common_1.UnprocessableEntityException({ code: 'BUNDLE_RECEIPT_AMOUNT_MISMATCH', message: '實收金額須等於本組訂單的應付金額。', details: { expected: sum.toFixed(2) } });",
+      "    if (lines.some(line => at < line.createdAt || (line.paymentDeadline && at >= line.paymentDeadline)))",
+      "        throw new common_1.ConflictException({ code: 'PACKAGE_PAYMENT_DEADLINE_EXCEEDED' });",
+      "    (0, manual_payment_review_1.validateManualPaymentReview)({ ...dto, paymentMethod: method }, sum.isZero(), lines[0].createdAt, at);",
+      "    await lockEvidence(tx, method, reference);",
+      "    const [used] = await tx.$queryRaw `SELECT EXISTS(",
+      "    SELECT 1 FROM commerce.payment_event WHERE upper(btrim(payment_method))=${method} AND upper(btrim(reference_no))=upper(${reference})",
+      "    UNION ALL SELECT 1 FROM commerce.paper_receipt_evidence WHERE upper(btrim(payment_channel))=${method} AND upper(btrim(receipt_reference))=upper(${reference})",
+      "    UNION ALL SELECT 1 FROM commerce.enrollment_bundle_payment WHERE upper(btrim(payment_method))=${method} AND upper(btrim(reference_no))=upper(${reference})",
+      "  ) AS used`;",
+      "    if (used.used)",
+      "        throw new common_1.ConflictException({ code: 'BUNDLE_RECEIPT_ALREADY_USED', message: '此收款憑證已登錄，請核對原紀錄。' });",
+      "    const receiptId = (0, node_crypto_1.randomUUID)();",
+      "    await tx.$executeRaw `INSERT INTO commerce.enrollment_bundle_payment(bundle_id,receipt_id,amount,payment_method,reference_no,received_at,actor_id,request_id)",
+      "    VALUES (${bundleId}::uuid,${receiptId}::uuid,${sum},${method},${reference},${at},${actor}::uuid,${requestId})`;",
+      "    // Use the normal order writer. The master receipt and every allocation commit in the same transaction.",
+      "    for (const line of lines) {",
+      "        if (group.policy === 'COMBINED') {",
+      "            await tx.$executeRaw `INSERT INTO commerce.enrollment_bundle_allocation(bundle_id,order_id,amount)",
+      "        VALUES(${bundleId}::uuid,${line.orderId}::uuid,${new database_1.Prisma.Decimal(line.amount)})`;",
+      "            continue;",
+      "        }",
+      "        const allocationMethod = new database_1.Prisma.Decimal(line.amount).isZero() ? 'COUPON_WAIVER' : method;",
+      "        await write(tx, line.orderId, { ...dto, amount: line.amount, paymentMethod: allocationMethod, referenceNo: reference }, 'enrollment-bundle:' + receiptId + ':' + line.position, requestId, actor, 'MANUAL_ADMIN');",
+      "    }",
+      "    return { receiptId, amount: sum.toFixed(2), paymentMethod: method, referenceNo: reference, receivedAt: at };",
+      "}"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/order/order-maintenance.js",
+   "before": "3549f55f62ed42dba22f6faaf99b1836beea2730b7e2ba089d4006e20dad4334",
+   "after": "ce77398bbb76697ab5b940a948bcbec0ab1a8525d7682524476a7db9f98cb7ad",
+   "changes": [
+    [
+     13,
+     1,
+     [
+      "    const [states, purchase, paper, setup, history, grouped] = await Promise.all(["
+     ]
+    ],
+    [
+     16,
+     1,
+     [
+      "        db.auditEvent.findMany({ where: { entityId: id, action: { startsWith: 'ORDER_MAINTENANCE_' } }, orderBy: { createdAt: 'desc' }, take: 20, select: { action: true, actorId: true, createdAt: true, beforeData: true, afterData: true } }),",
+      "        db.$queryRaw `SELECT 1 AS bound FROM membership.enrollment_bundle_ball b JOIN membership.enrollment_bundle g USING(bundle_id)",
+      "        WHERE g.superseded_at IS NULL AND (b.qualification_order_id=${id}::uuid OR (g.payment_policy='COMBINED' AND b.repurchase_order_id=${id}::uuid))`"
+     ]
+    ],
+    [
+     20,
+     0,
+     [
+      "    if (grouped.length) blockers.push('此單屬於整組會員申請，請回到該筆申請查看整組付款與重新選購資格。');"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/order/order-payment-context.service.js",
+   "before": "bab61b12d9276bed7778e62342805b4ecb8f0cc7360e68c9e744ac9fe846532f",
+   "after": "8fb37268b4054a8dc1a4c31845f871fe56de72871d7d6ad6240096a1b38a8221",
+   "changes": [
+    [
+     13,
+     0,
+     [
+      "const enrollment_bundle_receipt_1 = require(\"./enrollment-bundle-receipt\");",
+      "const bundle_order_guards_1 = require(\"../member-bundle/bundle-order-guards\");"
+     ]
+    ],
+    [
+     129,
+     0,
+     [
+      "        const [bundleLine] = await this.db.$queryRaw `SELECT b.qualification_order_id=${order.orderId}::uuid AS \"isEntry\",g.payment_policy='COMBINED' AS \"combinedPayment\",q.status='EFFECTIVE' AS \"repurchaseOpen\",g.application_id AS \"applicationId\",b.position FROM membership.enrollment_bundle_ball b JOIN membership.enrollment_bundle g USING(bundle_id) JOIN membership.qualification q ON q.qualification_id=b.qualification_id WHERE b.qualification_order_id=${order.orderId}::uuid OR b.repurchase_order_id=${order.orderId}::uuid`;"
+     ]
+    ],
+    [
+     130,
+     1,
+     [
+      "        return { enrollmentBundle: bundleLine ?? null, delivery, orderId: order.orderId, orderNo: order.orderNo.toString(), status: order.status, total: order.netAmount.toString(), currency: order.currency, createdAt: order.createdAt.toISOString(), paymentDeadline: snapshot?.paymentDeadline?.toISOString() ?? null, ballNo: order.qualification?.ballNo ?? null, member: order.qualification?.currentHolderLegalEntity ? { memberNo: order.qualification.currentHolderLegalEntity.memberNo, legalName: order.qualification.currentHolderLegalEntity.registeredName, nameSource: 'LEGAL_ENTITY' } : projected ? { memberNo: projected.memberNo, legalName: projected.legalName, preferredName: projected.preferredName, nameSource: projected.legalNameSource } : null, selectedPaymentMethod: report?.paymentMethod ?? checkout?.paymentMethod ?? (['BANK_TRANSFER', 'CASH'].includes(declaredMethod) ? declaredMethod : null), report, receivingBank: bank, canReport: (!bundleLine || !bundleLine.isEntry && !bundleLine.combinedPayment && bundleLine.repurchaseOpen) && order.status === 'CONFIRMED' && (!snapshot?.paymentDeadline || snapshot.paymentDeadline > new Date()), receipts: order.paymentEvents.filter((e) => e.eventType === 'PAYMENT_CONFIRMED').map((e) => ({ amount: e.amount.toString(), paymentMethod: e.paymentMethod, referenceNo: e.referenceNo, occurredAt: e.occurredAt.toISOString(), recordedAt: e.recordedAt.toISOString() })) };"
+     ]
+    ],
+    [
+     140,
+     0,
+     [
+      "            if (await (0, enrollment_bundle_receipt_1.bundleForQualificationOrder)(tx, order.orderId))",
+      "                throw new common_1.ConflictException({ code: 'BUNDLE_SINGLE_PAYMENT_NOT_ALLOWED', message: '請至正式會員申請頁回報這組資格的合計匯款。' });",
+      "            await (0, bundle_order_guards_1.assertRepurchaseBallEffective)(tx, order.orderId, new Date(payload.paidAt));"
+     ]
+    ],
+    [
+     160,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/order/order.controller.js",
+   "before": "e58959c1263c7450174f4158170ee956502d1b3e460c9f378840c5143a7b65c6",
+   "after": "a85f798bdc43e5563829ee2a940859802717f3d0785c2fc55218a201cad8d72a",
+   "changes": [
+    [
+     83,
+     0,
+     [
+      "    async confirmBundle(orderId, dto, key, req) {",
+      "        const result = await this.service.confirmEnrollmentPayment(orderId, dto, key, req.requestId, req.user?.personId);",
+      "        return { data: result.value, meta: { replayed: result.replayed } };",
+      "    }"
+     ]
+    ],
+    [
+     160,
+     0,
+     [
+      "    (0, common_1.Post)(':orderId/bundle-payment-confirmations'),",
+      "    (0, roles_decorator_1.Roles)('SUPER_ADMIN', 'ORDER_OPS', 'FINANCE'),",
+      "    (0, common_1.UseGuards)(idempotency_guard_1.IdempotencyGuard),",
+      "    (0, swagger_1.ApiHeader)({ name: 'Idempotency-Key', required: true }),",
+      "    (0, swagger_1.ApiOperation)({ operationId: 'adminConfirmEnrollmentBundlePayment', summary: '核對整組資格款，依訂單分攤並記錄單一收款憑證' }),",
+      "    __param(0, (0, common_1.Param)('orderId', new common_1.ParseUUIDPipe())),",
+      "    __param(1, (0, common_1.Body)()),",
+      "    __param(2, (0, common_1.Headers)('idempotency-key')),",
+      "    __param(3, (0, common_1.Req)()),",
+      "    __metadata(\"design:type\", Function),",
+      "    __metadata(\"design:paramtypes\", [String, payment_confirmation_dto_1.PaymentConfirmationDto, String, Object]),",
+      "    __metadata(\"design:returntype\", Promise)",
+      "], OrderController.prototype, \"confirmBundle\", null);",
+      "__decorate(["
+     ]
+    ],
+    [
+     174,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/order/order.module.js",
+   "before": "02c2601180038f0a11286942f5abc8c9bfc1e8190e7b1638d5a56ce2383ffee5",
+   "after": "bf8c8de81bf6c6bd9b412699108b8068067389717d57f9633647cb7225ec4f55",
+   "changes": [
+    [
+     11,
+     0,
+     [
+      "const enrollment_bundle_controller_1 = require(\"../member-bundle/enrollment-bundle.controller\");",
+      "const enrollment_bundle_service_1 = require(\"../member-bundle/enrollment-bundle.service\");"
+     ]
+    ],
+    [
+     37,
+     1,
+     [
+      "    (0, common_1.Module)({ imports: [auth_module_1.AuthModule, package_config_module_1.PackageConfigModule, qualification_module_1.QualificationModule, organization_module_1.OrganizationModule], controllers: [enrollment_bundle_controller_1.EnrollmentBundleController, paper_workbench_controller.PaperOrderWorkbenchController,payment_context_controller.AdminOrderPaymentContextController,payment_context_controller.MemberOrderPaymentContextController,tracking_controller.AdminOrderTrackingController, order_controller_1.OrderController, admin_retail_referrer_controller_1.AdminRetailReferrerController, paper_receipt_controller_1.PaperReceiptController, paper_intake_controller_1.PaperIntakeController, commercial_offering_controller_1.AdminCommercialOfferingController, commercial_offering_controller_1.MemberCommercialOfferingController], providers: [enrollment_bundle_service_1.EnrollmentBundleService, paper_workbench_service.PaperOrderWorkbenchService,payment_context_service.OrderPaymentContextService,tracking_service.AdminOrderTrackingService, order_service_1.OrderService, retail_referrer_attribution_service_1.RetailReferrerAttributionService, paper_receipt_service_1.PaperReceiptService, paper_intake_service_1.PaperIntakeService, paper_person_identity_service_1.PaperPersonIdentityService, retail_referral_explain_service_1.RetailReferralExplainService, commercial_offering_service_1.CommercialOfferingService, commercial_offering_config_service_1.CommercialOfferingConfigService], exports: [order_service_1.OrderService, retail_referrer_attribution_service_1.RetailReferrerAttributionService, commercial_offering_service_1.CommercialOfferingService] })"
+     ]
+    ],
+    [
+     39,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/order/order.service.js",
+   "before": "459f6ba61184beb272b54e4e458f06a92b4a54603b3379dcc69b502d7a021cc8",
+   "after": "eb37e6cc5e1d98de68312c2050ed46ff51d45cac0129654e1e87e5f55677a381",
+   "changes": [
+    [
+     13,
+     0,
+     [
+      "const enrollment_bundle_placement_1 = require(\"../qualification/enrollment-bundle-placement\");",
+      "const excellence_activation_1 = require(\"../member-bundle/excellence-activation\");",
+      "const enrollment_bundle_receipt_1 = require(\"./enrollment-bundle-receipt\");",
+      "const bundle_order_guards_1 = require(\"../member-bundle/bundle-order-guards\");",
+      "const manual_payment_review_1 = require(\"./manual-payment-review\");"
+     ]
+    ],
+    [
+     229,
+     0,
+     [
+      "        try {",
+      "            return await this.idempotency.execute(paper?.scope ?? `member:package-order:create:${personId}`, key, dto, tx => this.createPackageInTransaction(tx, dto, requestId, personId, paper));",
+      "        }",
+      "        catch (error) {",
+      "            if (['P2002', 'P2034'].includes(error.code))",
+      "                throw new common_1.ConflictException({ code: 'RETRYABLE_CONFLICT', message: '請用原訂單重試。' });",
+      "            throw error;",
+      "        }",
+      "    }",
+      "    async createPackageInTransaction(tx, dto, requestId, personId, paper, bundleClass) {"
+     ]
+    ],
+    [
+     232,
+     54,
+     [
+      "        if (paper)",
+      "            await (0, paper_order_source_1.assertPaperOrderSource)(tx, paper.paperApplicationId, personId, dto.legalEntityId);",
+      "        const person = await tx.person.findUnique({ where: { personId } });",
+      "        if (!person || (paper ? !['DRAFT', 'EFFECTIVE'].includes(person.status) : person.status !== 'EFFECTIVE'))",
+      "            throw new common_1.ConflictException({ code: paper ? 'PAPER_PERSON_NOT_ELIGIBLE' : 'MEMBER_PERSON_DISABLED' });",
+      "        if (paper) {",
+      "            const application = await tx.paperApplication.findUnique({ where: { paperApplicationId: paper.paperApplicationId }, select: { personId: true, orderId: true, status: true } });",
+      "            if (!application || application.personId !== personId || application.status !== 'OPEN')",
+      "                throw new common_1.ConflictException({ code: 'PAPER_APPLICATION_NOT_OPEN' });",
+      "            if (application.orderId)",
+      "                throw new common_1.ConflictException({ code: 'PAPER_APPLICATION_ORDER_ALREADY_CREATED' });"
+     ]
+    ],
+    [
+     287,
+     4,
+     [
+      "        const now = new Date(), offering = await this.resolveOfferingSnapshot(tx, dto.commercialOfferingCode, paper ? 'ADMIN_PAPER' : 'WEB_MEMBER', now), prepared = await (this.packages ?? new package_config_service_1.PackageConfigService(this.prisma)).checkoutData(tx, personId, { packageVersionId: dto.packageVersionId, couponCode: dto.couponCode, quoteHash: dto.quoteHash, targetQualificationId: dto.targetQualificationId, legalEntityId: dto.legalEntityId, selections: dto.selections }, now, !!paper), v = prepared.version, pricing = prepared.pricing;",
+      "        if (bundleClass && (v.profile.packageClass !== bundleClass || v.profile.status !== 'ACTIVE' ||",
+      "            (bundleClass === 'QUALIFICATION' && v.membershipEffect !== 'FORMAL_ELIGIBILITY'))) {",
+      "            throw new common_1.UnprocessableEntityException({ code: 'BUNDLE_PACKAGE_CLASS_INVALID', message: '請選擇目前開放且適用於此資格的套組。' });"
+     ]
+    ],
+    [
+     292,
+     0,
+     [
+      "        if (!paper && !bundleClass && v.profile.packageClass === 'QUALIFICATION' && ['NETWORK_MEMBER', 'FORMAL_PENDING'].includes(person.membershipState ?? ''))",
+      "            await (0, bundle_order_guards_1.assertSingleApplicationCheckout)(tx, personId);",
+      "        const fulfillment = await (0, package_fulfillment_1.packageFulfillment)(tx, personId, dto.fulfillmentMethod, dto.deliveryUpdatedAt, prepared.selections.length > 0);",
+      "        const paymentDeadline = v.profile.packageClass === 'QUALIFICATION' ? new Date(Math.min(now.getTime() + 48 * 60 * 60 * 1000, pricing.endsAt ? Date.parse(pricing.endsAt) : Infinity)) : null;",
+      "        this.assertOfferingPurpose(offering, v.profile.packageClass === 'QUALIFICATION' ? 'ENTRY' : 'REPURCHASE');",
+      "        this.assertOfferingSelection(offering, prepared.selections);",
+      "        let qualificationId = dto.targetQualificationId;",
+      "        let sponsorEvidence;",
+      "        if (v.profile.packageClass === 'QUALIFICATION') {",
+      "            // Omitted sponsor is assigned by staff before payment confirmation; never default to a company ball.",
+      "            if (dto.sponsorCode?.trim())",
+      "                sponsorEvidence = await (this.sponsors ?? new sponsor_resolver_service_1.SponsorResolver(this.prisma)).resolveWithin(tx, { code: dto.sponsorCode, effectiveAt: now, ruleVersion: 'R1.0B' });",
+      "            const qualification = await tx.qualification.create({ data: { currentHolderPersonId: dto.legalEntityId ? null : personId, currentHolderLegalEntityId: dto.legalEntityId ?? null, planLevelCode: v.profile.stableCode, status: 'DRAFT', activeFlag: false } });",
+      "            qualificationId = qualification.qualificationId;",
+      "            await (0, allocate_created_ball_1.allocateCreatedBall)(tx, qualificationId, sponsorEvidence?.sponsorQualificationId);",
+      "            await tx.qualificationHolderHistory.create({ data: { qualificationId, holderPersonId: dto.legalEntityId ? null : personId, holderLegalEntityId: dto.legalEntityId ?? null, effectiveFrom: now, sourceType: 'PACKAGE_CHECKOUT' } });",
+      "            await tx.qualificationOwnerInterval.create({ data: { qualificationId, ownerType: dto.legalEntityId ? 'LEGAL_ENTITY' : 'MEMBER', personId: dto.legalEntityId ? null : personId, legalEntityId: dto.legalEntityId ?? null, companyPrincipalId: null, effectiveFrom: now, sourceType: 'PACKAGE_CHECKOUT', sourceId: qualificationId, evidenceHash: (0, crypto_1.createHash)('sha256').update(JSON.stringify({ qualificationId, personId: dto.legalEntityId ? null : personId, legalEntityId: dto.legalEntityId ?? null, packageVersionId: dto.packageVersionId, at: now.toISOString() })).digest('hex') } });",
+      "            await tx.qualificationStatusHistory.create({ data: { qualificationId, status: 'DRAFT', effectiveFrom: now, sourceType: 'PACKAGE_CHECKOUT' } });",
+      "            if (sponsorEvidence)",
+      "                await (0, sponsor_resolver_service_1.saveSponsorSelection)(tx, { qualificationId, sponsorId: sponsorEvidence.sponsorQualificationId,",
+      "                    ownerId: sponsorEvidence.sponsorOwnerPersonId, personId, at: now, policyVersion: sponsorEvidence.policyVersion ?? sponsorEvidence.ruleVersion, correlationId });",
+      "        }",
+      "        if (!qualificationId)",
+      "            throw new common_1.UnprocessableEntityException({ code: 'TARGET_QUALIFICATION_REQUIRED' });",
+      "        const packageParameters = await (0, package_parameters_1.resolvePackageParameters)(tx, now, v, prepared.selections.length ? prepared.selections.map(s => s.profile.ruleVersionCode) : ['R1.0B']);",
+      "        const order = await tx.order.create({ data: { qualificationId, purpose: v.profile.packageClass === 'QUALIFICATION' ? 'ENTRY' : 'REPURCHASE', status: 'CONFIRMED', currency: v.currency, grossAmount: new database_1.Prisma.Decimal(pricing.total).add(pricing.discountAmount), discountAmount: new database_1.Prisma.Decimal(pricing.discountAmount), netAmount: new database_1.Prisma.Decimal(pricing.total), ...packageParameters, confirmedAt: now, lines: { create: prepared.selections.map(s => ({ productId: s.product.productId, skuSnapshot: s.product.sku, productNameSnapshot: s.product.displayName, quantity: new database_1.Prisma.Decimal(s.quantity), unitPrice: new database_1.Prisma.Decimal(0), lineAmount: new database_1.Prisma.Decimal(0), gpvRateSnapshot: new database_1.Prisma.Decimal(0), gpvAmountSnapshot: new database_1.Prisma.Decimal(0), pvRateSnapshot: new database_1.Prisma.Decimal(0), ruleProfileSnapshot: { profileId: s.profile.productRuleProfileId, packageSelection: true, ...(fulfillment ? { fulfillment } : {}), recognitionConfigRef: v.recognitionConfigRef, packageConfigHash: v.configHash }, commercialOfferingVersionId: offering?.commercialOfferingVersionId, commercialOfferingSnapshot: offering, linePurpose: dto.linePurpose })) } }, include: { lines: true } });",
+      "        if (paper)",
+      "            await tx.paperApplication.update({ where: { paperApplicationId: paper.paperApplicationId }, data: { orderId: order.orderId, status: 'ORDER_CREATED' } });",
+      "        const snapshot = await tx.packagePurchaseSnapshot.create({ data: { orderId: order.orderId, personId: dto.legalEntityId ? null : personId, legalEntityId: dto.legalEntityId ?? null, targetQualificationId: dto.targetQualificationId, packageProfileVersionId: v.packageProfileVersionId, packageCode: v.profile.stableCode, packageName: v.displayName, packageClass: v.profile.packageClass, currency: v.currency, priceAmount: new database_1.Prisma.Decimal(pricing.goodsAmount), qualificationFee: new database_1.Prisma.Decimal(pricing.qualificationFee), discountAmount: new database_1.Prisma.Decimal(pricing.discountAmount), couponCode: pricing.couponCode, paymentDeadline, selectableProductQuantity: pricing.selectableProductQuantity, membershipEffect: v.membershipEffect, qualificationEffect: v.qualificationEffect, activeDurationUnit: v.activeDurationUnit, activeDurationValue: v.activeDurationValue, recognitionConfigRef: pricing.recognitionPolicy, packageConfigHash: v.configHash, purchasedAt: now, selections: { create: prepared.selections.map(s => ({ productRuleProfileId: s.productRuleProfileId, productId: s.product.productId, skuSnapshot: s.product.sku, productDisplaySnapshot: s.product.displayName, quantity: s.quantity, productConfigHash: s.productConfigHash })) } } });",
+      "        if (pricing.couponId) {",
+      "            await tx.couponRedemption.create({ data: { couponId: pricing.couponId, orderId: order.orderId, personId, snapshot: pricing, expiresAt: paymentDeadline } });",
+      "            await tx.couponUsageEvent.create({ data: { orderId: order.orderId, kind: 'RESERVED' } });",
+      "        }",
+      "        await this.audit.write(tx, { actorType: paper ? 'USER' : 'MEMBER', actorId: paper?.actorId ?? personId, action: paper ? 'PAPER_ORDER_CREATED' : 'PACKAGE_ORDER_CREATED', entityType: 'ORDER', entityId: order.orderId, afterData: { orderId: order.orderId, qualificationId, fulfillment, packagePurchaseSnapshotId: snapshot.packagePurchaseSnapshotId, packageCode: v.profile.stableCode, packageClass: v.profile.packageClass, netAmount: pricing.total, qualificationFee: pricing.qualificationFee, discountAmount: pricing.discountAmount, couponCode: pricing.couponCode, operatorPersonId: personId, legalEntityId: dto.legalEntityId ?? null, sponsorEvidence: sponsorEvidence ? (sponsorEvidence.kind === 'COMPANY_ALIAS' ? { kind: 'COMPANY_ALIAS', displayLabel: sponsorEvidence.displayLabel, policyVersion: sponsorEvidence.policyVersion, ruleVersion: sponsorEvidence.ruleVersion, effectiveAt: sponsorEvidence.effectiveAt } : { kind: 'BALL', sponsorBallNo: sponsorEvidence.sponsorBallNo, ruleVersion: sponsorEvidence.ruleVersion, effectiveAt: sponsorEvidence.effectiveAt }) : null }, requestId, correlationId });",
+      "        await this.outbox.enqueue(tx, { eventType: 'MEMBER_PACKAGE_ORDER_CREATED', aggregateType: 'ORDER', aggregateId: order.orderId, payload: { schemaVersion: 2, orderId: order.orderId, qualificationId, personId: dto.legalEntityId ? null : personId, legalEntityId: dto.legalEntityId ?? null, operatorPersonId: personId, packagePurchaseSnapshotId: snapshot.packagePurchaseSnapshotId, packageClass: v.profile.packageClass, recognitionStatus: 'PAYMENT_PENDING', source: paper ? 'ADMIN_PAPER_ORDER' : 'MEMBER' }, correlationId });",
+      "        return { ...order, packagePurchaseSnapshotId: snapshot.packagePurchaseSnapshotId, packageClass: v.profile.packageClass };"
+     ]
+    ],
+    [
+     435,
+     0,
+     [
+      "        return this.idempotency.execute('admin:payment:' + orderId, key, dto, async (tx) => {",
+      "            await (0, enrollment_bundle_receipt_1.guardSinglePayment)(tx, orderId, dto);",
+      "            return this.confirmPaymentInTransaction(tx, orderId, dto, key, requestId, actorId, reviewMode);",
+      "        });",
+      "    }",
+      "    async confirmEnrollmentPayment(orderId, dto, key, requestId, actorId) {",
+      "        if (!actorId)",
+      "            throw new common_1.UnprocessableEntityException({ code: 'ADMIN_PERSON_ID_REQUIRED' });",
+      "        const bundleId = await (0, enrollment_bundle_receipt_1.bundleForQualificationOrder)(this.prisma, orderId);",
+      "        if (!bundleId)",
+      "            throw new common_1.ConflictException({ code: 'ENROLLMENT_BUNDLE_NOT_FOUND' });",
+      "        return this.idempotency.execute('admin:enrollment-bundle:payment:' + bundleId, key, dto, async (tx) => {",
+      "            const receipt = await (0, enrollment_bundle_receipt_1.confirmBundlePayment)(tx, bundleId, dto, actorId, requestId, this.confirmPaymentInTransaction.bind(this));",
+      "            const [bundle] = await tx.$queryRaw `SELECT application_id AS id FROM membership.enrollment_bundle",
+      "          WHERE bundle_id=${bundleId}::uuid AND payment_policy='COMBINED'`;",
+      "            if (bundle)",
+      "                await (0, excellence_activation_1.activateEnrollmentBundleIfReady)(tx, bundle.id, requestId);",
+      "            return receipt;",
+      "        }, { timeout: 120000, retryOnConflict: true });",
+      "    }",
+      "    static applyEnrollmentAllocation(tx, orderId, dto, key, requestId, actorId) {",
+      "        // This call stays inside the caller's locked transaction. It never starts an independent payment.",
+      "        const db = tx;",
+      "        return new OrderService_1(db, new idempotency_service_1.IdempotencyService(db), new audit_service_1.AuditService(), new outbox_service_1.OutboxService())",
+      "            .confirmPaymentInTransaction(tx, orderId, dto, key, requestId, actorId, 'BUNDLE_ALLOCATION');",
+      "    }",
+      "    async confirmPaymentInTransaction(tx, orderId, dto, key, requestId, actorId, reviewMode) {"
+     ]
+    ],
+    [
+     436,
+     5,
+     [
+      "        await tx.$queryRaw `SELECT order_id FROM commerce.\"order\" WHERE order_id=${orderId}::uuid FOR UPDATE`;",
+      "        const order = await tx.order.findUnique({",
+      "            where: { orderId },",
+      "            include: { lines: true },",
+      "        });",
+      "        if (!order) {",
+      "            throw new common_1.ConflictException({ code: 'RESOURCE_NOT_FOUND', message: '訂單不存在。' });",
+      "        }",
+      "        if (order.status === 'PAID' || order.status === 'FULFILLED') {",
+      "            throw new common_1.ConflictException({ code: 'ORDER_LOCKED', message: '訂單已付款，不可重複確認。' });",
+      "        }",
+      "        if (order.status !== 'CONFIRMED') {",
+      "            throw new common_1.ConflictException({ code: 'ORDER_LOCKED', message: '只有CONFIRMED訂單可確認付款。' });",
+      "        }",
+      "        const amount = new database_1.Prisma.Decimal(dto.amount);",
+      "        if (!amount.equals(order.netAmount)) {",
+      "            throw new common_1.UnprocessableEntityException({",
+      "                code: 'DOMAIN_RULE_VIOLATION',",
+      "                message: '付款金額必須等於訂單應付金額。',",
+      "                details: { expected: order.netAmount.toString(), received: amount.toString() },"
+     ]
+    ],
+    [
+     442,
+     2,
+     [
+      "        }",
+      "        const occurredAt = new Date(dto.occurredAt);",
+      "        if (reviewMode === 'MANUAL_ADMIN') {",
+      "            (0, manual_payment_review_1.validateManualPaymentReview)(dto, amount.eq(0), order.createdAt, occurredAt);",
+      "        }",
+      "        const entrySnapshot = tx.packagePurchaseSnapshot ? await tx.packagePurchaseSnapshot.findUnique({ where: { orderId } }) : null;",
+      "        if (entrySnapshot?.packageClass === 'ACTIVE_DURATION')",
+      "            await (0, bundle_order_guards_1.assertRepurchaseBallEffective)(tx, orderId, occurredAt);",
+      "        if (amount.eq(0) && (!entrySnapshot || entrySnapshot.packageCode !== 'LEADER' || !entrySnapshot.discountAmount.eq(72600) || !entrySnapshot.qualificationFee.eq(0) || entrySnapshot.selectableProductQuantity !== 0 || dto.paymentMethod !== 'COUPON_WAIVER') || !amount.eq(0) && dto.paymentMethod === 'COUPON_WAIVER')",
+      "            throw new common_1.UnprocessableEntityException({ code: 'COUPON_WAIVER_CONFIRMATION_INVALID', message: '全額減免必須核對對應優惠訂單，且不應記為銀行匯款或現金。' });",
+      "        if (reviewMode !== 'BUNDLE_ALLOCATION' && entrySnapshot?.paymentDeadline && (new Date() >= entrySnapshot.paymentDeadline || occurredAt >= entrySnapshot.paymentDeadline || occurredAt < order.createdAt || occurredAt.getTime() > Date.now() + 60000))",
+      "            throw new common_1.ConflictException({ code: \"PACKAGE_PAYMENT_DEADLINE_EXCEEDED\", message: \"付款期限已過或付款時間不符，請勿確認此筆收款，應進行款項核對與退款處理。\" });",
+      "        const payment = await tx.paymentEvent.create({",
+      "            data: {",
+      "                orderId,",
+      "                eventType: 'PAYMENT_CONFIRMED',",
+      "                amount,",
+      "                paymentMethod: dto.paymentMethod,",
+      "                referenceNo: dto.referenceNo,",
+      "                idempotencyKey: key,",
+      "                occurredAt,",
+      "                createdBy: actorId,",
+      "                correlationId,",
+      "            },",
+      "        });",
+      "        await tx.order.update({",
+      "            where: { orderId },",
+      "            data: { status: 'PAID', paidAt: occurredAt },",
+      "        });",
+      "        // Legacy unit harnesses predate the additive package delegate; production Prisma always provides it.",
+      "        const packageSnapshot = tx.packagePurchaseSnapshot ? await tx.packagePurchaseSnapshot.findUnique({ where: { orderId } }) : null;",
+      "        if (packageSnapshot) {",
+      "            const packageQualificationId = order.qualificationId;",
+      "            if (!packageQualificationId)",
+      "                throw new common_1.UnprocessableEntityException({ code: 'PACKAGE_ORDER_QUALIFICATION_MISSING' });",
+      "            let downstreamStatus = 'RECOGNITION_CONFIGURATION_PENDING';",
+      "            if (packageSnapshot.packageClass === 'QUALIFICATION') {",
+      "                const selected = tx.qualificationSponsorSelectionEvidence ? await tx.qualificationSponsorSelectionEvidence.findFirst({ where: { qualificationId: packageQualificationId }, orderBy: { selectedAt: 'desc' }, select: { selectedSponsorQualificationId: true } }) : null;",
+      "                let sponsorQualificationId;",
+      "                const internal = await (0, enrollment_bundle_placement_1.internalSponsorAtPayment)(tx, packageQualificationId, orderId, occurredAt, !!selected);",
+      "                if (!selected && !internal)",
+      "                    throw new common_1.UnprocessableEntityException({ code: 'PAYMENT_SPONSOR_REQUIRED', message: '請先至「會員資格一覽」指定推薦球，再確認收款，以確保推薦獎金歸屬正確。' });",
+      "                if (internal) {",
+      "                    if (selected && selected.selectedSponsorQualificationId !== internal.sponsorQualificationId)",
+      "                        throw new common_1.ConflictException({ code: 'BUNDLE_SPONSOR_MISMATCH', message: '推薦關係與申請時的預排不一致。' });",
+      "                    sponsorQualificationId = internal.sponsorQualificationId;",
+      "                    await tx.sponsorRelationship.create({ data: { ...internal, childQualificationId: packageQualificationId, effectiveFrom: occurredAt } });",
+      "                }",
+      "                else if (selected) {",
+      "                    const selectedBall = await tx.qualification.findFirst({ where: { qualificationId: selected.selectedSponsorQualificationId, status: 'EFFECTIVE', effectiveAt: { lte: occurredAt } }, select: { qualificationId: true, ballNo: true, kind: true, currentHolderPersonId: true, currentHolderLegalEntityId: true } });",
+      "                    if (!selectedBall?.ballNo || (!selectedBall.currentHolderPersonId && !selectedBall.currentHolderLegalEntityId && selectedBall.kind !== 'COMPANY_BOOTSTRAP'))",
+      "                        throw new common_1.UnprocessableEntityException({ code: 'SPONSOR_EVIDENCE_INVALID' });",
+      "                    const resolvedSponsorId = selectedBall.qualificationId;",
+      "                    sponsorQualificationId = resolvedSponsorId;",
+      "                    const sponsorSequenceNo = await (this.organization ?? new organization_service_1.OrganizationService(this.prisma)).allocateSponsorSequence(tx, resolvedSponsorId);",
+      "                    await tx.sponsorRelationship.create({ data: { sponsorQualificationId: resolvedSponsorId, childQualificationId: packageQualificationId, sponsorSequenceNo, effectiveFrom: occurredAt } });",
+      "                }",
+      "                const placementDueAt = sponsorQualificationId ? new Date(occurredAt.getTime() + 72 * 60 * 60 * 1000) : undefined;",
+      "                await tx.qualificationSetup.create({ data: { qualificationId: packageQualificationId, ownerPersonId: packageSnapshot.personId, ownerLegalEntityId: packageSnapshot.legalEntityId, qualifyingOrderId: orderId, packagePurchaseSnapshotId: packageSnapshot.packagePurchaseSnapshotId, packageType: packageSnapshot.packageCode, setupStatus: sponsorQualificationId ? 'PLACEMENT_PENDING' : 'BALL_SETUP_PENDING', finalSponsorQualificationId: sponsorQualificationId, placementRequestedAt: sponsorQualificationId ? occurredAt : undefined, placementDueAt, setupPolicyVersion: 'NR-DEC-004-V1' } });",
+      "                downstreamStatus = sponsorQualificationId ? 'PLACEMENT_PENDING' : 'BALL_SETUP_PENDING';",
+      "                await (0, database_1.capturePaymentReferral)(tx, orderId, packageQualificationId, occurredAt, order.ruleVersionCode);"
+     ]
+    ],
+    [
+     445,
+     78,
+     [
+      "            await this.outbox.enqueue(tx, { eventType: 'PACKAGE_PAYMENT_CONFIRMED', aggregateType: 'ORDER', aggregateId: orderId, correlationId, payload: { schemaVersion: 1, eventType: 'PACKAGE_PAYMENT_CONFIRMED', orderId, qualificationId: order.qualificationId, packagePurchaseSnapshotId: packageSnapshot.packagePurchaseSnapshotId, packageClass: packageSnapshot.packageClass, occurredAt: occurredAt.toISOString(), recognitionStatus: 'CONFIGURATION_PENDING', downstreamStatus } });",
+      "            await this.audit.write(tx, { actorType: actorId ? 'USER' : 'SYSTEM', actorId, action: 'PACKAGE_PAYMENT_CONFIRMED', entityType: 'ORDER', entityId: orderId, afterData: { paymentEventId: payment.paymentEventId, packagePurchaseSnapshotId: packageSnapshot.packagePurchaseSnapshotId, downstreamStatus }, requestId, correlationId });",
+      "            const completed = (0, no_shipping_completion_1.zeroGoodsCoupon)(packageSnapshot) && await (0, no_shipping_completion_1.autoCompleteZeroGoods)(tx, this.audit, orderId, requestId, correlationId);",
+      "            return { orderId, status: completed ? 'FULFILLED' : 'PAID', paymentEventId: payment.paymentEventId, correlationId, packagePurchaseSnapshotId: packageSnapshot.packagePurchaseSnapshotId, downstreamStatus };",
+      "        }",
+      "        if (!order.qualificationId) {",
+      "            await this.outbox.enqueue(tx, { eventType: 'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED', aggregateType: 'ORDER', aggregateId: orderId, correlationId, payload: { schemaVersion: 1, orderId, personId: order.purchaserPersonId, amount: order.netAmount.toString(), occurredAt: occurredAt.toISOString(), ruleVersionCode: order.ruleVersionCode, parameterSnapshotHash: order.parameterSnapshotHash, recognitionStatus: 'RETAIL_REFERRAL_RECOGNITION_PENDING' } });",
+      "            await this.audit.write(tx, { actorType: actorId ? 'USER' : 'SYSTEM', actorId, action: 'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED', entityType: 'ORDER', entityId: orderId, afterData: { paymentEventId: payment.paymentEventId, amount: amount.toString(), referenceNo: dto.referenceNo }, requestId, correlationId });",
+      "            return { orderId, status: 'PAID', paymentEventId: payment.paymentEventId, correlationId };",
+      "        }",
+      "        await this.outbox.enqueue(tx, {",
+      "            eventType: 'SALE_CONFIRMED',",
+      "            aggregateType: 'ORDER',",
+      "            aggregateId: orderId,",
+      "            correlationId,",
+      "            payload: {"
+     ]
+    ],
+    [
+     524,
+     29,
+     [
+      "                source: 'MANUAL',"
+     ]
+    ],
+    [
+     554,
+     1,
+     [
+      "                qualificationId: order.qualificationId,",
+      "                amount: order.netAmount.toString(),",
+      "                occurredAt: occurredAt.toISOString(),",
+      "                ruleVersionCode: order.ruleVersionCode,",
+      "                parameterSnapshotHash: order.parameterSnapshotHash,",
+      "            },",
+      "        });",
+      "        await this.audit.write(tx, {",
+      "            actorType: actorId ? 'USER' : 'SYSTEM',",
+      "            actorId,",
+      "            action: 'PAYMENT_CONFIRMED',",
+      "            entityType: 'ORDER',",
+      "            entityId: orderId,",
+      "            afterData: {"
+     ]
+    ],
+    [
+     556,
+     2,
+     [
+      "                amount: amount.toString(),",
+      "                referenceNo: dto.referenceNo,",
+      "            },",
+      "            requestId,",
+      "            correlationId,"
+     ]
+    ],
+    [
+     559,
+     0,
+     [
+      "        return {",
+      "            orderId,",
+      "            status: 'PAID',",
+      "            paymentEventId: payment.paymentEventId,",
+      "            correlationId,",
+      "        };"
+     ]
+    ],
+    [
+     596,
+     1,
+     [
+      "                    const selected = await tx.qualificationSponsorSelectionEvidence.findFirst({ where: { qualificationId: c.order.qualificationId }, orderBy: { selectedAt: 'desc' }, select: { selectedSponsorQualificationId: true } });"
+     ]
+    ],
+    [
+     661,
+     1,
+     [
+      "            const enrollmentBundlePayment = snapshot ? await (0, enrollment_bundle_receipt_1.adminBundlePayment)(tx, orderId) : null;",
+      "            return { ...order, enrollmentBundlePayment, ...this.packageReadback(snapshot, setup), lines: order.lines.map(line => {"
+     ]
+    ],
+    [
+     683,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/qualification/enrollment-bundle-placement.js",
+   "before": null,
+   "after": "23cc24ce1ea7afd4868857461a6e9a16a75a0f058f26be221c8d6341923ed523",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.bundleParentPosition = bundleParentPosition;",
+      "exports.internalSponsorAtPayment = internalSponsorAtPayment;",
+      "exports.readyDescendants = readyDescendants;",
+      "exports.bundleDescendantsForPlacement = bundleDescendantsForPlacement;",
+      "const common_1 = require(\"@nestjs/common\");",
+      "function bundleParentPosition(position) {",
+      "    if (!Number.isSafeInteger(position) || position < 1)",
+      "        throw new RangeError('Invalid bundle position');",
+      "    return position === 1 ? null : { position: Math.floor(position / 2), side: position % 2 === 0 ? 'LEFT' : 'RIGHT' };",
+      "}",
+      "const fail = (code, message) => { throw new common_1.ConflictException({ code, message }); };",
+      "async function lockedPart(tx, qualificationId) {",
+      "    const [part] = await tx.$queryRaw `",
+      "    SELECT b.bundle_id AS \"bundleId\", b.position, b.qualification_id AS \"qualificationId\",",
+      "           b.qualification_order_id AS \"qualificationOrderId\"",
+      "    FROM membership.enrollment_bundle_ball b",
+      "    JOIN membership.enrollment_bundle g ON g.bundle_id=b.bundle_id",
+      "    WHERE b.qualification_id=${qualificationId}::uuid FOR UPDATE OF g`;",
+      "    return part;",
+      "}",
+      "/** Only this checkout's newly created qualifications can act as a planned internal",
+      " * sponsor. The parent's actual paid order and sponsor edge must already exist at",
+      " * the payment timestamp so the existing referral snapshot sees the whole path. */",
+      "async function internalSponsorAtPayment(tx, qualificationId, orderId, paidAt, rootSponsorSelected = true) {",
+      "    const part = await lockedPart(tx, qualificationId);",
+      "    if (!part?.bundleId)",
+      "        return null;",
+      "    if (part.qualificationOrderId !== orderId)",
+      "        fail('BUNDLE_ORDER_MISMATCH', '此訂單與預排球位不符。');",
+      "    const wanted = bundleParentPosition(part.position);",
+      "    if (!wanted) {",
+      "        if (!rootSponsorSelected)",
+      "            fail('BUNDLE_ROOT_SPONSOR_REQUIRED', '請先核對第 1 球的外部推薦人，再確認整組收款。');",
+      "        return null;",
+      "    }",
+      "    const [parent] = await tx.$queryRaw `",
+      "    SELECT p.qualification_id AS id,",
+      "      (o.qualification_id=p.qualification_id AND o.status IN ('PAID','FULFILLED')",
+      "        AND o.paid_at<=${paidAt} AND q.status='DRAFT'",
+      "        AND child.current_holder_person_id IS NOT DISTINCT FROM q.current_holder_person_id",
+      "        AND child.current_holder_legal_entity_id IS NOT DISTINCT FROM q.current_holder_legal_entity_id",
+      "        AND EXISTS(SELECT 1 FROM organization.sponsor_relationship s",
+      "          WHERE s.child_qualification_id=p.qualification_id AND s.effective_from<=${paidAt} AND s.effective_to IS NULL)) AS ready",
+      "    FROM membership.enrollment_bundle_ball p",
+      "    JOIN commerce.\"order\" o ON o.order_id=p.qualification_order_id",
+      "    JOIN membership.qualification q ON q.qualification_id=p.qualification_id",
+      "    JOIN membership.qualification child ON child.qualification_id=${qualificationId}::uuid",
+      "    WHERE p.bundle_id=${part.bundleId}::uuid AND p.position=${wanted.position}`;",
+      "    if (!parent?.ready)",
+      "        fail('BUNDLE_PARENT_PAYMENT_REQUIRED', `請先核對第 ${wanted.position} 球的推薦人及付款。第 ${part.position} 球的付款時間須在該球付款後或同時。`);",
+      "    return { sponsorQualificationId: parent.id, sponsorSequenceNo: wanted.side === 'LEFT' ? 1 : 2 };",
+      "}",
+      "function readyDescendants(rows, rootId) {",
+      "    if (rows[0]?.qualificationId !== rootId || rows.length < 2 || rows.some((row, i) => row.position !== i + 1 || !row.ownerMatches))",
+      "        fail('BUNDLE_PLAN_INCONSISTENT', '預排球位或持有人資料不一致，請核對原申請。');",
+      "    const pending = rows.filter(row => !['PAID', 'FULFILLED', 'PARTIAL_RETURN'].includes(row.orderStatus) ||",
+      "        !['PLACEMENT_PENDING', 'PLACEMENT_OVERDUE'].includes(row.setupStatus ?? ''));",
+      "    if (pending.length)",
+      "        fail('BUNDLE_PLACEMENT_NOT_READY', `第 ${pending.map(row => row.position).join('、')} 球仍待確認付款、推薦人或退貨審核。完成後可一起安置。`);",
+      "    return rows.slice(1).map(row => {",
+      "        const parent = bundleParentPosition(row.position);",
+      "        const parentId = rows[parent.position - 1].qualificationId;",
+      "        if (row.finalSponsor !== parentId)",
+      "            fail('BUNDLE_SPONSOR_MISMATCH', '內部推薦球與原預排不符，請核對申請。');",
+      "        return { qualificationId: row.qualificationId, binaryParentQualificationId: parentId, side: parent.side };",
+      "    });",
+      "}",
+      "/** Root and every descendant are placed by the same caller's transaction.",
+      " * Ordinary placements have no bundle and follow their existing single-ball path. */",
+      "async function bundleDescendantsForPlacement(tx, qualificationId) {",
+      "    const part = await lockedPart(tx, qualificationId);",
+      "    if (!part?.bundleId)",
+      "        return null;",
+      "    if (part.position !== 1)",
+      "        fail('BUNDLE_ROOT_PLACEMENT_REQUIRED', '此球已由多球申請預排。請選擇該組第 1 球，一起完成安置。');",
+      "    const rows = await tx.$queryRaw `",
+      "    SELECT b.bundle_id AS \"bundleId\", b.position,b.qualification_id AS \"qualificationId\",",
+      "      b.qualification_order_id AS \"qualificationOrderId\",o.status AS \"orderStatus\",",
+      "      s.setup_status AS \"setupStatus\",s.final_sponsor_qualification_id AS \"finalSponsor\",",
+      "      (q.status='DRAFT' AND o.qualification_id=q.qualification_id",
+      "        AND q.current_holder_person_id IS NOT DISTINCT FROM firstq.current_holder_person_id",
+      "        AND q.current_holder_legal_entity_id IS NOT DISTINCT FROM firstq.current_holder_legal_entity_id",
+      "        AND (s.qualifying_order_id IS NULL OR s.qualifying_order_id=b.qualification_order_id)) AS \"ownerMatches\"",
+      "    FROM membership.enrollment_bundle_ball b",
+      "    JOIN membership.qualification q ON q.qualification_id=b.qualification_id",
+      "    JOIN commerce.\"order\" o ON o.order_id=b.qualification_order_id",
+      "    JOIN membership.qualification firstq ON firstq.qualification_id=${qualificationId}::uuid",
+      "    LEFT JOIN membership.qualification_setup s ON s.qualification_id=b.qualification_id",
+      "    WHERE b.bundle_id=${part.bundleId}::uuid ORDER BY b.position`;",
+      "    return readyDescendants(rows, qualificationId);",
+      "}"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/qualification/pending-sponsor.js",
+   "before": "7039741c251cba472e8fdfad0213794df18c12691e0aef36f540154da5eec970",
+   "after": "61c0457f294be65004e6323f889fe2a44c4b32c5cab6450b9fd468d230f11175",
+   "changes": [
+    [
+     4,
+     0,
+     [
+      "const excellence_activation_1 = require(\"../member-bundle/excellence-activation\");"
+     ]
+    ],
+    [
+     15,
+     2,
+     [
+      "    const [planned] = await db.$queryRaw `SELECT position FROM membership.enrollment_bundle_ball WHERE qualification_id=${id}::uuid AND position>1`;",
+      "    const allowed = !planned && q.kind === 'MEMBER_ORIGIN' && q.status === 'DRAFT' && !q.binaryPlacement && !setup?.placedAt && (!setup || ['PLACEMENT_PENDING', 'PLACEMENT_OVERDUE', 'BALL_SETUP_PENDING', 'RETURN_REVIEW_PENDING'].includes(setup.setupStatus));",
+      "    return { allowed, sponsorBallNo: sponsor?.ballNo ?? null, expectedSponsorQualificationId: sponsorId, paid: !!setup, reason: allowed ? null : planned ? '此球的內部推薦人由多球申請預排。' : '僅尚未安置的會員資格可以變更推薦球。', q, setup, edge };"
+     ]
+    ],
+    [
+     64,
+     0,
+     [
+      "        await (0, excellence_activation_1.activateBundleForQualification)(tx, id, requestId);"
+     ]
+    ],
+    [
+     67,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/qualification/place-deferred-qualification.js",
+   "before": null,
+   "after": "bde247d9cd39a6091fc9f30abfc5ab513bb461ab53cc671f445736c2c461083a",
+   "changes": [
+    [
+     0,
+     0,
+     [
+      "\"use strict\";",
+      "Object.defineProperty(exports, \"__esModule\", { value: true });",
+      "exports.placeDeferredQualification = placeDeferredQualification;",
+      "exports.placePlannedDescendants = placePlannedDescendants;",
+      "const current_tree_1 = require(\"../binary-tree/current-tree\");",
+      "const allocate_created_ball_1 = require(\"./allocate-created-ball\");",
+      "const common_1 = require(\"@nestjs/common\");",
+      "const node_crypto_1 = require(\"node:crypto\");",
+      "const qualification_activation_gate_1 = require(\"./qualification-activation-gate\");",
+      "const excellence_activation_1 = require(\"../member-bundle/excellence-activation\");",
+      "async function placeDeferredQualification(tx, organization, audit, actorPersonId, placedByType, input, requestId, bundle) {",
+      "    await tx.$queryRaw `SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${input.qualificationId},0))) lock_row`;",
+      "    await tx.$queryRaw `SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${`${input.binaryParentQualificationId}:${input.side}`},0))) lock_row`;",
+      "    const setup = await tx.qualificationSetup.findUnique({ where: { qualificationId: input.qualificationId } });",
+      "    if (!setup)",
+      "        throw new common_1.NotFoundException({ code: 'QUALIFICATION_SETUP_NOT_FOUND' });",
+      "    if (bundle)",
+      "        await (0, qualification_activation_gate_1.assertQualificationActivation)(tx, setup);",
+      "    if (!['PLACEMENT_PENDING', 'PLACEMENT_OVERDUE'].includes(setup.setupStatus) || !setup.finalSponsorQualificationId)",
+      "        throw new common_1.ConflictException({ code: 'PLACEMENT_NOT_PENDING' });",
+      "    const [qualification, sponsor, parent, sponsorEdge, existingPlacement] = await Promise.all([",
+      "        tx.qualification.findUnique({ where: { qualificationId: input.qualificationId } }), tx.qualification.findUnique({ where: { qualificationId: setup.finalSponsorQualificationId } }), tx.qualification.findUnique({ where: { qualificationId: input.binaryParentQualificationId } }), tx.sponsorRelationship.findUnique({ where: { childQualificationId: input.qualificationId } }), tx.binaryPlacement.findUnique({ where: { childQualificationId: input.qualificationId } })",
+      "    ]);",
+      "    if (!qualification || !sponsor || !parent)",
+      "        throw new common_1.NotFoundException({ code: 'PLACEMENT_RESOURCE_NOT_FOUND' });",
+      "    if (existingPlacement)",
+      "        throw new common_1.ConflictException({ code: 'PLACEMENT_CONFLICT' });",
+      "    if (!sponsorEdge || sponsorEdge.sponsorQualificationId !== setup.finalSponsorQualificationId)",
+      "        throw new common_1.ConflictException({ code: 'SPONSOR_CONFIRMATION_MISSING' });",
+      "    if (bundle) {",
+      "        const allocation = await tx.ballNoAllocation.findUnique({ where: { qualificationId: input.qualificationId } });",
+      "        if (!allocation)",
+      "            await (0, allocate_created_ball_1.allocateCreatedBall)(tx, input.qualificationId, setup.finalSponsorQualificationId);",
+      "        const membership = await tx.binaryTreeMembership.findUnique({ where: { qualificationId: input.binaryParentQualificationId } });",
+      "        if (!membership)",
+      "            throw new common_1.ConflictException({ code: 'BINARY_TREE_SCOPE_MISMATCH' });",
+      "        await (0, current_tree_1.assertCurrentPlacement)(tx, membership.binaryTreeId, input.qualificationId, input.binaryParentQualificationId);",
+      "    }",
+      "    if (parent.status !== 'EFFECTIVE')",
+      "        throw new common_1.UnprocessableEntityException({ code: 'BINARY_PARENT_NOT_ELIGIBLE' });",
+      "    const side = input.side;",
+      "    await organization.assertBinarySlotAvailable(tx, input.binaryParentQualificationId, side);",
+      "    await organization.assertNoBinaryCycle(tx, input.qualificationId, input.binaryParentQualificationId);",
+      "    await organization.assertFirstThirdLeftRule(tx, setup.finalSponsorQualificationId, sponsorEdge.sponsorSequenceNo, input.binaryParentQualificationId, side);",
+      "    const placedAt = new Date(), correlationId = (0, node_crypto_1.randomUUID)(), evidenceBody = { qualificationId: input.qualificationId, sponsorQualificationId: setup.finalSponsorQualificationId, binaryParentQualificationId: input.binaryParentQualificationId, side, placedByType, placedByPersonId: actorPersonId ?? null, placedAt: placedAt.toISOString(), reasonCode: input.reasonCode ?? null, policyVersion: setup.setupPolicyVersion, previousStatus: setup.setupStatus }, evidenceHash = (0, node_crypto_1.createHash)('sha256').update(JSON.stringify(evidenceBody)).digest('hex');",
+      "    await organization.createBinaryPlacement(tx, { parentQualificationId: input.binaryParentQualificationId, childQualificationId: input.qualificationId, side, effectiveFrom: placedAt }, { sourceType: 'DEFERRED_PLACEMENT', actorId: actorPersonId, actorType: placedByType === 'SPONSOR_OWNER' ? 'MEMBER' : placedByType === 'SYSTEM_AUTO' ? 'SYSTEM' : 'ADMIN', correlationId, reason: input.reasonCode ?? placedByType });",
+      "    const evidence = await tx.placementEvidence.create({ data: { ...evidenceBody, placedAt, placedByPersonId: actorPersonId, reasonCode: input.reasonCode?.trim() || undefined, correlationId, evidenceHash } });",
+      "    await tx.qualificationStatusHistory.updateMany({ where: { qualificationId: input.qualificationId, effectiveTo: null }, data: { effectiveTo: placedAt } });",
+      "    const plan = await tx.qualificationPlanHistory.findFirst({ where: { qualificationId: input.qualificationId, effectiveTo: null } });",
+      "    if (!qualification.planLevelCode)",
+      "        throw new common_1.UnprocessableEntityException({ code: 'QUALIFICATION_PLAN_REQUIRED' });",
+      "    if (!plan)",
+      "        await tx.qualificationPlanHistory.create({ data: { qualificationId: input.qualificationId, planCode: qualification.planLevelCode, effectiveFrom: placedAt, sourceType: 'QUALIFICATION_PLACEMENT', sourceId: evidence.placementEvidenceId } });",
+      "    await tx.qualificationSetup.update({ where: { qualificationId: input.qualificationId }, data: { setupStatus: 'PLACED', placedAt } });",
+      "    await tx.qualification.update({ where: { qualificationId: input.qualificationId }, data: { status: 'EFFECTIVE', effectiveAt: placedAt } });",
+      "    await tx.qualificationStatusHistory.create({ data: { qualificationId: input.qualificationId, status: 'EFFECTIVE', effectiveFrom: placedAt, sourceType: 'QUALIFICATION_PLACEMENT', sourceId: evidence.placementEvidenceId } });",
+      "    await audit.write(tx, { actorType: placedByType === 'ADMIN_OVERRIDE' ? 'USER' : placedByType === 'SYSTEM_AUTO' ? 'SYSTEM' : 'MEMBER', actorId: actorPersonId, action: 'QUALIFICATION_PLACED', entityType: 'Qualification', entityId: input.qualificationId, afterData: { ...evidenceBody, evidenceHash }, requestId, correlationId });",
+      "    await tx.outboxEvent.create({ data: { eventType: 'QUALIFICATION_PLACED', aggregateType: 'Qualification', aggregateId: input.qualificationId, payload: { schemaVersion: 1, ...evidenceBody, evidenceHash }, correlationId } });",
+      "    return { placementEvidenceId: evidence.placementEvidenceId, ...evidenceBody, evidenceHash };",
+      "}",
+      "async function placePlannedDescendants(tx, organization, audit, descendants, requestId) {",
+      "    for (const child of descendants ?? []) {",
+      "        await placeDeferredQualification(tx, organization, audit, undefined, 'SYSTEM_AUTO', { ...child, reasonCode: 'ENROLLMENT_BUNDLE_LEVEL_ORDER' }, requestId, true);",
+      "    }",
+      "    if (descendants?.length)",
+      "        await (0, excellence_activation_1.activateBundleForQualification)(tx, descendants[0].qualificationId, requestId);",
+      "}"
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/qualification/qualification-placement.service.js",
+   "before": "220f4daa137d5469b8dfd0c70152a650f752e5bfa9de2490851d0d814461419c",
+   "after": "023e1a554591debbc83632dac53d4a025b016fe05c86fa469814fc624d4fcea4",
+   "changes": [
+    [
+     12,
+     0,
+     [
+      "const enrollment_bundle_placement_1 = require(\"./enrollment-bundle-placement\");",
+      "const place_deferred_qualification_1 = require(\"./place-deferred-qualification\");"
+     ]
+    ],
+    [
+     71,
+     0,
+     [
+      "        const planned = await this.db.$queryRaw `",
+      "   SELECT b.qualification_id AS id,b.position,(SELECT count(*)::int FROM membership.enrollment_bundle_ball c WHERE c.bundle_id=b.bundle_id) AS count",
+      "   FROM membership.enrollment_bundle_ball b",
+      "   JOIN membership.qualification_setup s ON s.qualification_id=b.qualification_id",
+      "   WHERE b.position=1 AND s.final_sponsor_qualification_id IN (${database_1.Prisma.join(sponsorIds.map(id => database_1.Prisma.sql `${id}::uuid`))})",
+      "     AND s.setup_status IN ('PLACEMENT_PENDING','PLACEMENT_OVERDUE')`;",
+      "        const groupSizes = new Map(planned.map(b => [b.id, b.count]));"
+     ]
+    ],
+    [
+     76,
+     1,
+     [
+      "        return rows.map(x => { const pending = qualificationById.get(x.qualificationId); return { ...this.view(x, now, { memberNo: (x.ownerPersonId ? memberNoByPerson.get(x.ownerPersonId) : null) ?? null, pendingBallNo: pending?.ballNo ?? null, placementReference: pending ? `P${pending.qualificationNo}` : null, sponsorBallNo: x.finalSponsorQualificationId ? qualificationById.get(x.finalSponsorQualificationId)?.ballNo ?? null : null }), ...(groupSizes.has(x.qualificationId) ? { bundleBallCount: groupSizes.get(x.qualificationId) } : {}) }; });"
+     ]
+    ],
+    [
+     150,
+     0,
+     [
+      "                const descendants = await (0, enrollment_bundle_placement_1.bundleDescendantsForPlacement)(tx, input.qualificationId);"
+     ]
+    ],
+    [
+     201,
+     0,
+     [
+      "                await (0, place_deferred_qualification_1.placePlannedDescendants)(tx, this.organization, this.audit, descendants, requestId);"
+     ]
+    ],
+    [
+     202,
+     1,
+     [
+      "            }, { timeout: 120000 });"
+     ]
+    ],
+    [
+     217,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/qualification/sponsor-resolver.controller.js",
+   "before": "b647a02d55d86fe48d6315d4ed9a88a02910d4576de008f1601a800f7898531e",
+   "after": "2e8adf81e135886b5f39e61476241f9c023c52284ca7203487daae2d4ce0be65",
+   "changes": [
+    [
+     24,
+     1,
+     [
+      "    (0, class_validator_1.Matches)(sponsor_resolver_service_1.SPONSOR_CODE),"
+     ]
+    ],
+    [
+     50,
+     1,
+     [
+      ""
+     ]
+    ]
+   ]
+  },
+  {
+   "file": "modules/qualification/sponsor-resolver.service.js",
+   "before": "96e86b0e0f45574fe79aa3608e5b8476f48f52cb465a9d4cd2e7be3ae5ef0ba7",
+   "after": "1a7cefddfd187db4dfc9993f075128314cf670990f4bc68b81237d6e2bc0d32c",
+   "changes": [
+    [
+     11,
+     1,
+     [
+      "exports.SponsorResolver = exports.SPONSOR_CODE = void 0;"
+     ]
+    ],
+    [
+     13,
+     0,
+     [
+      "exports.saveSponsorSelection = saveSponsorSelection;"
+     ]
+    ],
+    [
+     15,
+     2,
+     [
+      "const BALL = /^(?:(?:(?:TW8888888888|TW09[0-9]{8}|[0-9]{10})-[0-9]{2,19})|[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,}))$/;",
+      "exports.SPONSOR_CODE = /^(?:(?:(?:TW8888888888|TW09[0-9]{8}|[0-9]{10})-[0-9]{2,19})|[A-Z][A-Z0-9_-]{1,39})$/;"
+     ]
+    ],
+    [
+     32,
+     1,
+     [
+      "        if (!code || !exports.SPONSOR_CODE.test(code))"
+     ]
+    ],
+    [
+     35,
+     2,
+     [
+      "            let canonicalCode = code;",
+      "            if (db.$queryRaw) {",
+      "                const aliases = await db.$queryRaw `SELECT q.ball_no FROM organization.ball_number_alias a JOIN membership.qualification q USING(qualification_id) WHERE a.alias=${code}`;",
+      "                canonicalCode = aliases[0]?.ball_no ?? code;",
+      "            }",
+      "            const row = await db.qualification.findFirst({ where: { ballNo: canonicalCode, status: 'EFFECTIVE', effectiveAt: { lte: at } }, select: { qualificationId: true, ballNo: true, planLevelCode: true, effectiveAt: true, kind: true, currentHolderPersonId: true, currentHolderLegalEntityId: true } });"
+     ]
+    ],
+    [
+     43,
+     1,
+     [
+      "        const alias = await db.companySponsorAlias.findFirst({ where: { aliasNormalized: code, effectiveFrom: { lte: at }, OR: [{ effectiveTo: null }, { effectiveTo: { gt: at } }], targetQualification: { status: 'EFFECTIVE', kind: 'COMPANY_BOOTSTRAP' } }, orderBy: { effectiveFrom: 'desc' }, select: { targetQualificationId: true, displayLabel: true, policyVersion: true, effectiveFrom: true, targetQualification: { select: { currentHolderPersonId: true, currentCompanyPrincipalId: true } } } });"
+     ]
+    ],
+    [
+     46,
+     1,
+     [
+      "        return { kind: 'COMPANY_ALIAS', sponsorQualificationId: alias.targetQualificationId, displayLabel: alias.displayLabel, effectiveAt: alias.effectiveFrom, ruleVersion, policyVersion: alias.policyVersion, sponsorOwnerPersonId: alias.targetQualification.currentCompanyPrincipalId ? null : alias.targetQualification.currentHolderPersonId };"
+     ]
+    ],
+    [
+     61,
+     1,
+     [
+      "async function saveSponsorSelection(tx, input) {",
+      "    const { qualificationId, sponsorId, ownerId, personId, at, policyVersion, correlationId } = input;",
+      "    if (ownerId)",
+      "        return tx.qualificationSponsorSelectionEvidence.create({ data: { qualificationId, attributionReferrerQualificationId: sponsorId,",
+      "                selectedSponsorQualificationId: sponsorId, selectedSponsorOwnerPersonId: ownerId, selectedByPersonId: personId, selectedAt: at, source: 'MANUAL_INPUT', policyVersion, correlationId } });",
+      "    // Legal entities and company principals own qualifications directly. Their operating representatives do not own them.",
+      "    const recorded = await tx.$executeRaw `INSERT INTO organization.qualification_sponsor_selection_evidence(",
+      "   qualification_sponsor_selection_evidence_id,qualification_id,attribution_referrer_qualification_id,selected_sponsor_qualification_id,",
+      "   selected_sponsor_owner_person_id,selected_sponsor_owner_legal_entity_id,selected_by_person_id,selected_at,source,policy_version,correlation_id)",
+      "   SELECT gen_random_uuid(),${qualificationId}::uuid,q.qualification_id,q.qualification_id,NULL,q.current_holder_legal_entity_id,${personId}::uuid,${at},'MANUAL_INPUT',${policyVersion},${correlationId}::uuid",
+      "   FROM membership.qualification q WHERE q.qualification_id=${sponsorId}::uuid AND q.status='EFFECTIVE' AND q.effective_at<=${at}",
+      "     AND (q.current_holder_legal_entity_id IS NOT NULL OR q.current_company_principal_id IS NOT NULL OR q.kind='COMPANY_BOOTSTRAP')`;",
+      "    if (!recorded)",
+      "        throw new common_1.UnprocessableEntityException({ code: 'SPONSOR_CODE_INELIGIBLE' });",
+      "}",
+      ""
+     ]
+    ]
+   ]
+  }
+ ]
+}
