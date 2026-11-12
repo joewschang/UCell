@@ -1,0 +1,85 @@
+.app[data-app="member"] {
+  --member-bottom-nav-height: calc(66px + env(safe-area-inset-bottom, 0px));
+  --mall-dock-bottom: calc(var(--member-bottom-nav-height) + 8px);
+}
+
+@media not all and (min-width: 1100px) {
+  .app[data-app="member"] > nav[aria-label="主要功能"] {
+    height: var(--member-bottom-nav-height);
+  }
+
+  .app[data-app="member"]:has(.cart-checkout-bar, .product-mobile-buy) > nav[aria-label="主要功能"] {
+    z-index: 11;
+  }
+
+  .app[data-app="member"] .uc-cart-shop:has(> .cart-checkout-bar) {
+    padding-bottom: calc(var(--mall-dock-height, 8rem) + 16px);
+  }
+
+  .app[data-app="member"] .uc-cart-shop .cart-checkout-bar {
+    position: fixed;
+    left: var(--mall-dock-center, 50%);
+    width: var(--mall-dock-width, min(528px, calc(100% - 32px)));
+    transform: translateX(-50%);
+    margin-top: 0;
+  }
+}
+
+@media (min-width: 1100px) {
+  .app[data-app="member"] {
+    --mall-dock-bottom: 20px;
+  }
+}
+
+.app[data-app="member"] .uc-cart-shop .cart-checkout-bar {
+  bottom: var(--mall-dock-bottom);
+  background-color: var(--ucell-surface);
+  color: var(--ucell-text-primary);
+  border-color: var(--ucell-border);
+}
+
+.app[data-app="member"] .uc-cart-shop .cart-checkout-bar .primary {
+  background-color: var(--ucell-primary);
+  border-color: var(--ucell-primary);
+  color: var(--ucell-on-primary);
+}
+
+.app[data-app="member"] .uc-cart-shop .cart-checkout-bar .primary:disabled {
+  background-color: var(--ucell-surface-secondary);
+  border-color: var(--ucell-border);
+  color: var(--ucell-text-secondary);
+}
+
+@media (max-width: 700px) {
+  .app[data-app="member"] .product-detail {
+    padding-bottom: calc(var(--mall-dock-height, 6rem) + 16px);
+  }
+
+  .app[data-app="member"] .product-mobile-buy {
+    bottom: var(--mall-dock-bottom);
+    left: var(--mall-dock-center, 50%);
+    right: auto;
+    width: var(--mall-dock-width, calc(100% - 32px));
+    transform: translateX(-50%);
+    flex-wrap: wrap;
+    color: var(--ucell-text-primary);
+    border: 1px solid var(--ucell-border);
+    border-radius: 16px;
+  }
+}
+
+/* Leave room to read and operate the page in landscape or with the keyboard open. */
+@media (max-height: 380px) {
+  .app[data-app="member"] .uc-cart-shop .cart-checkout-bar,
+  .app[data-app="member"] .product-mobile-buy {
+    position: static;
+    width: auto;
+    transform: none;
+    margin-top: 16px;
+  }
+
+  .app[data-app="member"] .uc-cart-shop:has(> .cart-checkout-bar),
+  .app[data-app="member"] .product-detail {
+    padding-bottom: 0;
+  }
+}

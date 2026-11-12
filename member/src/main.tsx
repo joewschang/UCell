@@ -19,6 +19,8 @@ import 'bootstrap/dist/css/bootstrap-grid.min.css';
 import '@ucell/design-system/styles';
 import './ucell-theme.css';
 import './content.css';
+import './mall-dock.css';
+import './mall-dock.js';
 initializeUiTheme();
 function Bootstrap() {
     const navigate=useNavigate();
