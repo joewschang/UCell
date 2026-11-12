@@ -119,9 +119,9 @@ export class MembershipApplicationService {
       const sponsorSequenceNo=await this.organization.allocateSponsorSequence(tx,app.sponsorQualificationId);
       const side=app.binarySide as SideCode;
       await this.organization.assertBinarySlotAvailable(tx,app.binaryParentQualificationId,side);
-      await this.organization.assertFirstThirdLeftRule(tx,app.sponsorQualificationId,sponsorSequenceNo,app.binaryParentQualificationId,side);
-
       const effectiveAt=new Date();
+      await this.organization.assertSponsorPlacementScope(tx,app.sponsorQualificationId,sponsorSequenceNo,app.binaryParentQualificationId,effectiveAt);
+
       const qualification=await tx.qualification.create({
         data:{
           currentHolderPersonId:app.personId,

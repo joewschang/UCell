@@ -46,3 +46,11 @@ R1.0B frozen originals remain historical baselines. Product-next 72-hour/BFS pla
 
 會員和管理後台、商品目錄與訂單使用「重銷（三個月）」、「重銷（六個月）」、「重銷（十二個月）」。三種名稱依序對應 ACTIVE_QUARTER、ACTIVE_HALF_YEAR、ACTIVE_YEAR。
 現行[會員制度與獎金計算說明手冊](../Docs/current/UCell_R1_0_會員制度與獎金計算說明手冊_多資格獨立經營版_v1_5.docx)、[後台系統規格書](../Docs/current/UCell_R1_0B_後台MVP細部系統規格書_v1_0.docx)與[獎金引擎規格書](../Docs/current/UCell_R1_0B_獎金引擎與核心邏輯規格書_v4_2_20261003.docx)均採用上述名稱。
+
+## 第三顆直推球的安置規則（2026-11-12）
+
+會員的第三顆直推球可安置在推薦球正下方的左、右空位，也可安置在其左、右兩支組織內的合法空位。永久推薦序號仍為第三。會員及後台選位、API 預檢和實際寫入均依同一規則檢查推薦範圍與空位。
+
+2026-10-14 歸檔的《事業手冊1006》第 4 頁曾要求第一、三顆直推球安置於左側。第一顆已自 2026-11-08 開放左右選位，本次將第三顆也開放左右選位。比較舊版規格、SQL 定義或驗收報告時，安置方向以本節為準。
+
+正式會員協議版本 `DIRECT-PLACEMENT-20261112` 已將此規則納入新申請的簽署條文。歷史案件以簽署當時的全文、版本與雜湊查驗。[協議條文與版本紀錄](../deployment/third-placement/contract/README.md)

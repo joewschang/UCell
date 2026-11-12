@@ -1,3 +1,4 @@
+import { checkContract,priorUnchanged } from './contract-renewal';
 import {adminEnrollmentReview} from '../member-bundle/admin-bundle-review';
 import {activateEnrollmentBundleIfReady} from '../member-bundle/excellence-activation';
 import {ConflictException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
@@ -132,6 +133,7 @@ export class FormalMemberApplicationService {
     const current=await tx.formalMemberApplication.findFirst({where:{personId,status:{in:['DRAFT','SUBMITTED','UNDER_REVIEW','NEEDS_MORE_INFO'] as any}},include:{snapshots:{orderBy:{version:'desc'},take:1}}});
     if(current&&current.status!=='DRAFT'&&current.status!=='NEEDS_MORE_INFO')throw new ConflictException({code:'FORMAL_APPLICATION_LOCKED'});
     if(current&&current.applicantType!==normalized.applicantType)throw new ConflictException({code:'FORMAL_APPLICANT_TYPE_LOCKED'});
+    const unchanged=await priorUnchanged(tx,current,normalized);if(unchanged&&current)return this.view(current,unchanged as any,current.snapshots[0].version);
     const encrypted=this.pii.encrypt(normalized),version=(current?.snapshots[0]?.version??0)+1;
     const metadata={
      applicantType:normalized.applicantType,
@@ -215,6 +217,10 @@ export class FormalMemberApplicationService {
   return this.db.$transaction(async tx=>{
    const app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
    if(!app||app.sourceChannel!=='ADMIN_PAPER')throw new NotFoundException({code:'PAPER_FORMAL_APPLICATION_NOT_FOUND'});
+   if(evidenceType==='SIGNED_APPLICATION_AGREEMENT'&&decision==='REVIEWED'){
+    await tx.$queryRaw`SELECT formal_member_application_id FROM identity.formal_member_application WHERE formal_member_application_id=${applicationId}::uuid FOR UPDATE`;
+    await checkContract(tx,applicationId,'sign');
+   }
    const row=await tx.formalPaperEvidence.upsert({
     where:{formalMemberApplicationId_evidenceType:{formalMemberApplicationId:applicationId,evidenceType:evidenceType as any}},
     create:{formalMemberApplicationId:applicationId,evidenceType:evidenceType as any,status:decision,sourceReference,reviewedBy:actorId,reviewedAt:now,note},
@@ -253,6 +259,7 @@ export class FormalMemberApplicationService {
  async beginReview(applicationId:string,actorId:string,requestId:string){
   if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
   try{return await this.db.$transaction(async tx=>{
+   await checkContract(tx,applicationId,'submit');
    const gate=await this.evidenceGate(applicationId,tx);
    if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_REVIEW_GATE_BLOCKED',details:{codes:gate.codes}});
    const now=new Date(),app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
@@ -271,6 +278,7 @@ export class FormalMemberApplicationService {
  async approve(applicationId:string,actorId:string,requestId:string){
   if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
   try{return await this.db.$transaction(async tx=>{
+   await checkContract(tx,applicationId,'submit');
    const gate=await this.evidenceGate(applicationId,tx);
    if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:gate.codes}});
    const now=new Date(),app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});

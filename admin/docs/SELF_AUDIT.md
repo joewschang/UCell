@@ -5,7 +5,7 @@
 PASS：
 - Person / Qualification 在UI文案與資料模型明確分離。
 - Sponsor / Binary 在UI語意明確分離。
-- 第1與第3直推左子樹不由Frontend自行取代Backend檢核。
+- 推薦範圍與可用安置位置由後端重新檢核。
 - Upgrade / Transfer / Exit使用正式Workflow API。
 - Upgrade核准不由Frontend指定過去時間；預設讓Server取核准時間。
 - Bonus、K0/K1/K2、EPV、RPV、Carry、Recovery不在Frontend自行計算。

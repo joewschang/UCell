@@ -17,7 +17,7 @@
    - Binary Placement
    - Binary Slot 檢查
    - Binary Cycle 檢查
-   - 第1/3直推左子樹規則
+   - 第三顆直推球可選推薦球下方左、右任一側的合法空位。
    - Audit
    - Serializable transaction
 

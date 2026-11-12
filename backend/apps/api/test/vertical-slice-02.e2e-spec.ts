@@ -98,7 +98,7 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
     }
     const organization = {
       allocateSponsorSequence: jest.fn(async () => 2), assertBinarySlotAvailable: jest.fn(),
-      assertFirstThirdLeftRule: jest.fn(), assertNoBinaryCycle: jest.fn(), createBinaryPlacement: jest.fn(async (client:any,data:any)=>client.binaryPlacement.create({data})),
+      assertSponsorPlacementScope: jest.fn(), assertNoBinaryCycle: jest.fn(), createBinaryPlacement: jest.fn(async (client:any,data:any)=>client.binaryPlacement.create({data})),
     };
     const execute = jest.fn(async (_scope: string, _key: string, _payload: any, work: any) => ({ value: await work(tx), replayed: false }));
     const audit = { write: jest.fn() };
@@ -117,19 +117,18 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
     expect(audit.write).toHaveBeenCalledWith(tx, expect.objectContaining({ action: 'MEMBERSHIP_APPLICATION_APPROVED_EFFECTIVE' }));
     // All delegates are transaction-local. Real rollback is asserted by phase3-membership-db-test.mjs.
   });
-  it('1st and 3rd direct-left rule is enforced during approval', async () => {
-    for (const sequence of [1, 3]) {
-      const app = { personId:'person-A', legalEntityId:null, status: 'SUBMITTED', sponsorQualificationId: 'sponsor-A', binaryParentQualificationId: 'sponsor-A', binarySide: 'RIGHT' };
-      const tx = { membershipApplication: { findUnique: jest.fn(async () => app), update: jest.fn() }, qualification: { create: jest.fn() } };
-      const organization = { allocateSponsorSequence: jest.fn(async () => sequence), assertBinarySlotAvailable: jest.fn(), assertFirstThirdLeftRule: jest.fn(async () => { throw new Error('LEFT_SUBTREE_REJECTED'); }) };
-      const audit = { write: jest.fn() };
-      const service = new MembershipApplicationService({} as any, { execute: async (_scope: string, _key: string, _payload: any, work: any) => work(tx) } as any, audit as any, organization as any);
-      await expect(service.approve('application-A', 'approval-key', 'request-A')).rejects.toThrow('LEFT_SUBTREE_REJECTED');
-      expect(organization.assertFirstThirdLeftRule).toHaveBeenCalledWith(tx, 'sponsor-A', sequence, 'sponsor-A', 'RIGHT');
-      expect(tx.qualification.create).not.toHaveBeenCalled();
-      expect(tx.membershipApplication.update).not.toHaveBeenCalled();
-      expect(audit.write).not.toHaveBeenCalled();
-    }
+  it('placement scope failure rolls back approval', async () => {
+    const sequence = 3;
+    const app = { personId:'person-A', legalEntityId:null, status: 'SUBMITTED', sponsorQualificationId: 'sponsor-A', binaryParentQualificationId: 'outside', binarySide: 'RIGHT' };
+    const tx = { membershipApplication: { findUnique: jest.fn(async () => app), update: jest.fn() }, qualification: { create: jest.fn() } };
+    const organization = { allocateSponsorSequence: jest.fn(async () => sequence), assertBinarySlotAvailable: jest.fn(), assertSponsorPlacementScope: jest.fn(async () => { throw new Error('SPONSOR_SUBTREE_REQUIRED'); }) };
+    const audit = { write: jest.fn() };
+    const service = new MembershipApplicationService({} as any, { execute: async (_scope: string, _key: string, _payload: any, work: any) => work(tx) } as any, audit as any, organization as any);
+    await expect(service.approve('application-A', 'approval-key', 'request-A')).rejects.toThrow('SPONSOR_SUBTREE_REQUIRED');
+    expect(organization.assertSponsorPlacementScope).toHaveBeenCalledWith(tx, 'sponsor-A', sequence, 'outside', expect.any(Date));
+    expect(tx.qualification.create).not.toHaveBeenCalled();
+    expect(tx.membershipApplication.update).not.toHaveBeenCalled();
+    expect(audit.write).not.toHaveBeenCalled();
   });
   it('Active periods cannot overlap', async () => {
     const tx = {

@@ -25,14 +25,25 @@ describe('Organization guardrails (P0)', () => {
     await expect(service.assertNoBinaryCycle({$queryRaw:query} as any,'child','child')).rejects.toMatchObject({response:{code:'DOMAIN_RULE_VIOLATION'}});
     expect(query).toHaveBeenCalledTimes(1);
   });
-  it('1st and 3rd direct recruit must be within sponsor LEFT subtree',async()=>{
-    const service=new OrganizationService({} as any),tx={binaryPlacement:{findFirst:jest.fn(async()=>({childQualificationId:'left'}))},$queryRaw:jest.fn(async()=>[{found:false}])};
-    for(const sequence of [1,3]){
-      await expect(service.assertFirstThirdLeftRule(tx as any,'sponsor',sequence,'sponsor',SideCode.RIGHT)).rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});
-      await expect(service.assertFirstThirdLeftRule(tx as any,'sponsor',sequence,'outside',SideCode.LEFT)).rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});
-      await expect(service.assertFirstThirdLeftRule(tx as any,'sponsor',sequence,'sponsor',SideCode.LEFT)).resolves.toBeUndefined();
-    }
-    await expect(service.assertFirstThirdLeftRule(tx as any,'sponsor',2,'sponsor',SideCode.RIGHT)).resolves.toBeUndefined();
+  it.each(['LEFT','RIGHT'] as const)('previews a third direct on %s', async side => {
+    const tx = {
+      qualification: { findUnique: async ({where}: any) => ({qualificationId:where.qualificationId}) },
+      sponsorRelationship: { aggregate: async () => ({_max:{sponsorSequenceNo:2}}) },
+      binaryTreeMembership: { findUnique: async () => null },
+      binaryPlacement: { findFirst: async () => null },
+    };
+    const service = new OrganizationService({$transaction: (read: any) => read(tx)} as any);
+    const result = await service.previewPlacement({sponsorQualificationId:'s',binaryParentQualificationId:'s',binarySide:side});
+    expect(result).toMatchObject({valid:true, nextSponsorSequenceNo:3, firstThirdLeftRequired:false, side});
+  });
+  it('keeps indirect third placements inside the member sponsor subtree', async () => {
+    const guard = new OrganizationService({} as any).assertSponsorPlacementScope;
+    const tx = {qualification:{findUniqueOrThrow: async () => ({kind:'MEMBER_ORIGIN'})},
+      $queryRaw: jest.fn().mockResolvedValueOnce([{found:true}]).mockResolvedValueOnce([{found:false}])};
+    await expect(guard(tx as any,'s',3,'right-descendant')).resolves.toBeUndefined();
+    await expect(guard(tx as any,'s',3,'outside')).rejects.toMatchObject({response:{code:'SPONSOR_SUBTREE_REQUIRED'}});
+    await expect(guard(tx as any,'s',1,'parent')).resolves.toBeUndefined();
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(2);
   });
   it('sponsor sequence is permanent and never renumbered after exit',async()=>{
     const aggregate=jest.fn(async()=>({_max:{sponsorSequenceNo:7}})),query=jest.fn(async()=>[]),tx={$queryRaw:query,sponsorRelationship:{aggregate}};

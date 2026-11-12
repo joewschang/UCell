@@ -11,7 +11,8 @@ if(!qwf.includes('reviewFeePaid')) failures.push('Workflow approval does not ver
 if(!qwf.includes('qualificationPlanHistory')) failures.push('Upgrade plan history missing');
 if(!bq.includes('qualificationPlanAt')) failures.push('Temporal plan lookup missing');
 if(!bin.includes('isQualificationEffectiveAt')) failures.push('Binary settlement is not temporal-status aware');
-if(!migration.includes('trg_binary_first_third_left')) failures.push('DB first/third-left guard missing');
+const placement=fs.readFileSync('packages/database/prisma/migrations/20261112160000_third_direct_either_side/migration.sql','utf8');
+if(!placement.includes('SPONSOR_SUBTREE_REQUIRED')) failures.push('DB sponsor-subtree placement guard missing');
 if(!migration.includes('trg_sponsor_update_guard')) failures.push('DB sponsor update guard missing');
 
 if(failures.length){

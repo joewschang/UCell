@@ -1,3 +1,4 @@
+import { assertSponsorPlacementScope } from './sponsor-placement-scope';
 import { attachTreePlacement, TreePlacementMeta } from './tree-placement';
 import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma, PrismaService, SideCode } from '@ucell/database';
@@ -45,14 +46,13 @@ export class OrganizationService {
           if(canonical && input.sponsorQualificationId!==designation?.qualificationId)throw new ConflictException({code:'FOUNDING_COMPANY_SPONSOR_REQUIRED'});
         }
         await this.assertBinarySlotAvailable(tx,input.binaryParentQualificationId,side);
-        await this.assertFirstThirdLeftRule(
+        await this.assertSponsorPlacementScope(
           tx,input.sponsorQualificationId,nextSponsorSequenceNo,
-          input.binaryParentQualificationId,side
-        );
+          input.binaryParentQualificationId);
         return {
           valid:true,
           nextSponsorSequenceNo,
-          firstThirdLeftRequired:[1,3].includes(nextSponsorSequenceNo),
+          firstThirdLeftRequired:false,
           sponsor:{qualificationId:sponsor.qualificationId,holder:sponsor.currentHolder},
           binaryParent:{qualificationId:parent.qualificationId,holder:parent.currentHolder},
           side,
@@ -62,7 +62,7 @@ export class OrganizationService {
         return {
           valid:false,
           nextSponsorSequenceNo,
-          firstThirdLeftRequired:[1,3].includes(nextSponsorSequenceNo),
+          firstThirdLeftRequired:false,
           code:response?.code ?? 'PLACEMENT_INVALID',
           message:response?.message ?? error?.message ?? 'Binary placement invalid',
           side,
@@ -151,60 +151,5 @@ export class OrganizationService {
     }
   }
 
-  async assertFirstThirdLeftRule(
-    tx: Prisma.TransactionClient,
-    sponsorQualificationId: string,
-    sponsorSequenceNo: number,
-    binaryParentQualificationId: string,
-    side: SideCode,
-  ) {
-    if (![1, 3].includes(sponsorSequenceNo)) return;
-
-    if (binaryParentQualificationId === sponsorQualificationId) {
-      if (side !== SideCode.LEFT) {
-        throw new UnprocessableEntityException({
-          code: 'BINARY_LEFT_SUBTREE_REQUIRED',
-          message: '第1與第3位直推必須安置於推薦人的左子樹。',
-        });
-      }
-      return;
-    }
-
-    const leftChild = await tx.binaryPlacement.findFirst({
-      where: {
-        parentQualificationId: sponsorQualificationId,
-        side: SideCode.LEFT,
-        effectiveTo: null,
-      },
-      select: { childQualificationId: true },
-    });
-
-    if (!leftChild) {
-      throw new UnprocessableEntityException({
-        code: 'BINARY_LEFT_SUBTREE_REQUIRED',
-        message: '推薦人的左子樹尚未建立，無法將第1/3位直推安置到其他位置。',
-      });
-    }
-
-    const rows = await tx.$queryRaw<Array<{ found: boolean }>>`
-      WITH RECURSIVE subtree AS (
-        SELECT ${leftChild.childQualificationId}::uuid AS qualification_id
-        UNION ALL
-        SELECT bp.child_qualification_id
-        FROM organization.binary_placement bp
-        JOIN subtree s ON bp.parent_qualification_id = s.qualification_id
-        WHERE bp.effective_to IS NULL
-      )
-      SELECT EXISTS(
-        SELECT 1 FROM subtree WHERE qualification_id = ${binaryParentQualificationId}::uuid
-      ) AS found
-    `;
-
-    if (!rows[0]?.found) {
-      throw new UnprocessableEntityException({
-        code: 'BINARY_LEFT_SUBTREE_REQUIRED',
-        message: '第1與第3位直推必須安置於推薦人的左子樹。',
-      });
-    }
-  }
+  readonly assertSponsorPlacementScope = assertSponsorPlacementScope;
 }

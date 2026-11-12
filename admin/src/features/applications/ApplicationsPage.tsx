@@ -2,7 +2,9 @@ import {EnrollmentReview} from './EnrollmentReview';
 import {uiValue,uiText,domainLabel} from "../../../../shared/design-system/i18n";
 import {ConfirmAction} from '../../components/ConfirmAction';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
+import * as React from 'react';
 import {useState} from 'react';
+import {createContractRenewal,type ContractRenewalState} from '../../../../shared/contract-renewal.mjs';
 import {command,get,getBlob,qs} from '../../lib/api';
 import {MembershipApplication} from '../../types/domain';
 import {Badge,Card,ErrorBox,PageHeader} from '../../components/ui';
@@ -15,6 +17,7 @@ import {openPrivateDocument} from '../../lib/privateDocument';
 
 function tone(s:string){return s==='EFFECTIVE'?'ok':s==='SUBMITTED'?'warn':s==='DRAFT'?'neutral':'danger'}
 
+const ContractRenewal=createContractRenewal(React);
 export function ApplicationsPage(){
  const {user}=useAuth();
  const qc=useQueryClient();const [status,setStatus]=useState('SUBMITTED'),[search,setSearch]=useState('');
@@ -29,6 +32,10 @@ export function ApplicationsPage(){
  const detail=useQuery({queryKey:['application',selected],queryFn:()=>get<any>(`/admin/membership-applications/${selected}`),enabled:!!selected});
  const formalDetail=useQuery({queryKey:['formal-application-detail',selectedFormal],queryFn:()=>get<any>(`/admin/formal-member-applications/${selectedFormal}/detail`),enabled:!!selectedFormal});
  const formalDocuments=useQuery({queryKey:['formal-application-documents',selectedFormal],queryFn:()=>get<any>(`/admin/formal-member-applications/${selectedFormal}/documents`),enabled:!!selectedFormal});
+ const caseDetail=formalDetail.data?.data;
+ const canRenew=!!selectedFormal&&['SUPER_ADMIN','MEMBERSHIP_OPS'].includes(user?.role??'')&&['DRAFT','NEEDS_MORE_INFO'].includes(caseDetail?.status);
+ const renewalPath='/admin/formal-applications/'+encodeURIComponent(selectedFormal??'')+'/contract-renewal';
+ const renewal=useQuery({queryKey:[renewalPath,caseDetail?.version],queryFn:()=>get<{data:ContractRenewalState}>(renewalPath),enabled:canRenew,retry:false});
  const rows:MembershipApplication[]=list.data?.data??[];const formalRows=formalList.data?.data??[];const a:MembershipApplication|undefined=detail.data?.data;
  async function formalAction(kind:'spouse-verification'|'cross-line-review'|'begin-review'|'approve'){
   if(!selectedFormal)return;setBusy(true);setError(null);
@@ -88,6 +95,7 @@ export function ApplicationsPage(){
    <ErrorBox error={formalDetail.error}/><ErrorBox error={formalDocuments.error}/>
    {!formalDetail.data?.data?<p className="muted">{uiText("正在載入受保護 KYC 詳情…")}</p>:(()=>{const d=formalDetail.data.data,p=d.payload??{},docs=formalDocuments.data?.data??[];return <>
     <div className="status-strip"><Badge tone={d.status==='APPROVED'?'ok':d.status==='UNDER_REVIEW'?'warn':'neutral'}>{domainLabel(d.status)}</Badge><span>{d.applicantType} · {d.sourceChannel}</span></div>
+    {canRenew&&<><ErrorBox error={renewal.error}/><ContractRenewal admin state={renewal.data?.data} disabled={busy} save={(body,key)=>command(renewalPath,body,key)} reload={async()=>{await Promise.all([renewal.refetch(),formalDetail.refetch(),formalDocuments.refetch()]);}}/></>}
     {d.enrollmentBundle&&<EnrollmentReview group={d.enrollmentBundle} status={d.status} blocked={busy} onBusy={setBusy} refresh={()=>formalDetail.refetch()}/>}
     <dl className="detail-grid">
      <dt>會員編號</dt><dd>{d.legalEntity?.memberNo??d.person?.memberNo??'—'}</dd>

@@ -24,6 +24,7 @@ try{
   run(['scripts/phase3-concurrency-db-test.mjs']);
   run(['scripts/phase3-return-outbox-db-test.mjs']);
   run(['scripts/phase3-membership-db-test.mjs']);
+  run(['scripts/third-direct-placement-db-test.mjs']);
   run(['scripts/phase3-rpv-concurrency-db-test.mjs']);
   run(['scripts/system-assignment-db-test.mjs']);
   run(['scripts/qualification-placement-db-test.mjs']);

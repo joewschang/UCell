@@ -5,7 +5,7 @@ import {consentFormalContract,getFormalRequiredContracts,saveFormalDraft,uploadF
 import {useResource} from './useResource';
 import {countryOptions} from './countryOptions';
 
-export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onSubmitted?:()=>void;onSaved?:(id:string)=>void;draftOnly?:boolean}={}){
+export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,agreementBlocked=false}:{onSubmitted?:()=>void;onSaved?:(id:string)=>void;draftOnly?:boolean;agreementBlocked?:boolean}={}){
  const contracts=useResource('formal-contracts',getFormalRequiredContracts);
  const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[submitted,setSubmitted]=useState(false);
  const [saved,setSaved]=useState<{id:string;version:number;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;applicantType:string}|null>(null);
@@ -25,7 +25,7 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onS
  const set=(name:keyof typeof form,value:string|boolean)=>setForm(current=>({...current,[name]:value}));
  const setFile=(type:FormalDocumentType,file?:File)=>{setFiles(current=>({...current,[type]:file}));setUploaded(current=>{const next={...current};delete next[type];return next;});};
  async function submit(event:React.FormEvent){
-  event.preventDefault();if(!(accepted||contract.acceptedAt)||busy)return;setBusy(true);setError('');
+  event.preventDefault();if(agreementBlocked||!(accepted||contract.acceptedAt)||busy)return;setBusy(true);setError('');
   try{
    if(!contract.acceptedAt)await consentFormalContract(contract.id,key.current);
    const common={
@@ -81,7 +81,7 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onS
  <label>銀行別／代碼<input required maxLength={16} value={form.bankCode} onChange={e=>set('bankCode',e.target.value)}/></label>
  <label>銀行帳號<input required maxLength={34} autoComplete="off" value={form.bankAccount} onChange={e=>set('bankAccount',e.target.value)}/></label>
  <label>帳戶名<input required maxLength={120} value={form.accountHolder} onChange={e=>set('accountHolder',e.target.value)}/></label>
- <button className="primary" disabled={busy||!(accepted||!!contract.acceptedAt)}>{busy?'儲存／上傳中…':'儲存資料與文件'}</button>
+ <button className="primary" disabled={busy||agreementBlocked||!(accepted||!!contract.acceptedAt)}>{busy?'儲存／上傳中…':'儲存資料與文件'}</button>
  {saved&&<p role="status">已保存第 {saved.version} 版自然人草稿；身分證明號碼 {saved.identityDocumentNumberMasked??'未提供'}{saved.spouseIdentityDocumentNumberMasked?'，配偶身分證明號碼 '+saved.spouseIdentityDocumentNumberMasked:''}，帳號 {saved.bankAccountMasked}。</p>}
  {saved&&!draftOnly&&<button type="button" disabled={busy||submitted} onClick={async()=>{setBusy(true);setError('');try{await submitFormalEnrollment(saved.id,key.current);setSubmitted(true);onSubmitted?.();}catch(e){setError(e instanceof Error?e.message:'送出失敗');}finally{setBusy(false);}}}>{submitted?'申請已送出，等待審核':'送出正式會員申請'}</button>}
  {error&&<p role="alert">{error}</p>}</form>;

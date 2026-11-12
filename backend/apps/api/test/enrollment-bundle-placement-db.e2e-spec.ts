@@ -72,15 +72,13 @@ describeDb('Formal enrollment group placement on PostgreSQL',()=>{
     const addon=group.balls[1].repurchase!;
     const payAddon=()=>orders.confirmPayment(addon.orderId,{amount:addon.total,paymentMethod:'BANK_TRANSFER',referenceNo:randomUUID(),occurredAt:new Date().toISOString()},randomUUID(),randomUUID(),actor,'MANUAL_ADMIN');
     await expect(payAddon()).rejects.toMatchObject({response:{code:'BUNDLE_REPURCHASE_AWAITS_PLACEMENT'}});
-    const rootPlacement={qualificationId:root,binaryParentQualificationId:sponsor,side:'LEFT' as const,reasonCode:'bundle-test'};
+    const rootPlacement={qualificationId:root,binaryParentQualificationId:sponsor,side:'RIGHT' as const,reasonCode:'bundle-test'};
     await expect(placement.placeByAdmin(actor,rootPlacement,randomUUID(),randomUUID()))
       .rejects.toMatchObject({response:{code:'FORMAL_MEMBERSHIP_APPROVAL_REQUIRED'}});
     await expect(placement.placeByAdmin(actor,{...rootPlacement,qualificationId:left},randomUUID(),randomUUID()))
       .rejects.toMatchObject({response:{code:'BUNDLE_ROOT_PLACEMENT_REQUIRED'}});
     await assertUnplaced();
     await db.person.update({where:{personId:person.personId},data:{membershipState:'FORMAL_MEMBER'}});
-    await expect(placement.placeByAdmin(actor,{...rootPlacement,side:'RIGHT'},randomUUID(),randomUUID()))
-      .rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});
     const write=org.createBinaryPlacement.bind(org);
     const failThird=jest.spyOn(org,'createBinaryPlacement').mockImplementation((tx,edge,metadata)=>{
       if(edge.childQualificationId===right)throw new Error('third placement interrupted');
@@ -91,7 +89,7 @@ describeDb('Formal enrollment group placement on PostgreSQL',()=>{
     } finally {failThird.mockRestore();}
     await assertUnplaced();
     const {topologyVersion}=await db.binaryTree.findUniqueOrThrow({where:{binaryTreeId:treeId}});
-    const place={qualificationId:root,binaryParentQualificationId:sponsor,side:'LEFT' as const,expectedVersion:topologyVersion,reason:'enrollment bundle'};
+    const place={qualificationId:root,binaryParentQualificationId:sponsor,side:'RIGHT' as const,expectedVersion:topologyVersion,reason:'enrollment bundle'};
     const key=randomUUID();
     if(route==='admin-console') {
       const preflight=await trees.preview(fixture.actor,treeId,place);
@@ -100,13 +98,13 @@ describeDb('Formal enrollment group placement on PostgreSQL',()=>{
       expect((await trees.place(fixture.actor,treeId,confirmed,key)).replayed).toBe(true);
     } else {
       const pending=await placement.pendingForSponsorOwner(fixture.holder.personId);
-      const external={placementReference:pending[0].placementReference!,binaryParentBallNo:fixture.qualification.ballNo!,side:'LEFT' as const};
+      const external={placementReference:pending[0].placementReference!,binaryParentBallNo:fixture.qualification.ballNo!,side:'RIGHT' as const};
       const first=await placement.placeBySponsorOwnerReference(fixture.holder.personId,external,key,randomUUID());
       expect(await placement.placeBySponsorOwnerReference(fixture.holder.personId,external,key,randomUUID())).toEqual(first);
     }
     for (const [index,id] of ids.entries()) {
       expect(await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:id}}))
-        .toMatchObject({parentQualificationId:expectedParents[index],side:index===2?'RIGHT':'LEFT'});
+        .toMatchObject({parentQualificationId:expectedParents[index],side:index===0||index===2?'RIGHT':'LEFT'});
       expect(await db.binaryTreeMembership.findUniqueOrThrow({where:{qualificationId:id}})).toMatchObject({binaryTreeId:treeId});
       expect(await db.qualification.findUniqueOrThrow({where:{qualificationId:id}})).toMatchObject({status:'EFFECTIVE',ballNo:expect.any(String)});
       expect(await db.placementEvidence.findFirstOrThrow({where:{qualificationId:id}}))

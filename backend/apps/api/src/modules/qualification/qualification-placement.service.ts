@@ -1,3 +1,4 @@
+import { correctLeaf, type CorrectionInput } from './leaf-correction';
 import {ConflictException,ForbiddenException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {PrismaService,Prisma,qualificationReturnReviewPolicy} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
@@ -35,6 +36,15 @@ export class QualificationPlacementService {
   const personIds=[...new Set(rows.map(x=>x.ownerPersonId).filter((id):id is string=>!!id))],qualificationIds=[...new Set(rows.flatMap(x=>[x.qualificationId,x.finalSponsorQualificationId].filter((id):id is string=>!!id)))]; const [people,qualifications]=await Promise.all([this.db.person.findMany({where:{personId:{in:personIds}},select:{personId:true,memberNo:true}}),this.db.qualification.findMany({where:{qualificationId:{in:qualificationIds}},select:{qualificationId:true,qualificationNo:true,ballNo:true}})]); const memberNoByPerson=new Map(people.map(x=>[x.personId,x.memberNo])),qualificationById=new Map(qualifications.map(x=>[x.qualificationId,x])); return rows.map(x=>{const pending=qualificationById.get(x.qualificationId);return {...this.view(x,now,{memberNo:(x.ownerPersonId?memberNoByPerson.get(x.ownerPersonId):null)??null,pendingBallNo:pending?.ballNo??null,placementReference:pending?`P${pending.qualificationNo}`:null,sponsorBallNo:x.finalSponsorQualificationId?qualificationById.get(x.finalSponsorQualificationId)?.ballNo??null:null}),...(groupSizes.has(x.qualificationId)?{bundleBallCount:groupSizes.get(x.qualificationId)}:{})};});
  }
 
+ async correct(actor:string,id:string,input:CorrectionInput,key:string,requestId:string){
+  if(!actor)throw new ForbiddenException();
+  try{return await this.idempotency.execute('admin:leaf-correction:'+actor,key,{id,...input},async tx=>{
+   const result=await correctLeaf(tx,id,input,actor);
+   await this.audit.write(tx,{actorType:'ADMIN',actorId:actor,action:'BINARY_PLACEMENT_CORRECTED',entityType:'Qualification',entityId:id,afterData:result,reasonCode:input.reason.trim(),requestId,correlationId:result.correctionId});
+   await tx.outboxEvent.create({data:{eventType:'BINARY_TREE_CHANGED',aggregateType:'BinaryTree',aggregateId:result.binaryTreeId,payload:{...result,schemaVersion:1},correlationId:result.correctionId}});
+   return result;
+  });}catch(error){if(['P2002','P2034'].includes((error as any).code)||(error as any).meta?.code==='40001')throw new ConflictException('位置剛有異動，請重新整理再確認。');throw error;}
+ }
  async dashboard(input:{status?:string;after?:string;take?:number}){return placementMonitor(this.db,input);}
  async monitor(input:{status?:string;aging?:string;take?:number}={},now=new Date()){
   const take=Math.min(Math.max(Number.isFinite(input.take)?input.take!:50,1),100),rows=await this.db.qualificationSetup.findMany({where:{setupStatus:{in:['PLACEMENT_PENDING','PLACEMENT_OVERDUE','PLACED']}},orderBy:{placementDueAt:'asc'},take:100});

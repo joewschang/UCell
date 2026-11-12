@@ -47,12 +47,12 @@ export class QualificationService {
       const side = dto.binarySide as SideCode;
 
       await this.organization.assertBinarySlotAvailable(tx, dto.binaryParentQualificationId, side);
-      await this.organization.assertFirstThirdLeftRule(
+      await this.organization.assertSponsorPlacementScope(
         tx,
         dto.sponsorQualificationId,
         sponsorSequenceNo,
         dto.binaryParentQualificationId,
-        side,
+        effectiveAt,
       );
 
       const qualification = await tx.qualification.create({

@@ -1,3 +1,4 @@
+import { signingRenewalView,checkContract } from './contract-renewal';
 import {BadRequestException,ConflictException,ForbiddenException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
 import {createHash,randomUUID} from 'node:crypto';
@@ -17,7 +18,8 @@ export class FormalKycDocumentService{
     const app=await this.db.formalMemberApplication.findFirst({where:{formalMemberApplicationId:applicationId,personId}});
     if(!app)throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
     const rows=await this.db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:{not:'SUPERSEDED'}},orderBy:{createdAt:'desc'}});
-    return {applicationId,required:app.sourceChannel==='MEMBER_WEB'&&app.applicantType==='INDIVIDUAL'?[...REQUIRED_WEB]:[],documents:rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null}))};
+    const contractRenewal=await signingRenewalView(this.db,applicationId,personId);
+    return {applicationId,contractRenewal,required:app.sourceChannel==='MEMBER_WEB'&&app.applicantType==='INDIVIDUAL'?[...REQUIRED_WEB]:[],documents:rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null}))};
   }
 
   async upload(personId:string,applicationId:string,type:string,mimeType:string,contentBase64:string,requestId:string){
@@ -42,9 +44,10 @@ export class FormalKycDocumentService{
     try{row=await this.db.$transaction(async tx=>{
       const current=await tx.formalMemberApplication.findFirst({where:{formalMemberApplicationId:applicationId,personId}});
       if(!current||!['DRAFT','NEEDS_MORE_INFO'].includes(current.status))throw new ForbiddenException({code:'FORMAL_APPLICATION_LOCKED'});
+      if(type==='SIGNED_APPLICATION_AGREEMENT')await checkContract(tx,applicationId,'sign');
       await tx.formalApplicationDocument.updateMany({where:{formalMemberApplicationId:applicationId,documentType:type as any,status:'PRESENT'},data:{status:'SUPERSEDED'}});
       const created=await tx.formalApplicationDocument.create({data:{formalMemberApplicationId:applicationId,documentType:type as any,status:'PRESENT',storageObjectKey:objectKey,contentSha256:sha,mimeType,sizeBytes:bytes.length,malwareScanStatus:'PENDING',uploadedByPersonId:personId,uploadedAt:now}});
-      await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_KYC_DOCUMENT_UPLOADED',entityType:'FormalApplicationDocument',entityId:created.formalApplicationDocumentId,afterData:{applicationId,documentType:type,mimeType,sizeBytes:bytes.length,contentSha256:sha},requestId,correlationId:randomUUID()});
+      await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_KYC_DOCUMENT_UPLOADED',entityType:'FormalApplicationDocument',entityId:created.formalApplicationDocumentId,afterData:{applicationId,documentType:type,mimeType,sizeBytes:bytes.length,contentSha256:sha,applicationSnapshotHash:current.currentSnapshotHash},requestId,correlationId:randomUUID()});
       return created;
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}catch(error){
       if((error as any).code==='P2034')throw new ConflictException({code:'RETRYABLE_CONFLICT'});
