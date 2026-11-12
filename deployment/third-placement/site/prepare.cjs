@@ -29,8 +29,7 @@ const sites = {
 };
 
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
-function prepare(app, root, out) {
-  const site = sites[app];
+function prepare(app, root, out, site=sites[app], release='placement') {
   assert(site, 'Unknown site');
   const original = filename => fs.readFileSync(path.join(root, 'assets', filename), 'utf8');
   assert.equal(digest(fs.readFileSync(path.join(root, 'index.html'))), site.html, 'Unexpected base HTML');
@@ -40,8 +39,9 @@ function prepare(app, root, out) {
     assert.equal(code.split(from).length, 2, 'Missing or duplicate anchor: ' + from);
     code = code.replace(from, () => to);
   }
+  if (site.transform) code = site.transform(code);
   const tag = digest(code).slice(0, 16);
-  const entry = app + '-placement-' + tag + '.js';
+  const entry = app + '-' + release + '-' + tag + '.js';
   const outAssets = path.join(out, 'overlay', 'assets');
   fs.mkdirSync(outAssets, {recursive:true});
   // Lazy modules import the app singleton. Update their imports and both Vite dependency lists together.
@@ -65,4 +65,5 @@ function prepare(app, root, out) {
   ].join('\n'));
   console.log(app, entry, manifest.entryHash);
 }
+module.exports = {prepare};
 if (require.main === module) prepare(...process.argv.slice(2));

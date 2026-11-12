@@ -26,7 +26,7 @@ function fixture() {
     },
     person: { create: jest.fn(async ({data}: any) => ({personId: 'person', ...data})) },
     qualification: {findUnique: jest.fn(async (_query: any): Promise<any> => ({qualificationId: 'ball', status: 'EFFECTIVE'}))},
-    productReference: {findMany: jest.fn(async (_query: any) => [{productId: 'product', sku: 'TEST_ONLY_SKU', displayName: 'TEST_ONLY Product', currentPrice: new Prisma.Decimal('123.45')}])},
+    productReference: {findMany: jest.fn(async (_query: any) => [{productId: 'product', sku: 'TEST_ONLY_SKU', displayName: 'TEST_ONLY Product', currentPrice: new Prisma.Decimal('123.45'), currency: 'TWD'}])},
     productRuleProfile: {findFirst: jest.fn(async (_query: any): Promise<any> => ({productRuleProfileId: 'profile', gpvRate: new Prisma.Decimal('.4'), pvRate: new Prisma.Decimal('.2'), rpvEligible: false, epvEligible: true, ruleVersionCode: 'TEST_ONLY', parameterSnapshotHash: 'sealed-hash'}))},
     order: {
       create: jest.fn(async ({data}: any) => ({...data, orderId: 'created-order', lines: data.lines.create})),

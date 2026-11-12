@@ -1,3 +1,4 @@
+import { checkContract } from './contract-renewal';
 import {ConflictException,ForbiddenException,Injectable,NotFoundException} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {Prisma,PrismaService} from '@ucell/database';
@@ -89,6 +90,7 @@ export class FormalEnrollmentService{
    if(!app||app.personId!==personId||app.sourceChannel!=='MEMBER_WEB')throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
    if(['SUBMITTED','UNDER_REVIEW','APPROVED'].includes(app.status))return {applicationId,status:app.status};
    if(!['DRAFT','NEEDS_MORE_INFO'].includes(app.status))throw new ConflictException({code:'FORMAL_APPLICATION_NOT_SUBMITTABLE'});
+   await checkContract(tx,applicationId,'submit');
    const fee=await tx.order.findFirst({where:{purchaserPersonId:personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'PAID'}});
    const bundle=await enrollmentBundlePayment(tx,applicationId,personId);
    if(!bundle?.paymentReported)requirePaidBundleRoot(bundle);
