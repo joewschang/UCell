@@ -8,6 +8,8 @@ import {MembershipPlanEmblem as QualificationEmblem,BallRankBadge} from './Membe
 import MemberPayouts from './MemberPayouts';
 import { qualificationReferenceLabel } from './terminology';
 import MemberMessages from './MemberMessages';
+import {InboxScope, MeInboxLink, useInboxRoute} from './MemberInboxEntry';
+import './member-notifications.css';
 import { useQualificationFocus } from './useQualificationFocus';
 import { MemberNavigation, IncomeNavigation } from './MemberNavigation';
 import {MemberPageHeader} from './MemberPageHeader';
@@ -149,6 +151,7 @@ function Me() {
  const { qualifications } = useQualification();
  return <>
   <MemberPageHeader title="我的帳戶"/>
+  <MeInboxLink/>
   <Result state={state}>{p => <>
    <section className="card"><h3>{p.name}</h3><p><span>會員編號</span> {p.memberNo}</p><p>會員狀態：{p.membershipState??'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? availabilityText.fieldMissing}（{p.emailVerifiedAt?'已驗證':'尚未驗證'}）</p><p>電話：{p.phone ?? availabilityText.fieldMissing}（{p.mobileVerifiedAt?'已驗證':'尚未驗證'}）</p></section>
    {!data.isMock&&p.membershipState===null&&<NetworkRegistration person={p} refresh={state.retry}/>}
@@ -166,10 +169,17 @@ function MemberApp() {
     const { unread } = useNotifications(current?.id);
     const memberIdentityLabel=memberNo?`會員編號 ${memberNo}`:memberNoStatus==='loading'?'會員編號確認中':'會員編號尚未提供（帳戶資料尚未同步）';
     const {mainRef,begin}=useQualificationFocus(loading,error,current?.id);
+    const inboxOpen=useInboxRoute(mainRef);
+    const inboxQualification=loading||error ? undefined : current??undefined;
+    const inboxContext=<InboxScope loading={loading} error={error} retry={retry}>
+      {inboxQualification && <ContextBar beforeSelect={begin}/>}
+    </InboxScope>;
     return <MemberAppShell><a className="uc-skip-link" href="#member-main">跳至主要內容</a>
-      <header><div className="uc-member-brand"><CompanyLogo/><small>{memberIdentityLabel}</small></div>{(!data.isMock||current) && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>
+      <header><div className="uc-member-brand"><CompanyLogo/><small>{memberIdentityLabel}</small></div>{(!data.isMock||current) && <Link className="notification-link" to="/notifications" aria-current={inboxOpen?'page':undefined} aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>
       {data.isMock && <aside className="demo-banner" data-environment="mock-visual-only"><strong>{uiText("DEV 示範模式 · ")}</strong><span>目前為示範資料，不代表真實業績、獎金或訂單。</span></aside>}
-      <main ref={mainRef} id="member-main" tabIndex={-1}>{loading ? <LoadingState label={loadingLabel}/> : error ? <ErrorState message={error} retry={()=>{begin();retry()}}/> : current ? <><ContextBar beforeSelect={begin}/><div key={current.id}><Routes>
+      <main ref={mainRef} id="member-main" tabIndex={-1}>{inboxOpen && !data.isMock
+        ? <MemberMessages key={inboxQualification?.id??'personal'} q={inboxQualification} context={inboxContext}/>
+        : loading ? <LoadingState label={loadingLabel}/> : error ? <ErrorState message={error} retry={()=>{begin();retry()}}/> : current ? <><ContextBar beforeSelect={begin}/><div key={current.id}><Routes>
         <Route path="/" element={<><ServiceWelcome/><Home q={current}/></>}/>
         <Route path="/ai-assistant" element={<AiAssistant q={current}/>}/>
         <Route path="/organization" element={<Organization q={current}/>}/>

@@ -1,0 +1,98 @@
+/* Keep the default state at the same specificity as the legacy button:hover.
+   Component variants (primary buttons, destructive actions, tree symbols) can
+   still supply their own foreground and background as a pair. */
+:where(.app[data-app="admin"], .login-shell, dialog, [role="dialog"]) button:is(:hover, :active):where(:enabled) {
+  background-color: var(--ucell-surface-secondary);
+  color: var(--ucell-text-primary);
+}
+
+:where(.app[data-app="admin"], .login-shell, dialog, [role="dialog"]) button:hover:where(:disabled) {
+  background-color: var(--ucell-surface);
+  color: var(--ucell-text-muted);
+}
+
+/* Give unstyled links a theme-aware pressed color. Zero specificity leaves
+   links with their own palette, such as inverted header links, in control. */
+:where(.content, .login-shell, dialog, [role="dialog"]) :where(a:any-link:active) {
+  color: var(--ucell-primary-hover);
+}
+.uc-pipeline small { color: var(--ucell-text-secondary); }
+
+/* The navigation rail has its own dark surface in both display modes. */
+.app[data-app="admin"] .sidebar :is(.sidebar-foot button, .uc-ops-menu-toggle):is(:hover, :active) {
+  background: #234957;
+  color: #fff;
+}
+
+.daily-cards button:is(:hover, :active, :focus-visible) {
+  background: var(--ucell-surface-secondary);
+  color: var(--ucell-text-primary);
+  border-color: var(--ucell-primary);
+}
+.daily-cards button:is(.selected, [aria-pressed="true"]) {
+  background: var(--ucell-info-bg);
+  color: var(--ucell-text-primary);
+  border-color: var(--ucell-primary);
+  box-shadow: inset 4px 0 var(--ucell-primary);
+  outline: none;
+}
+.daily-cards button small { color: var(--ucell-text-secondary); }
+.daily-cards button .overdue { color: var(--ucell-danger); }
+
+/* A selected control keeps its fill after touch or when the pointer leaves.
+   Use the companion on-primary colour for solid accent fills in both themes. */
+:is(.geo-map-controls, .pnasl-period, .marketing-tabs, .holder-maintenance nav) button[aria-pressed="true"],
+.app[data-app="admin"] :is(button.primary, .button-link, .uc-button[data-variant="primary"]) {
+  background: var(--ucell-primary);
+  color: var(--ucell-on-primary);
+  border-color: var(--ucell-primary);
+}
+.app[data-app="admin"] :is(button.primary, .button-link, .uc-button[data-variant="primary"]):is(:hover, :active):where(:not(:disabled)) {
+  background: var(--ucell-primary-hover);
+  color: var(--ucell-on-primary);
+}
+:is(.paper-modes, .review-distribution, .marketing-segments, .tracking-cards, .uc-review-modes) button[aria-pressed="true"],
+.tracking-cards button.selected {
+  background: var(--ucell-success-bg);
+  color: var(--ucell-text-primary);
+  border-color: var(--ucell-primary);
+}
+.app[data-app="admin"] :is(.click-row, .search-option, .ux-ball-option, .list-row):is(:active, :focus-visible, [aria-selected="true"]) {
+  background: var(--ucell-info-bg);
+  color: var(--ucell-text-primary);
+}
+:where(.app[data-app="admin"], .login-shell, dialog, [role="dialog"]) :is(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ucell-primary);
+  outline-offset: 2px;
+}
+.app[data-app="admin"] .daily-cards button:focus-visible {
+  outline: 2px solid var(--ucell-primary);
+  outline-offset: 3px;
+}
+
+/* Document intake lazy-loads styles and used the OS palette even after a
+   manual theme change. Its preview and fields follow the selected theme. */
+.app[data-app="admin"] .intake-page :is(.intake-card, .intake-preview-panel, input, select, textarea) {
+  background-color: var(--ucell-surface);
+  color: var(--ucell-text-primary);
+  border-color: var(--ucell-border);
+}
+.app[data-app="admin"] .intake-page :is(.intake-bank, .intake-upload, .intake-preview-close) {
+  background-color: var(--ucell-success-bg);
+  color: var(--ucell-text-primary);
+  border-color: var(--ucell-primary);
+}
+.intake-page .intake-required { color: var(--ucell-danger); }
+
+/* The AI assistant uses older variable names for its interactive surfaces. */
+.app[data-app="admin"] .uc-ai {
+  --uc-surface: var(--ucell-surface);
+  --uc-text: var(--ucell-text-primary);
+  --uc-muted: var(--ucell-text-secondary);
+  --ai-line: var(--ucell-border);
+  --ai-ink: var(--ucell-text-primary);
+}
+.uc-ai button:not(.primary):is(:hover, :active, :focus-visible) {
+  background-color: var(--ucell-surface-secondary);
+  color: var(--ucell-text-primary);
+}

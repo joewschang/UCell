@@ -1,3 +1,4 @@
+import {directoryPage,directoryResult} from '../../common/utils/directory-page';
 import { Roles } from '../auth/roles.decorator';
 import { Body, Controller, Get, Headers, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -23,12 +24,15 @@ export class QualificationController {
     @Query('q') q?: string,
     @Query('status') status?: string,
     @Query('take') take?: string,
+    @Query('page') page?: string,
   ){
-    return {data:await this.service.search({
+    const window=directoryPage(page,take);
+    const rows=await this.service.search({
       q:q || undefined,
       status:status || undefined,
       take:Number(take ?? 50),
-    })};
+    },window);
+    return directoryResult(rows,window);
   }
 
   @Post()

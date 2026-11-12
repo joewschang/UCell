@@ -42,6 +42,8 @@ async function openSecondOrder(){
     view=create(<MemoryRouter initialEntries={['/orders?orderId='+second]}><QueryClientProvider client={client}><OrdersPage/></QueryClientProvider></MemoryRouter>,
       {createNodeMock:el=>el.type==='input'?dialogReason:{showModal:vi.fn(),close:vi.fn(),open:false}});
   });
+  await vi.waitFor(()=>expect(buttons(view!.root,/^收款$/)).toHaveLength(1));
+  act(()=>buttons(view!.root,/^收款$/)[0].props.onClick());
   await vi.waitFor(()=>expect(view!.root.findAllByProps({'aria-label':'整組資格收款'})).toHaveLength(1));
   return view!.root.findByProps({'aria-label':'整組資格收款'});
 }

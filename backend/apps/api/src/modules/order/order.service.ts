@@ -1,3 +1,5 @@
+import {qualificationFilter,qualificationRows} from '../qualification/qualification-directory';
+import type {DirectoryPage} from '../../common/utils/directory-page';
 import {internalSponsorAtPayment} from '../qualification/enrollment-bundle-placement';
 import {activateEnrollmentBundleIfReady} from '../member-bundle/excellence-activation';
 import {adminBundlePayment,bundleForQualificationOrder,confirmBundlePayment,guardSinglePayment} from './enrollment-bundle-receipt';
@@ -222,6 +224,9 @@ export class OrderService {
         });
       }
 
+      if (!member && dto.items.some(item=>!/^\d+(?:\.\d{1,4})?$/.test(item.quantity)||new Prisma.Decimal(item.quantity).lte(0))) {
+        throw new UnprocessableEntityException({code:'INVALID_ORDER_QUANTITY',message:'數量須大於零，最多可填四位小數。'});
+      }
       const productIds = [...new Set(dto.items.map(i => i.productId))];
       const products = await tx.productReference.findMany({
         where: { productId: { in: productIds }, isActive: true },
@@ -234,6 +239,9 @@ export class OrderService {
         });
       }
 
+      if (!member && products.some(product=>product.currency!=='TWD')) {
+        throw new UnprocessableEntityException({code:'UNSUPPORTED_ORDER_CURRENCY',message:'人工訂單以新台幣計價，請重新選擇商品。'});
+      }
       const now = new Date();
       const offering = await this.resolveOfferingSnapshot(tx, dto.commercialOfferingCode, member ? 'WEB_MEMBER' : 'ADMIN', now);
       this.assertOfferingPurpose(offering, dto.purpose ?? 'RETAIL');
@@ -523,7 +531,18 @@ export class OrderService {
   }
 
 
-  async search(input:{status?:string;qualificationId?:string;q?:string;take?:number}={}){
+  qualificationOptions(window:DirectoryPage,q?:string,id?:string) {
+    return qualificationRows(this.prisma,window,qualificationFilter(q,'EFFECTIVE'),id);
+  }
+
+  productOptions() {
+    const now=new Date();
+    return this.prisma.productReference.findMany({where:{isActive:true,currency:'TWD',ruleProfiles:{some:{
+      effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]
+    }}},select:{productId:true,sku:true,displayName:true,currentPrice:true,currency:true},orderBy:{sku:'asc'}});
+  }
+
+  async search(input:{status?:string;qualificationId?:string;q?:string;take?:number}={},window?:DirectoryPage){
     const take=Math.min(Math.max(input.take ?? 50,1),100);
     const q=input.q?.trim();
 
@@ -544,8 +563,9 @@ export class OrderService {
         lines:true,
         paymentEvents:true,
       },
-      orderBy:{createdAt:'desc'},
-      take,
+      orderBy:[{createdAt:'desc'},{orderId:'desc'}],
+      skip:window?.skip,
+      take:window ? window.take+1 : take,
     });
     if(!orders.length)return orders;
     const orderIds=orders.map(row=>row.orderId),[snapshots,setups]=await Promise.all([

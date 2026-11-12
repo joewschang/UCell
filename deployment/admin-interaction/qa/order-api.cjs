@@ -1,0 +1,64 @@
+'use strict';
+// Exercise the compiled production services with synthetic records on a local disposable database.
+const path=require('node:path'),{createRequire}=require('node:module'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
+const root=process.argv[2],url=new URL(process.env.DATABASE_URL);
+assert(['localhost','127.0.0.1'].includes(url.hostname)&&url.port,'An isolated local PostgreSQL database is required');
+const load=createRequire(path.resolve(root,'main.js'));
+load('reflect-metadata');
+const {PrismaService}=load('@ucell/database'),db=new PrismaService();
+const {OrderService}=load('./modules/order/order.service'),{OrderController}=load('./modules/order/order.controller');
+const {QualificationService}=load('./modules/qualification/qualification.service'),{QualificationController}=load('./modules/qualification/qualification.controller');
+const {IdempotencyService}=load('./common/idempotency/idempotency.service'),{AuditService}=load('./common/audit/audit.service'),{OutboxService}=load('./common/outbox/outbox.service');
+async function run() {
+ const tag='QA-'+randomUUID().slice(0,8),at=new Date();
+ const holder=await db.person.create({data:{legalName:tag,membershipState:'FORMAL_MEMBER',status:'EFFECTIVE'}});
+ const ids=Array.from({length:124},()=>randomUUID());
+ await db.qualification.createMany({data:ids.map(qualificationId=>({qualificationId,currentHolderPersonId:holder.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:at,createdAt:at}))});
+ const canceled=await db.qualification.create({data:{currentHolderPersonId:holder.personId,planLevelCode:'STARTER',status:'DRAFT'}});
+ const orders=new OrderService(db,new IdempotencyService(db),new AuditService(),new OutboxService()),oc=new OrderController(orders);
+ const qc=new QualificationController(new QualificationService(db));
+ const pages=[await qc.search(tag,'EFFECTIVE','100','1'),await qc.search(tag,'EFFECTIVE','100','2')];
+ assert.deepEqual(pages.map(p=>p.data.length),[100,24]);assert.equal(pages[0].meta.hasNext,true);assert.equal(pages[1].meta.hasNext,false);
+ const returned=pages.flatMap(p=>p.data.map(q=>q.qualificationId));
+ assert.deepEqual(returned,[...ids].sort().reverse());
+ assert.equal((await qc.search(tag,'EFFECTIVE','8')).meta,undefined);
+ assert.equal((await oc.qualificationOptions(undefined,'1','8',canceled.qualificationId)).data.length,0);
+ assert.equal((await oc.qualificationOptions(undefined,'1','8',ids[0])).data[0].qualificationId,ids[0]);
+ assert(!('email' in pages[0].data[0].currentHolder));await assert.rejects(()=>qc.search(undefined,undefined,'8','0'),{status:400});
+ for(const method of ['create','qualificationOptions','productOptions'])assert.deepEqual(Reflect.getMetadata('roles',OrderController.prototype[method]),['SUPER_ADMIN','ORDER_OPS','FINANCE']);
+ const prod=await db.productReference.create({data:{sku:tag,displayName:'測試商品',currentPrice:170}});
+ await db.productRuleProfile.create({data:{productId:prod.productId,effectiveFrom:new Date(+at-60000),ruleVersionCode:'R1.0B',parameterSnapshotHash:'f'.repeat(64)}});
+ assert((await oc.productOptions()).data.some(p=>p.productId===prod.productId));
+ const req={user:{personId:holder.personId},requestId:randomUUID()},key=randomUUID();
+ const body={qualificationId:ids[0],purpose:'RETAIL',items:[{productId:prod.productId,quantity:'2'}]};
+ const euros=await db.productReference.create({data:{sku:tag+'-eur',displayName:'外幣測試',currentPrice:15,currency:'EUR'}});
+ await db.productRuleProfile.create({data:{productId:euros.productId,effectiveFrom:new Date(+at-60000),ruleVersionCode:'R1.0B'}});
+ assert(!(await oc.productOptions()).data.some(p=>p.productId===euros.productId));
+ for(const [productId,quantity,expectedCode] of [[prod.productId,'0.0000','INVALID_ORDER_QUANTITY'],[euros.productId,'1','UNSUPPORTED_ORDER_CURRENCY']]){
+   await assert.rejects(()=>oc.create({...body,items:[{productId,quantity}]},randomUUID(),req),e=>e.response?.code===expectedCode);
+ }
+ const fresh=await oc.create(body,key,req),id=fresh.data.orderId;
+ assert.equal((await oc.create(body,key,req)).data.orderId,id);
+ assert.equal(Number((await oc.get(id)).data.netAmount),340);
+ assert((await oc.search(undefined,ids[0],undefined,'8','false','1')).data.some(o=>o.orderId===id));
+ const historyIds=Array.from({length:124},()=>randomUUID());
+ await db.order.createMany({data:historyIds.map(orderId=>({orderId,qualificationId:ids[1],status:'CONFIRMED',purpose:'RETAIL',grossAmount:'170',netAmount:'170',createdAt:at,ruleVersionCode:'R1.0B'}))});
+ const history=[await oc.search(undefined,ids[1],undefined,'100','false','1'),await oc.search(undefined,ids[1],undefined,'100','false','2')];
+ assert.deepEqual(history.map(x=>x.data.length),[100,24]);assert.deepEqual(history.flatMap(x=>x.data.map(y=>y.orderId)),historyIds.sort().reverse());
+ assert.deepEqual(history.map(x=>x.meta.hasNext),[true,false]);assert.equal((await oc.search(undefined,ids[1],undefined,'8','false')).meta,undefined);
+ const settled=await db.order.create({data:{qualificationId:ids[2],status:'PAID',purpose:'RETAIL',grossAmount:'170',netAmount:'170',ruleVersionCode:'R1.0B',paidAt:at}});
+ const locked=await orders.maintenance(settled.orderId);assert.equal(locked.canVoid,false);
+ await assert.rejects(()=>orders.maintain(settled.orderId,{action:'VOID',version:locked.version,reason:'測試阻擋已收款訂單作廢'},randomUUID(),randomUUID(),holder.personId),e=>e.status===409);
+ let m=await orders.maintenance(id);
+ const initial=m.version;
+ await orders.maintain(id,{action:'NOTE',reason:'測試維護備註',note:'測試已核對',version:initial},randomUUID(),randomUUID(),holder.personId);
+ m=await orders.maintenance(id);
+ assert.equal(m.note,'測試已核對');
+ await assert.rejects(()=>orders.maintain(id,{action:'VOID',reason:'測試舊版',version:initial},randomUUID(),randomUUID(),holder.personId),e=>e.response?.code==='ORDER_MAINTENANCE_STALE');
+ await orders.maintain(id,{action:'VOID',reason:'測試取消尚未收款訂單',version:m.version},randomUUID(),randomUUID(),holder.personId);
+ assert.equal((await oc.get(id)).data.status,'VOIDED');assert.equal((await orders.maintenance(id)).archived,true);
+ assert(!(await oc.search(undefined,ids[0],undefined,'8','false','1')).data.some(o=>o.orderId===id));
+ assert((await oc.search(undefined,ids[0],undefined,'8','true','1')).data.some(o=>o.orderId===id));
+ console.log('Passed 124-item paging, safe purchase lookups, roles, create/retry, detail, update, stale edit, unpaid void and archive search.');
+}
+run().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>db.$disconnect());
