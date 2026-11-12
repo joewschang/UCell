@@ -1,5 +1,5 @@
 {
-  "deployed": false,
+  "deployed": true,
   "base": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:813733a516347c8b682607158375416cf5cc8297c2cabc049d913d9c7848ed2a",
   "typecheck": "PASS",
   "focusedTests": {
@@ -31,5 +31,33 @@
   ],
   "sourceScope": "@line/liff and @liff subpackages only",
   "realLineAccountAndPhysicalDevices": "NOT TESTED",
-  "incidentEvidence": "No compromise investigation performed; vulnerable SDK presence is not evidence of exploitation"
+  "incidentEvidence": "No compromise investigation performed; vulnerable SDK presence is not evidence of exploitation",
+  "production": {
+    "verifiedAtUTC": "2026-11-12T02:43:34.820Z",
+    "version": "2.31.1",
+    "source": "actual production window.liff.getVersion(), no SDK mocking",
+    "htmlCache": "no-store, no-cache, must-revalidate, max-age=0",
+    "assets": [
+      {
+        "url": "/assets/liff-2.31.1-5c19bee4642ecbb0.js",
+        "sha256": "5c19bee4642ecbb0df24137ce47e55b59a21c9e91f300fb810afee6072fb0a0a",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "url": "/assets/health-center-28a52303d75e89-af1876ea6f32e9-journey-sound-liff-1989c5a6e04e1747.js",
+        "sha256": "1989c5a6e04e174775a1897b8fa27caecd8c2506ce43d9cc40cb3fa8458fc74e",
+        "cache": "public, max-age=31536000, immutable"
+      },
+      {
+        "url": "/greetings/entry-liff-49f39ccad27068de.js",
+        "sha256": "49f39ccad27068de34e5805803697f9c0299ef297202ab7fc34f78fad27884db",
+        "cache": "no-store, no-cache, must-revalidate, max-age=0"
+      }
+    ],
+    "legacyPaths": "main 302 safe relative target, greeting 200 dynamic import, retired sample 410; all no-store",
+    "limitations": "External LINE/API requests blocked during browser readback; no real account login/share or physical-device cache claim",
+    "revision": "ucell-prod-member--rel-261112024245-323df4",
+    "digest": "sha256:323df44079366b43646abe75bf7e3f96acb6d1e82845554794d8d04e7bfc61e3",
+    "mergeCommit": "dc27846af053d589e9990eecee1e5b092e211526"
+  }
 }
