@@ -1,0 +1,92 @@
+{
+  "version": "2026-10-29",
+  "source": "公司提供之五款新版商品包裝與說明原稿",
+  "notice": "本產品為日常營養補充食品，非具醫療效能，不可取代正規醫療與藥物治療。完整成分、過敏原、食用方式、保存條件及注意事項以實際包裝標示為準。",
+  "products": [
+    {
+      "sku": "TIP-696",
+      "name": "活力芯",
+      "englishName": "THE ESSENTIAL",
+      "series": "CoreSurge",
+      "packaging": "30 包／盒",
+      "description": "以 MycoGerm™ 米蕈真菌與複方素材為主軸的日常營養補充食品。新版採紅色盒裝與隨身條包。",
+      "highlights": [
+        "暢流力",
+        "調元力",
+        "暢循力",
+        "續航力"
+      ],
+      "poster": "/products/tip-696-20261029.jpg",
+      "sourceFile": "1-照片-1.jpg",
+      "sha256": "72033acfc262317cbc7ccc4279e788f408f5e68c3d1e062fa595c322375880ef"
+    },
+    {
+      "sku": "TIP-580",
+      "name": "淨衡順",
+      "englishName": "THE BALANCE",
+      "series": "MetaClear",
+      "packaging": "30 包／盒",
+      "description": "以天然素材與複方配方為主軸的日常營養補充食品。新版採白綠色盒裝與隨身條包。",
+      "highlights": [
+        "濾淨力",
+        "穩衡力",
+        "淨流力",
+        "清醇力"
+      ],
+      "poster": "/products/tip-580-20261029.jpg",
+      "sourceFile": "2-照片-2.jpg",
+      "sha256": "71b87d02c8e1514654b9e5d2d9629d36b88a2fd21cc73454baefc8de417e06c7"
+    },
+    {
+      "sku": "TIP-363",
+      "name": "晶萃源力飲",
+      "englishName": "THE CORE NEXUS",
+      "series": "MitoChrono",
+      "packaging": "10 瓶／盒",
+      "description": "以 MycoGerm™ 米蕈真菌與複方素材為主軸的日常營養補充飲品。新版採白色盒裝與玻璃瓶。",
+      "highlights": [
+        "賦能力",
+        "煥生力",
+        "恆時力",
+        "本源力"
+      ],
+      "poster": "/products/tip-363-20261029.jpg",
+      "sourceFile": "3-照片-3.jpg",
+      "sha256": "6197f03891aa6a21c81c5aa707fbe3887bd5d2e2a2455287b0f990ccd4a5eedf"
+    },
+    {
+      "sku": "TIP-777",
+      "name": "肽時光膠原飲",
+      "englishName": "THE COLLAGEN",
+      "series": "Luxbeauté",
+      "packaging": "30 包／盒；圖示單包 20 mL",
+      "description": "以膠原與複合美妍配方為主軸的日常營養補充飲品。新版採紫色盒裝與隨身袋裝。",
+      "highlights": [
+        "澎彈力",
+        "透光力",
+        "水凝力",
+        "光禦力"
+      ],
+      "poster": "/products/tip-777-20261029.jpg",
+      "sourceFile": "4-照片-4.jpg",
+      "sha256": "bdf1c882af18fe77f0b1ff3c90f0b8e905cd06f21821174bcf1e8ae87bcfa66c"
+    },
+    {
+      "sku": "TIP-999",
+      "name": "禦力源",
+      "englishName": "THE VITAL SHIELD",
+      "series": "ImmunoFlex",
+      "packaging": "30 包／盒",
+      "description": "以 MycoGerm™ 米蕈真菌與複方素材為主軸的日常營養補充食品。新版採藍色盒裝與隨身條包。",
+      "highlights": [
+        "支持力",
+        "防護力",
+        "修護力",
+        "補充力"
+      ],
+      "poster": "/products/tip-999-20261029.jpg",
+      "sourceFile": "5-照片-5.jpg",
+      "sha256": "ba5d1ca3c148456dd861ab45ae1b54302af1e8374bac4cb99f3e734c728a33a2"
+    }
+  ]
+}
