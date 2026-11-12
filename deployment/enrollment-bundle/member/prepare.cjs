@@ -5,8 +5,8 @@ const repo=path.resolve(__dirname,'../../..');
 const member=path.join(repo,'member'),memberRequire=createRequire(path.join(member,'package.json'));
 const esbuild=createRequire(memberRequire.resolve('vite/package.json'))('esbuild');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
-const original='1989c5a6e04e174775a1897b8fa27caecd8c2506ce43d9cc40cb3fa8458fc74e';
-const baseDigest='sha256:323df44079366b43646abe75bf7e3f96acb6d1e82845554794d8d04e7bfc61e3';
+const original='1f28f34eda608068e0fb622f2402356cf22bbf359b1cfcd605e4585f802d9aac';
+const baseDigest='sha256:c9073caecd7bf787ebedac0a861939b9769db0c86e6d8e8172393111284aa481';
 const aliases={
   react:'export const {useState,useRef,useEffect}=UCellGroupHost.React',
   'react/jsx-runtime':'export const {jsx,jsxs,Fragment}=UCellGroupHost.jsx',
