@@ -1,3 +1,7 @@
+import {bundleDescendantsForPlacement} from '../qualification/enrollment-bundle-placement';
+import {placePlannedDescendants,placeDeferredQualification} from '../qualification/place-deferred-qualification';
+import {assertQualificationActivation} from '../qualification/qualification-activation-gate';
+import {AuditService} from '../../common/audit/audit.service';
 import {ConflictException,ForbiddenException,Injectable,UnprocessableEntityException} from '@nestjs/common';
 import {binaryPath,Prisma,PrismaService,bootstrapBallNoFor,childPosition,bindCompanyLeaderProfile,effectiveCompanyParameters} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
@@ -31,7 +35,7 @@ export class BinaryTreeService {
   const actor=await this.authorize(p,true);
   if(!(scope.startsWith('place:')?placementRoles:scope.startsWith('confirm-sponsor:')?sponsorRoles:manageRoles).includes(p.role))throw new ForbiddenException({code:'TREE_COMMAND_ROLE_DENIED'});
   if(typeof key!=='string'||key.length<8||key.length>128)throw new UnprocessableEntityException({code:'IDEMPOTENCY_KEY_REQUIRED'});
-  for(let attempt=0;;attempt++)try{return await this.idempotency.execute(`tree:${scope}:${actor}`,key,body,async tx=>{await this.authorize(p,true,tx);const result=await work(tx,actor);await this.authorize(p,true,tx);return result;});}
+  for(let attempt=0;;attempt++)try{return await this.idempotency.execute(`tree:${scope}:${actor}`,key,body,async tx=>{await this.authorize(p,true,tx);const result=await work(tx,actor);await this.authorize(p,true,tx);return result;},scope.startsWith('place:')?{timeout:120000}:undefined);}
   catch(error){if(['P2034','P2002'].includes((error as any).code)&&attempt<2)continue;if(['P2034','P2002'].includes((error as any).code))throw new ConflictException({code:'TREE_COMMAND_CONFLICT'});throw error;}
  }
  private effective(value?:string){const now=new Date();if(value!==undefined&&(!Number.isFinite(Date.parse(value))||Math.abs(Date.parse(value)-now.getTime())>10000))throw new UnprocessableEntityException({code:'TREE_EFFECTIVE_TIME_UNSUPPORTED'});return now;}
@@ -136,9 +140,18 @@ export class BinaryTreeService {
     if(input.preflightToken!==expected)throw new ConflictException({code:'PLACEMENT_PREFLIGHT_STALE'});
    }
    const setup=await tx.qualificationSetup.findUnique({where:{qualificationId:input.qualificationId}});
+   const descendants=await bundleDescendantsForPlacement(tx,input.qualificationId);
    if(setup && (!['PLACEMENT_PENDING','PLACEMENT_OVERDUE'].includes(setup.setupStatus)||setup.finalSponsorQualificationId!==sponsor.sponsorQualificationId))throw new ConflictException({code:'PLACEMENT_NOT_PENDING'});
-   const edge=await this.organization.createBinaryPlacement(tx,{parentQualificationId:input.binaryParentQualificationId,childQualificationId:input.qualificationId,side:input.side,effectiveFrom:at},{sourceType:'TREE_PLACEMENT_CONSOLE',actorId,reason,correlationId:randomUUID()});
-   if(setup){
+   let edge;
+   if(descendants){
+    const audit=new AuditService(),requestId=randomUUID();
+    await placeDeferredQualification(tx,this.organization,audit,actorId,'ADMIN_OVERRIDE',{...input,reasonCode:reason},requestId,true);
+    await placePlannedDescendants(tx,this.organization,audit,descendants,requestId);
+    edge=await tx.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:input.qualificationId}});
+   }else{
+    edge=await this.organization.createBinaryPlacement(tx,{parentQualificationId:input.binaryParentQualificationId,childQualificationId:input.qualificationId,side:input.side,effectiveFrom:at},{sourceType:'TREE_PLACEMENT_CONSOLE',actorId,reason,correlationId:randomUUID()});
+   }
+   if(setup&&!descendants){
     const correlationId=randomUUID(),evidenceBody={qualificationId:input.qualificationId,sponsorQualificationId:sponsor.sponsorQualificationId,binaryParentQualificationId:input.binaryParentQualificationId,side:input.side,placedByType:'ADMIN_OVERRIDE',placedByPersonId:actorId,placedAt:at.toISOString(),reasonCode:reason,policyVersion:setup.setupPolicyVersion,previousStatus:setup.setupStatus};
     const evidence=await tx.placementEvidence.create({data:{...evidenceBody,placedAt:at,correlationId,evidenceHash:treeHash(evidenceBody)}});
     await tx.qualificationSetup.update({where:{qualificationId:input.qualificationId},data:{setupStatus:'PLACED',placedAt:at}});
@@ -148,7 +161,7 @@ export class BinaryTreeService {
     await tx.outboxEvent.create({data:{eventType:'QUALIFICATION_PLACED',aggregateType:'Qualification',aggregateId:input.qualificationId,payload:{schemaVersion:1,...evidenceBody,evidenceHash:evidence.evidenceHash},correlationId}});
    }
    const placed=await tx.qualification.findUniqueOrThrow({where:{qualificationId:input.qualificationId}}),parentBall=await tx.qualification.findUniqueOrThrow({where:{qualificationId:input.binaryParentQualificationId}}),membership=await tx.binaryTreeMembership.findUniqueOrThrow({where:{qualificationId:input.qualificationId}});
-   return {binaryTreeId:treeId,treeCode:tree.treeCode,ballNo:placed.ballNo,parentBallNo:parentBall.ballNo,binaryPositionNo:membership.binaryPositionNo.toString(),path:binaryPath(membership.binaryPositionNo),binaryPlacementId:edge.binaryPlacementId,topologyVersion:tree.topologyVersion+1,effectiveAt:at.toISOString()};
+   return {binaryTreeId:treeId,treeCode:tree.treeCode,ballNo:placed.ballNo,parentBallNo:parentBall.ballNo,binaryPositionNo:membership.binaryPositionNo.toString(),path:binaryPath(membership.binaryPositionNo),binaryPlacementId:edge.binaryPlacementId,topologyVersion:tree.topologyVersion+1+(descendants?.length??0),effectiveAt:edge.effectiveFrom.toISOString()};
   });
  }
  async preview(p:TreePrincipal,treeId:string,input:{qualificationId:string;binaryParentQualificationId:string;side:'LEFT'|'RIGHT';expectedVersion:number}){
@@ -163,6 +176,8 @@ export class BinaryTreeService {
    const sponsor=await tx.sponsorRelationship.findUnique({where:{childQualificationId:target.qualificationId}}),now=new Date();
    if(!sponsor||sponsor.effectiveFrom>now||(sponsor.effectiveTo&&sponsor.effectiveTo<=now))throw new ConflictException({code:'SPONSOR_CONFIRMATION_MISSING'});
    const setup=await tx.qualificationSetup.findUnique({where:{qualificationId:target.qualificationId}});
+   const descendants=await bundleDescendantsForPlacement(tx,target.qualificationId);
+   if(descendants&&setup)await assertQualificationActivation(tx,setup);
    if(setup&&(!['PLACEMENT_PENDING','PLACEMENT_OVERDUE'].includes(setup.setupStatus)||setup.finalSponsorQualificationId!==sponsor.sponsorQualificationId))throw new ConflictException({code:'PLACEMENT_NOT_PENDING'});
    await this.organization.assertBinarySlotAvailable(tx,input.binaryParentQualificationId,input.side);await this.organization.assertNoBinaryCycle(tx,target.qualificationId,input.binaryParentQualificationId);
    await this.organization.assertFirstThirdLeftRule(tx,sponsor.sponsorQualificationId,sponsor.sponsorSequenceNo,input.binaryParentQualificationId,input.side);

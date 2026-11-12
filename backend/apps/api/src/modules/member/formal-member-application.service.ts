@@ -1,5 +1,6 @@
 import {ConflictException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
+import {enrollmentBundlePayment,requirePaidBundleRoot} from './enrollment-bundle-payment';
 import {formalReviewDirectory} from './formal-review-directory';
 import {FormalMembershipConflictService} from './formal-membership-conflict.service';
 import {createHash,randomUUID} from 'node:crypto';
@@ -272,6 +273,7 @@ export class FormalMemberApplicationService {
    if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:gate.codes}});
    const now=new Date(),app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
    if(!app||app.status!=='UNDER_REVIEW')throw new ConflictException({code:'FORMAL_APPLICATION_NOT_APPROVABLE'});
+   if(app.applicantType==='INDIVIDUAL'&&app.personId)requirePaidBundleRoot(await enrollmentBundlePayment(tx,applicationId,app.personId));
    if(!app.applicantIdentityFingerprint)throw new UnprocessableEntityException({code:'FORMAL_IDENTITY_FINGERPRINT_REQUIRED'});
    const conflicts=await new FormalMembershipConflictService(tx as PrismaService).evaluate(applicationId,now);
    if(conflicts.status!=='CLEAR')throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:conflicts.codes}});

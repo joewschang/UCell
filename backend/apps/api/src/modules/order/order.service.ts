@@ -1,3 +1,7 @@
+import {internalSponsorAtPayment} from '../qualification/enrollment-bundle-placement';
+import {adminBundlePayment,bundleForQualificationOrder,confirmBundlePayment,guardSinglePayment} from './enrollment-bundle-receipt';
+import {packageFulfillment} from './package-fulfillment';
+import {assertSingleApplicationCheckout, assertRepurchaseBallEffective} from '../member-bundle/bundle-order-guards';
 import {ENTRY_POLICY} from '../coupon/entry-pricing';
 import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
@@ -10,13 +14,13 @@ import { PaymentConfirmationDto } from './dto/payment-confirmation.dto';
 import { validateManualPaymentReview } from './manual-payment-review';
 import { QualificationAccessService } from '../auth/qualification-access.service';
 import { PackageConfigService } from '../package-config/package-config.service';
-import { SponsorResolver } from '../qualification/sponsor-resolver.service';
+import { SponsorResolver, saveSponsorSelection } from '../qualification/sponsor-resolver.service';
 import { OrganizationService } from '../organization/organization.service';
 import { RetailReferrerAttributionService } from './retail-referrer-attribution.service';
 import { CommercialOfferingService, CommercialOfferingSnapshot } from './commercial-offering.service';
 import {resolvePackageParameters} from './package-parameters';
 
-type MemberOrderInput=Partial<CreateOrderDto>&{packageVersionId?:string;couponCode?:string;quoteHash?:string;targetQualificationId?:string;legalEntityId?:string;sponsorCode?:string;retailReferralCode?:string;selections?:Array<{productRuleProfileId:string;quantity:number}>};
+type MemberOrderInput=Partial<CreateOrderDto>&{fulfillmentMethod?:'DELIVERY'|'COMPANY_PICKUP';deliveryUpdatedAt?:string;packageVersionId?:string;couponCode?:string;quoteHash?:string;targetQualificationId?:string;legalEntityId?:string;sponsorCode?:string;retailReferralCode?:string;selections?:Array<{productRuleProfileId:string;quantity:number}>};
 
 @Injectable()
 export class OrderService {
@@ -151,13 +155,29 @@ export class OrderService {
   }
 
   private async createPackageForPerson(dto:MemberOrderInput,key:string,requestId:string,personId:string,paper?:{scope:string;actorId:string;paperApplicationId:string}){
+    try {
+      return await this.idempotency.execute(paper?.scope??`member:package-order:create:${personId}`,key,dto,
+        tx=>this.createPackageInTransaction(tx,dto,requestId,personId,paper));
+    } catch(error) {
+      if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'請用原訂單重試。'});
+      throw error;
+    }
+  }
+
+  async createPackageInTransaction(tx:Prisma.TransactionClient,dto:MemberOrderInput,requestId:string,personId:string,
+    paper?:{scope:string;actorId:string;paperApplicationId:string},bundleClass?:'QUALIFICATION'|'ACTIVE_DURATION') {
     if(dto.items?.length||!Array.isArray(dto.selections))throw new UnprocessableEntityException({code:'INVALID_PACKAGE_ORDER_SHAPE'});
     const correlationId=randomUUID();
-    try{return await this.idempotency.execute(paper?.scope??`member:package-order:create:${personId}`,key,dto,async tx=>{
       const person=await tx.person.findUnique({where:{personId}});
       if(!person || (paper ? !['DRAFT','EFFECTIVE'].includes(person.status) : person.status!=='EFFECTIVE'))throw new ConflictException({code:paper?'PAPER_PERSON_NOT_ELIGIBLE':'MEMBER_PERSON_DISABLED'});
       if(paper){const application=await tx.paperApplication.findUnique({where:{paperApplicationId:paper.paperApplicationId},select:{personId:true,orderId:true,status:true}});if(!application||application.personId!==personId||application.status!=='OPEN')throw new ConflictException({code:'PAPER_APPLICATION_NOT_OPEN'});if(application.orderId)throw new ConflictException({code:'PAPER_APPLICATION_ORDER_ALREADY_CREATED'});}
       const now=new Date(),offering=await this.resolveOfferingSnapshot(tx,dto.commercialOfferingCode,paper?'ADMIN_PAPER':'WEB_MEMBER',now),prepared=await (this.packages??new PackageConfigService(this.prisma)).checkoutData(tx,personId,{packageVersionId:dto.packageVersionId!,couponCode:dto.couponCode,quoteHash:dto.quoteHash,targetQualificationId:dto.targetQualificationId,legalEntityId:dto.legalEntityId,selections:dto.selections!},now),v=prepared.version,pricing=prepared.pricing;
+      if(bundleClass && (v.profile.packageClass!==bundleClass||v.profile.status!=='ACTIVE'||
+        (bundleClass==='QUALIFICATION'&&v.membershipEffect!=='FORMAL_ELIGIBILITY'))) {
+        throw new UnprocessableEntityException({code:'BUNDLE_PACKAGE_CLASS_INVALID',message:'請選擇目前開放且適用於此資格的套組。'});
+      }
+      if(!paper && !bundleClass && v.profile.packageClass==='QUALIFICATION' && ['NETWORK_MEMBER','FORMAL_PENDING'].includes(person.membershipState??''))await assertSingleApplicationCheckout(tx,personId);
+      const fulfillment=await packageFulfillment(tx,personId,dto.fulfillmentMethod,dto.deliveryUpdatedAt,prepared.selections.length>0);
       const paymentDeadline=v.profile.packageClass==='QUALIFICATION'?new Date(Math.min(now.getTime()+48*60*60*1000,pricing.endsAt?Date.parse(pricing.endsAt):Infinity)):null;
       this.assertOfferingPurpose(offering,v.profile.packageClass==='QUALIFICATION'?'ENTRY':'REPURCHASE');
       this.assertOfferingSelection(offering,prepared.selections);
@@ -169,18 +189,18 @@ export class OrderService {
         await tx.qualificationHolderHistory.create({data:{qualificationId,holderPersonId:dto.legalEntityId?null:personId,holderLegalEntityId:dto.legalEntityId??null,effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT'}});
         await tx.qualificationOwnerInterval.create({data:{qualificationId,ownerType:dto.legalEntityId?'LEGAL_ENTITY':'MEMBER',personId:dto.legalEntityId?null:personId,legalEntityId:dto.legalEntityId??null,companyPrincipalId:null,effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT',sourceId:qualificationId,evidenceHash:createHash('sha256').update(JSON.stringify({qualificationId,personId:dto.legalEntityId?null:personId,legalEntityId:dto.legalEntityId??null,packageVersionId:dto.packageVersionId,at:now.toISOString()})).digest('hex')}});
         await tx.qualificationStatusHistory.create({data:{qualificationId,status:'DRAFT',effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT'}});
-        if(sponsorEvidence)await tx.qualificationSponsorSelectionEvidence.create({data:{qualificationId,attributionReferrerQualificationId:sponsorEvidence.sponsorQualificationId,selectedSponsorQualificationId:sponsorEvidence.sponsorQualificationId,selectedSponsorOwnerPersonId:sponsorEvidence.sponsorOwnerPersonId,selectedByPersonId:personId,selectedAt:now,source:'MANUAL_INPUT',policyVersion:sponsorEvidence.kind==='COMPANY_ALIAS'?sponsorEvidence.policyVersion:sponsorEvidence.ruleVersion,correlationId}});
+        if(sponsorEvidence)await saveSponsorSelection(tx,{qualificationId,sponsorId:sponsorEvidence.sponsorQualificationId,
+          ownerId:sponsorEvidence.sponsorOwnerPersonId,personId,at:now,policyVersion:sponsorEvidence.policyVersion??sponsorEvidence.ruleVersion,correlationId});
       }
       if(!qualificationId)throw new UnprocessableEntityException({code:'TARGET_QUALIFICATION_REQUIRED'});
       const packageParameters=await resolvePackageParameters(tx,now,v,prepared.selections.length?prepared.selections.map(s=>s.profile.ruleVersionCode):['R1.0B']);
-      const order=await tx.order.create({data:{qualificationId,purpose:v.profile.packageClass==='QUALIFICATION'?'ENTRY':'REPURCHASE',status:'CONFIRMED',currency:v.currency,grossAmount:v.priceAmount.add(pricing.qualificationFee),discountAmount:new Prisma.Decimal(pricing.discountAmount),netAmount:new Prisma.Decimal(pricing.total),...packageParameters,confirmedAt:now,lines:{create:prepared.selections.map(s=>({productId:s.product.productId,skuSnapshot:s.product.sku,productNameSnapshot:s.product.displayName,quantity:new Prisma.Decimal(s.quantity),unitPrice:new Prisma.Decimal(0),lineAmount:new Prisma.Decimal(0),gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:s.profile.productRuleProfileId,packageSelection:true,recognitionConfigRef:v.recognitionConfigRef,packageConfigHash:v.configHash},commercialOfferingVersionId:offering?.commercialOfferingVersionId,commercialOfferingSnapshot:offering,linePurpose:dto.linePurpose})) as Prisma.OrderLineUncheckedCreateWithoutOrderInput[]}},include:{lines:true}});
+      const order=await tx.order.create({data:{qualificationId,purpose:v.profile.packageClass==='QUALIFICATION'?'ENTRY':'REPURCHASE',status:'CONFIRMED',currency:v.currency,grossAmount:v.priceAmount.add(pricing.qualificationFee),discountAmount:new Prisma.Decimal(pricing.discountAmount),netAmount:new Prisma.Decimal(pricing.total),...packageParameters,confirmedAt:now,lines:{create:prepared.selections.map(s=>({productId:s.product.productId,skuSnapshot:s.product.sku,productNameSnapshot:s.product.displayName,quantity:new Prisma.Decimal(s.quantity),unitPrice:new Prisma.Decimal(0),lineAmount:new Prisma.Decimal(0),gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:s.profile.productRuleProfileId,packageSelection:true,...(fulfillment?{fulfillment}:{}),recognitionConfigRef:v.recognitionConfigRef,packageConfigHash:v.configHash},commercialOfferingVersionId:offering?.commercialOfferingVersionId,commercialOfferingSnapshot:offering,linePurpose:dto.linePurpose})) as Prisma.OrderLineUncheckedCreateWithoutOrderInput[]}},include:{lines:true}});
       if(paper)await tx.paperApplication.update({where:{paperApplicationId:paper.paperApplicationId},data:{orderId:order.orderId,status:'ORDER_CREATED'}});
       const snapshot=await tx.packagePurchaseSnapshot.create({data:{orderId:order.orderId,personId:dto.legalEntityId?null:personId,legalEntityId:dto.legalEntityId??null,targetQualificationId:dto.targetQualificationId,packageProfileVersionId:v.packageProfileVersionId,packageCode:v.profile.stableCode,packageName:v.displayName,packageClass:v.profile.packageClass,currency:v.currency,priceAmount:new Prisma.Decimal(pricing.goodsAmount),qualificationFee:new Prisma.Decimal(pricing.qualificationFee),discountAmount:new Prisma.Decimal(pricing.discountAmount),couponCode:pricing.couponCode,paymentDeadline,selectableProductQuantity:pricing.selectableProductQuantity,membershipEffect:v.membershipEffect,qualificationEffect:v.qualificationEffect,activeDurationUnit:v.activeDurationUnit,activeDurationValue:v.activeDurationValue,recognitionConfigRef:pricing.recognitionPolicy!,packageConfigHash:v.configHash,purchasedAt:now,selections:{create:prepared.selections.map(s=>({productRuleProfileId:s.productRuleProfileId,productId:s.product.productId,skuSnapshot:s.product.sku,productDisplaySnapshot:s.product.displayName,quantity:s.quantity,productConfigHash:s.productConfigHash}))}}});
       if(pricing.couponId){await tx.couponRedemption.create({data:{couponId:pricing.couponId,orderId:order.orderId,personId,snapshot:pricing,expiresAt:paymentDeadline!}});await tx.couponUsageEvent.create({data:{orderId:order.orderId,kind:'RESERVED'}});}
       await this.audit.write(tx,{actorType:paper?'USER':'MEMBER',actorId:paper?.actorId??personId,action:paper?'PAPER_ORDER_CREATED':'PACKAGE_ORDER_CREATED',entityType:'ORDER',entityId:order.orderId,afterData:{orderId:order.orderId,qualificationId,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageCode:v.profile.stableCode,packageClass:v.profile.packageClass,netAmount:pricing.total,qualificationFee:pricing.qualificationFee,discountAmount:pricing.discountAmount,couponCode:pricing.couponCode,operatorPersonId:personId,legalEntityId:dto.legalEntityId??null,sponsorEvidence:sponsorEvidence?(sponsorEvidence.kind==='COMPANY_ALIAS'?{kind:'COMPANY_ALIAS',displayLabel:sponsorEvidence.displayLabel,policyVersion:sponsorEvidence.policyVersion,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}:{kind:'BALL',sponsorBallNo:sponsorEvidence.sponsorBallNo,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}):null},requestId,correlationId});
       await this.outbox.enqueue(tx,{eventType:'MEMBER_PACKAGE_ORDER_CREATED',aggregateType:'ORDER',aggregateId:order.orderId,payload:{schemaVersion:2,orderId:order.orderId,qualificationId,personId:dto.legalEntityId?null:personId,legalEntityId:dto.legalEntityId??null,operatorPersonId:personId,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageClass:v.profile.packageClass,recognitionStatus:'PAYMENT_PENDING',source:paper?'ADMIN_PAPER_ORDER':'MEMBER'},correlationId});
       return {...order,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageClass:v.profile.packageClass};
-    });}catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'Concurrent operation; retry the identical request with the same Idempotency-Key.'});throw error;}
   }
   async create(dto: CreateOrderDto, key: string, requestId: string, actorId?: string, member=false) {
     const correlationId = randomUUID();
@@ -345,8 +365,22 @@ export class OrderService {
     actorId?: string,
     reviewMode?: 'MANUAL_ADMIN',
   ) {
-    const correlationId = randomUUID();
-    return this.idempotency.execute(`admin:payment:${orderId}`, key, dto, async (tx) => {
+    return this.idempotency.execute('admin:payment:'+orderId,key,dto,async tx=>{
+      await guardSinglePayment(tx,orderId,dto);
+      return this.confirmPaymentInTransaction(tx,orderId,dto,key,requestId,actorId,reviewMode);
+    });
+  }
+
+  async confirmEnrollmentPayment(orderId:string,dto:PaymentConfirmationDto,key:string,requestId:string,actorId:string) {
+    if(!actorId)throw new UnprocessableEntityException({code:'ADMIN_PERSON_ID_REQUIRED'});
+    const bundleId=await bundleForQualificationOrder(this.prisma,orderId);
+    if(!bundleId)throw new ConflictException({code:'ENROLLMENT_BUNDLE_NOT_FOUND'});
+    return this.idempotency.execute('admin:enrollment-bundle:payment:'+bundleId,key,dto,
+      tx=>confirmBundlePayment(tx,bundleId,dto,actorId,requestId,this.confirmPaymentInTransaction.bind(this)),{timeout:120000,retryOnConflict:true});
+  }
+
+  private async confirmPaymentInTransaction(tx:Prisma.TransactionClient,orderId:string,dto:PaymentConfirmationDto,key:string,requestId:string,actorId?:string,reviewMode?:'MANUAL_ADMIN') {
+      const correlationId = randomUUID();
       await tx.$queryRaw`SELECT order_id FROM commerce."order" WHERE order_id=${orderId}::uuid FOR UPDATE`;
       const order = await tx.order.findUnique({
         where: { orderId },
@@ -376,6 +410,7 @@ export class OrderService {
         validateManualPaymentReview(dto, amount.eq(0), order.createdAt, occurredAt);
       }
       const entrySnapshot=tx.packagePurchaseSnapshot?await tx.packagePurchaseSnapshot.findUnique({where:{orderId}}):null;
+      if(entrySnapshot?.packageClass==='ACTIVE_DURATION')await assertRepurchaseBallEffective(tx,orderId,occurredAt);
       if(entrySnapshot?.paymentDeadline&&(new Date()>=entrySnapshot.paymentDeadline||occurredAt>=entrySnapshot.paymentDeadline||occurredAt<order.createdAt||occurredAt.getTime()>Date.now()+60000))throw new ConflictException({code:"PACKAGE_PAYMENT_DEADLINE_EXCEEDED",message:"付款期限已過或付款時間不符，請勿確認此筆收款，應進行款項核對與退款處理。"});
       const payment = await tx.paymentEvent.create({
         data: {
@@ -405,11 +440,15 @@ export class OrderService {
         if(packageSnapshot.packageClass==='QUALIFICATION'){
           const selected=tx.qualificationSponsorSelectionEvidence?await tx.qualificationSponsorSelectionEvidence.findFirst({where:{qualificationId:packageQualificationId},orderBy:{selectedAt:'desc'}}):null;
           let sponsorQualificationId:string|undefined;
-          if(selected){
-            const selectedBall=await tx.qualification.findUnique({where:{qualificationId:selected.selectedSponsorQualificationId},select:{ballNo:true}});
-            if(!selectedBall?.ballNo)throw new UnprocessableEntityException({code:'SPONSOR_EVIDENCE_INVALID'});
-            const resolved=await (this.sponsors??new SponsorResolver(this.prisma)).resolveWithin(tx as any,{code:selectedBall.ballNo,effectiveAt:occurredAt,ruleVersion:'R1.0B'});
-            const resolvedSponsorId=resolved.sponsorQualificationId; if(!resolvedSponsorId||resolvedSponsorId!==selected.selectedSponsorQualificationId)throw new UnprocessableEntityException({code:'SPONSOR_EVIDENCE_INVALID'});
+          const internal=await internalSponsorAtPayment(tx,packageQualificationId,orderId,occurredAt,!!selected);
+          if(internal){
+            if(selected&&selected.selectedSponsorQualificationId!==internal.sponsorQualificationId)throw new ConflictException({code:'BUNDLE_SPONSOR_MISMATCH',message:'推薦關係與申請時的預排不一致。'});
+            sponsorQualificationId=internal.sponsorQualificationId;
+            await tx.sponsorRelationship.create({data:{...internal,childQualificationId:packageQualificationId,effectiveFrom:occurredAt}});
+          }else if(selected){
+            const selectedBall=await tx.qualification.findFirst({where:{qualificationId:selected.selectedSponsorQualificationId,status:'EFFECTIVE',effectiveAt:{lte:occurredAt}},select:{qualificationId:true,ballNo:true,kind:true,currentHolderPersonId:true,currentHolderLegalEntityId:true}});
+            if(!selectedBall?.ballNo||(!selectedBall.currentHolderPersonId&&!selectedBall.currentHolderLegalEntityId&&selectedBall.kind!=='COMPANY_BOOTSTRAP'))throw new UnprocessableEntityException({code:'SPONSOR_EVIDENCE_INVALID'});
+            const resolvedSponsorId=selectedBall.qualificationId;
             sponsorQualificationId=resolvedSponsorId;
             const sponsorSequenceNo=await (this.organization??new OrganizationService(this.prisma)).allocateSponsorSequence(tx,resolvedSponsorId);
             await tx.sponsorRelationship.create({data:{sponsorQualificationId:resolvedSponsorId,childQualificationId:packageQualificationId,sponsorSequenceNo,effectiveFrom:occurredAt}});
@@ -467,7 +506,6 @@ export class OrderService {
         paymentEventId: payment.paymentEventId,
         correlationId,
       };
-    });
   }
 
 
@@ -511,7 +549,8 @@ export class OrderService {
     });
     const returned=await tx.returnLine.groupBy({by:['orderLineId'],where:{returnCase:{orderId,status:'POSTED'}},_sum:{quantity:true}});
     const [snapshot,setup]=await Promise.all([tx.packagePurchaseSnapshot.findUnique({where:{orderId},include:{selections:true}}),tx.qualificationSetup.findFirst({where:{qualifyingOrderId:orderId}})]);
-    return {...order,...this.packageReadback(snapshot,setup),lines:order.lines.map(line=>{
+    const enrollmentBundlePayment=snapshot?.packageClass==='QUALIFICATION'?await adminBundlePayment(tx,orderId):null;
+    return {...order,enrollmentBundlePayment,...this.packageReadback(snapshot,setup),lines:order.lines.map(line=>{
       const quantity=returned.find(row=>row.orderLineId===line.orderLineId)?._sum.quantity??new Prisma.Decimal(0);
       return {...line,returnedQuantity:quantity.toString(),remainingReversibleQuantity:Prisma.Decimal.max(0,line.quantity.minus(quantity)).toString()};
     })};

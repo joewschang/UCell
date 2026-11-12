@@ -4,6 +4,8 @@ import {Prisma,PrismaService} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
+import {enrollmentBundlePayment,requirePaidBundleRoot} from './enrollment-bundle-payment';
+import {EnrollmentBundleTransferDto,readBundleTransfer,reportBundleTransfer} from './enrollment-bundle-report';
 import {OrderService} from '../order/order.service';
 import {QualificationAccessService} from '../auth/qualification-access.service';
 
@@ -11,6 +13,13 @@ const FEE='600.00',RULE='FORMAL_ENROLLMENT_V1';
 @Injectable()
 export class FormalEnrollmentService{
  constructor(private readonly db:PrismaService,private readonly config:ConfigService,private readonly idempotency:IdempotencyService,private readonly audit:AuditService,private readonly orders:OrderService){}
+ async bundleReport(personId:string,applicationId:string) {
+  return {data:await readBundleTransfer(this.db,applicationId,personId)};
+ }
+ async reportBundle(personId:string,applicationId:string,body:EnrollmentBundleTransferDto,key:string) {
+  const result=await this.idempotency.execute('member:enrollment-bundle-report:'+personId+':'+applicationId,key,body,tx=>reportBundleTransfer(tx,applicationId,personId,body),{retryOnConflict:true});
+  return {data:result.value,meta:{replayed:result.replayed}};
+ }
  stagePaymentEnabled(){
   if(this.config.get('UCELL_ENVIRONMENT')!=='STAGE'||this.config.get('STAGE_PAYMENT_MODE')!=='ASSUME_PAID')return false;
   try{
@@ -29,12 +38,13 @@ export class FormalEnrollmentService{
   if(!person||person.status!=='EFFECTIVE'||person.securityStatus!=='NORMAL')throw new ForbiddenException({code:'MEMBER_PERSON_DISABLED'});
   const [fee,application,packages]=await Promise.all([
    this.db.order.findFirst({where:{purchaserPersonId:personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'PAID'},orderBy:{createdAt:'desc'}}),
-   this.db.formalMemberApplication.findFirst({where:{personId,applicantType:'INDIVIDUAL'},select:{formalMemberApplicationId:true,status:true},orderBy:{updatedAt:'desc'}}),
+   this.db.formalMemberApplication.findFirst({where:{personId,applicantType:'INDIVIDUAL'},select:{formalMemberApplicationId:true,status:true,sourceChannel:true,applicantType:true},orderBy:{updatedAt:'desc'}}),
    this.paidPackages(this.db,personId),
   ]);
   const pendingPackages=await this.db.packagePurchaseSnapshot.findMany({where:{personId,packageClass:'QUALIFICATION',paymentDeadline:{gt:new Date()}},orderBy:{purchasedAt:'desc'},take:20});
   const pendingOrders=await this.db.order.findMany({where:{orderId:{in:pendingPackages.map(p=>p.orderId)},status:'CONFIRMED'},select:{orderId:true,netAmount:true}});
-  return {pendingPackages:pendingPackages.filter(p=>pendingOrders.some(o=>o.orderId===p.orderId)).map(p=>({orderId:p.orderId,packageName:p.packageName,total:pendingOrders.find(o=>o.orderId===p.orderId)!.netAmount.toString(),paymentDeadline:p.paymentDeadline!.toISOString(),couponCode:p.couponCode,qualificationFee:p.qualificationFee.toString(),goodsAmount:p.priceAmount.toString(),selectableProductQuantity:p.selectableProductQuantity})),membershipState:person.membershipState,feeAmount:FEE,currency:'TWD',stagePaymentEnabled:this.stagePaymentEnabled(),feeReceipt:fee?this.receipt(fee):null,application:application?{id:application.formalMemberApplicationId,status:application.status}:null,paidPackages:packages};
+  const bundlePayment=application?await enrollmentBundlePayment(this.db,application.formalMemberApplicationId,personId):null;
+  return {bundlePayment,pendingPackages:pendingPackages.filter(p=>pendingOrders.some(o=>o.orderId===p.orderId)).map(p=>({orderId:p.orderId,packageName:p.packageName,total:pendingOrders.find(o=>o.orderId===p.orderId)!.netAmount.toString(),paymentDeadline:p.paymentDeadline!.toISOString(),couponCode:p.couponCode,qualificationFee:p.qualificationFee.toString(),goodsAmount:p.priceAmount.toString(),selectableProductQuantity:p.selectableProductQuantity})),membershipState:person.membershipState,feeAmount:FEE,currency:'TWD',stagePaymentEnabled:this.stagePaymentEnabled(),feeReceipt:fee?this.receipt(fee):null,application:application?{id:application.formalMemberApplicationId,status:application.status,sourceChannel:application.sourceChannel,applicantType:application.applicantType}:null,paidPackages:packages};
  }
  private async pending(tx:Prisma.TransactionClient,personId:string,sourceId:string){
   const person=await tx.person.findUniqueOrThrow({where:{personId}});
@@ -80,7 +90,9 @@ export class FormalEnrollmentService{
    if(['SUBMITTED','UNDER_REVIEW','APPROVED'].includes(app.status))return {applicationId,status:app.status};
    if(!['DRAFT','NEEDS_MORE_INFO'].includes(app.status))throw new ConflictException({code:'FORMAL_APPLICATION_NOT_SUBMITTABLE'});
    const fee=await tx.order.findFirst({where:{purchaserPersonId:personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'PAID'}});
-   const purchase=(await this.paidPackages(tx,personId))[0];
+   const bundle=await enrollmentBundlePayment(tx,applicationId,personId);
+   if(!bundle?.paymentReported)requirePaidBundleRoot(bundle);
+   const purchase=bundle?{orderId:bundle.rootOrderId}:(await this.paidPackages(tx,personId))[0];
    if(!purchase)throw new ConflictException({code:'FORMAL_ENROLLMENT_PAYMENT_REQUIRED'});
    const docs=await tx.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']}}});
    if(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'].some(type=>!docs.some(d=>d.documentType===type&&d.malwareScanStatus!=='INFECTED')))throw new ConflictException({code:'FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED'});

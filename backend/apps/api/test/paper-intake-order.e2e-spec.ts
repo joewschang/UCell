@@ -35,7 +35,7 @@ describe('Paper qualification package order',()=>{
    paymentEvent:{create:jest.fn().mockResolvedValue({paymentEventId:'payment'})},
    packagePurchaseSnapshot:{findUnique:jest.fn().mockResolvedValue({packagePurchaseSnapshotId:'snapshot',personId:'person',packageClass:'QUALIFICATION',packageCode:'STARTER'})},
    qualificationSponsorSelectionEvidence:{findFirst:jest.fn().mockResolvedValue({selectedSponsorQualificationId:'sponsor-q'})},
-   qualification:{findUnique:jest.fn().mockResolvedValue({ballNo:'A000001'}),update:jest.fn()},
+   qualification:{findFirst:jest.fn().mockResolvedValue({qualificationId:'sponsor-q',ballNo:'A000001',kind:'MEMBER_ORIGIN',currentHolderPersonId:'owner'}),update:jest.fn()},
    sponsorRelationship:{create:jest.fn()},
    qualificationSetup:{create:jest.fn()},
   };
@@ -46,7 +46,8 @@ describe('Paper qualification package order',()=>{
   const service=new OrderService({} as any,idempotency as any,audit as any,outbox as any,undefined,sponsors as any,organization as any);
   const result:any=await service.confirmPayment('order',{amount:'14400',paymentMethod:'BANK_TRANSFER',referenceNo:'PAPER-RECEIPT-1',occurredAt},'payment-key','request','operator');
   expect(result.value.downstreamStatus).toBe('PLACEMENT_PENDING');
-  expect(sponsors.resolveWithin).toHaveBeenCalledWith(tx,expect.objectContaining({code:'A000001',effectiveAt:new Date(occurredAt),ruleVersion:'R1.0B'}));
+  expect(tx.qualification.findFirst).toHaveBeenCalledWith(expect.objectContaining({where:{qualificationId:'sponsor-q',status:'EFFECTIVE',effectiveAt:{lte:new Date(occurredAt)}}}));
+  expect(sponsors.resolveWithin).not.toHaveBeenCalled();
   expect(tx.qualificationSetup.create).toHaveBeenCalledWith({data:expect.objectContaining({qualificationId:'qualification',ownerPersonId:'person',qualifyingOrderId:'order',packagePurchaseSnapshotId:'snapshot',setupStatus:'PLACEMENT_PENDING',finalSponsorQualificationId:'sponsor-q',placementRequestedAt:new Date(occurredAt),placementDueAt:new Date('2026-09-29T08:00:00.000Z'),setupPolicyVersion:'NR-DEC-004-V1'})});
   expect(tx.qualification.update).not.toHaveBeenCalled();
   expect(outbox.enqueue).toHaveBeenCalledWith(tx,expect.objectContaining({eventType:'PACKAGE_PAYMENT_CONFIRMED',payload:expect.objectContaining({qualificationId:'qualification',downstreamStatus:'PLACEMENT_PENDING'})}));

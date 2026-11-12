@@ -12,6 +12,7 @@ export class IdempotencyService {
     key: string,
     request: unknown,
     work: (tx: Prisma.TransactionClient) => Promise<T>,
+    options: {timeout?:number; retryOnConflict?:boolean} = {},
   ): Promise<{ value: T; replayed: boolean }> {
     const hash = requestHash(request);
 
@@ -43,7 +44,7 @@ export class IdempotencyService {
       }
     }
 
-    const result = await this.prisma.$transaction(async (tx) => {
+    const transact = () => this.prisma.$transaction(async (tx) => {
       const locked = await lookup(tx);
 
       if (locked && locked.requestHash !== hash) {
@@ -85,8 +86,16 @@ export class IdempotencyService {
       });
 
       return { value, replayed: false };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout:options.timeout });
 
-    return result;
+    for (let attempt=0;;attempt++) {
+      try { return await transact(); }
+      catch (error) {
+        const dbError=error as {code?:string; meta?:{code?:string}};
+        const conflict=['P2034','P2002','23505','40001','40P01'].includes(dbError.code??'') || ['23505','40001','40P01'].includes(dbError.meta?.code??'');
+        if (!options.retryOnConflict || !conflict) throw error;
+        if (attempt>=2) throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'另一筆操作正在更新資料，請使用原操作再試一次。'});
+      }
+    }
   }
 }
