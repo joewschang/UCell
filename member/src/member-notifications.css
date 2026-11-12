@@ -1,0 +1,27 @@
+.app[data-app="member"] > header .notification-link,
+.app[data-app="member"] .uc-inbox-account-link {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  flex-shrink: 0;
+}
+
+.app[data-app="member"] > header .notification-link[aria-current="page"] {
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
+.app[data-app="member"] .uc-inbox-scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem 1rem;
+  margin-block: .75rem;
+}
+
+.app[data-app="member"] .uc-inbox-scope button {
+  min-block-size: 44px;
+}
