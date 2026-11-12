@@ -172,6 +172,7 @@ async function testMap(ui){
   await newPageAt(page,'/organization');
   const map=region(page),root=map.getByRole('combobox',{name:'全貌起點'});
   await memberNode(map,1).waitFor();
+  await map.getByText(/已編球號且未作廢、未關閉的球.*目前有效推薦關係中的球/).waitFor();
   assert.equal(await page.locator('html').getAttribute('data-theme'),ui.theme);
   const initialRequests=mapRequests(ui);
   await map.getByRole('button',{name:'顯示全樹',exact:true}).click();
