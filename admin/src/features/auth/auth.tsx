@@ -2,6 +2,7 @@ import {uiText} from "../../../../shared/design-system/i18n";
 import React,{createContext,useContext,useEffect,useMemo,useState} from 'react';
 import {clearAdminToken,get,post,setAdminToken} from '../../lib/api';
 import {completeEntraRedirect,startEntraLogin,entraLogout} from './entra';
+import {playLoginFanfare,stopLoginFanfare} from './loginFanfare';
 import type {AdminRole} from './permissions';
 import {useQueryClient} from '@tanstack/react-query';
 
@@ -41,6 +42,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
   const [error,setError]=useState<string|null>(null);
 
   function clear(){
+    stopLoginFanfare();
     queryClient.clear();
     clearAdminToken();persistUser(null);setUser(null);
   }
@@ -59,7 +61,9 @@ export function AuthProvider({children}:{children:React.ReactNode}){
           setAdminToken(d.accessToken,d.expiresAt);
           queryClient.clear();
           const u:User={name:d.user?.preferredName||d.user?.legalName||'Admin',role:d.user.role,personId:d.user.personId,provider:d.user.provider,expiresAt:d.expiresAt};
-          setUser(u);persistUser(u);setReady(true);return;
+          setUser(u);persistUser(u);setReady(true);
+          playLoginFanfare(d);
+          return;
         }
       }catch{
         clear();setError('Microsoft 登入未完成。請重新按下登入，並在同一分頁完成驗證；若持續失敗，請從 Safari 或 Chrome 開啟本頁重試。');setReady(true);return;
@@ -103,6 +107,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       setUser(u);persistUser(u);
     },
     logout:async()=>{
+      stopLoginFanfare();
       setBusy(true);
       try{
         if(sessionStorage.getItem('ucell_admin_token')){

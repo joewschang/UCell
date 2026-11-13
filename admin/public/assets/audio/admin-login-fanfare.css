@@ -1,0 +1,38 @@
+.uc-login-fanfare {
+  position: fixed;
+  inset-inline-end: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--ucell-surface, #fff);
+  color: var(--ucell-text-primary, #17332d);
+  border: 1px solid var(--ucell-border, #b7c6c0);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px #102a2224;
+}
+
+.uc-login-fanfare button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.uc-login-fanfare button:hover,
+.uc-login-fanfare button:focus-visible {
+  color: var(--ucell-text-primary, #17332d);
+  background: var(--ucell-surface-secondary, #eaf2ee);
+  outline: 2px solid var(--ucell-primary, #087056);
+  outline-offset: -2px;
+}
+
+.uc-login-fanfare [hidden] {
+  display: none;
+}
