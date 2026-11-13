@@ -1,0 +1,19 @@
+.uc-content-card-body a.uc-video-explore {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: .65rem 1rem;
+  background: #09545e;
+  color: #fff;
+  border: 1px solid #76a9ab;
+  border-radius: .65rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.uc-content-card-body a.uc-video-explore:is(:hover,:active) { background: #063d45; color: #fff; }
+.uc-content-card-body a.uc-video-explore:focus-visible { outline: 3px solid var(--share-outline,#526878); outline-offset: 2px; }
+.uc-content-card-body .uc-share-actions { margin-bottom: 0; }
+.uc-content-card-body .uc-share-line { width: 100%; }

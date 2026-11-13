@@ -3,7 +3,7 @@ import type {Qualification} from './api';
 import {createReferralShareLink} from './memberData';
 import GreetingShareIcon from './GreetingShareIcon';
 import './social-share.css';
-export default function ReferralShare({q,contentId,productSku,eventCode,title='一起探索 UCell'}:{q:Qualification;contentId?:string;productSku?:string;eventCode?:string;title?:string}){
+export default function ReferralShare({q,contentId,productSku,eventCode,title='一起探索 UCell'}:{q?:Qualification;contentId?:string;productSku?:string;eventCode?:string;title?:string}){
  const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),flight=useRef(false);
  async function share(platform:string){
   if(flight.current)return;
