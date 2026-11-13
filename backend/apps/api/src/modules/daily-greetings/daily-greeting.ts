@@ -1,6 +1,7 @@
-import {greetingTheme,greetingArtwork,THEME_LABELS} from './greeting-art';
+import {greetingTheme} from './greeting-art';
+import {greetingPhoto,greetingPhotoData} from './greeting-photo';
 /** Versioned, reviewed copy. No member data, health claims or monetary rules. */
-export const GREETING_VERSION='template-v2-themes';
+export const GREETING_VERSION='template-v3-photography';
 export const TIME_ZONE='Asia/Taipei';
 const DAY=86_400_000;
 export function greetingDate(now=new Date()) { return new Date(now.getTime()+8*3_600_000-7*3_600_000).toISOString().slice(0,10); }
@@ -60,6 +61,6 @@ export const escapeHtml=(value:string)=>value.replace(/[&<>"']/g,c=>({'&':'&amp;
 export function greetingSvg(date:string,logoDataUri:string):string {
  if(!logoDataUri.startsWith('data:image/jpeg;base64,'))throw new Error('GREETING_OFFICIAL_LOGO_REQUIRED');
  const copy=greetingCopy(date),theme=greetingTheme(date,copy.category==='節慶');
- const ink=theme==='festival'?'#8d3038':'#214e49';
- return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><defs><linearGradient id="art-sky" x2="0" y2="1"><stop stop-color="#f8f1df"/><stop offset="1" stop-color="#aed5cf"/></linearGradient></defs>${greetingArtwork(theme)}<rect x="48" y="40" width="984" height="600" rx="32" fill="#fffdf7"/><g font-family="Noto Sans CJK TC" fill="${ink}"><image href="${logoDataUri}" x="60" y="48" width="400" height="225" preserveAspectRatio="xMidYMid meet"/><text x="960" y="158" text-anchor="end" font-size="28" letter-spacing="3">${THEME_LABELS[theme]}</text><path d="M100 285H980" stroke="${ink}" stroke-width="2" opacity=".18"/><text x="100" y="380" font-size="${copy.title.length>14?52:58}" font-weight="700">${escapeHtml(copy.title)}</text>${copy.lines.map((line,i)=>`<text x="104" y="${465+i*59}" font-size="36">${escapeHtml(line)}</text>`).join('')}<text x="104" y="590" font-size="25" letter-spacing="2">${date.replaceAll('-',' . ')}</text><text x="976" y="590" text-anchor="end" font-size="24">${theme==='weather'?'晴雨意象・非即時預報':'UCell・每日一份溫暖'}</text></g></svg>`;
+ const photo=greetingPhoto(date),ink=theme==='festival'?'#8d3038':'#214e49';
+ return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><image href="${greetingPhotoData(date)}" width="1080" height="1080" preserveAspectRatio="xMidYMid slice"/><rect x="38" y="32" width="304" height="171" rx="16" fill="#fff"/><image href="${logoDataUri}" x="38" y="32" width="304" height="171" preserveAspectRatio="xMidYMid meet"/><rect x="40" y="628" width="1000" height="412" rx="28" fill="#fffdf7" fill-opacity=".95"/><g font-family="Noto Sans CJK TC" fill="${ink}"><text x="80" y="689" font-size="24" letter-spacing="3">${copy.category==='節慶'?'節慶祝福':photo.label}</text><path d="M80 713H1000" stroke="${ink}" stroke-width="2" opacity=".18"/><text x="80" y="790" font-size="${copy.title.length>14?52:58}" font-weight="700">${escapeHtml(copy.title)}</text>${copy.lines.map((line,i)=>`<text x="84" y="${855+i*56}" font-size="36">${escapeHtml(line)}</text>`).join('')}<text x="84" y="995" font-size="24" letter-spacing="2">${date.replaceAll('-',' . ')}</text><text x="996" y="995" text-anchor="end" font-size="22">${theme==='weather'?'情境照片・非即時預報':'UCell・每日一份溫暖'}</text></g></svg>`;
 }

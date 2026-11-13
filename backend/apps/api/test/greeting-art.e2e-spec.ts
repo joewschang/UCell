@@ -27,6 +27,6 @@ describe('Reviewed daily theme rotation',()=>{
    expect(svg).toContain(logo);expect(svg).toContain('width="1080" height="1080"');
    if(greetingTheme(date,copy.category==='節慶')==='weather')expect(svg).toContain('非即時預報');
   }
-  expect(GREETING_VERSION).toBe('template-v2-themes');
+  expect(GREETING_VERSION).toBe('template-v3-photography');
  });
 });

@@ -5,7 +5,8 @@
     "assets": [
       "modules/organization-geo/taiwan-areas.json",
       "modules/admin-operations/bank-templates/*.xls",
-      "modules/daily-greetings/assets/*.jpeg"
+      "modules/daily-greetings/assets/*.jpeg",
+      "modules/daily-greetings/assets/photos/*"
     ]
   }
 }
