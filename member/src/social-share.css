@@ -3,3 +3,18 @@ button.uc-share-line,.uc-share-actions button.uc-share-line{background:#006b40;c
 .uc-share-social{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem;margin-top:.45rem}
 .uc-share-social button{min-height:44px;color:var(--ucell-text-primary,#16392f);background:var(--ucell-surface,#fff);border:1px solid var(--ucell-border,#73857d);border-radius:.6rem}
 .uc-share-social button:hover,.uc-share-social button:focus-visible,.uc-share-line:focus-visible{outline:3px solid #41ad90;outline-offset:1px}
+
+.uc-daily-greeting .uc-daily-actions > button.uc-share-line:not(:disabled) {
+  background: #007d36;
+  color: #fff;
+  border-color: #007d36;
+}
+.uc-daily-greeting .uc-daily-actions > button.uc-share-line:not(:disabled):is(:hover,:focus-visible,:active) {
+  background: #00632b;
+  color: #fff;
+  border-color: #00632b;
+}
+.uc-daily-greeting .uc-daily-actions > button.uc-share-line:focus-visible {
+  outline: 2px solid var(--ucell-text-primary, #17332d);
+  outline-offset: 2px;
+}
