@@ -1,0 +1,13 @@
+uc-birthday-wish:empty{display:none}
+html[data-birthday=yes]{--birthday-surface:#fff2e5;--birthday-ink:#54243c;--birthday-edge:#ac576f}
+html[data-birthday=yes][data-season-dark=yes]{--birthday-surface:#352336;--birthday-ink:#fff2dc;--birthday-edge:#eeb185}
+html[data-birthday=yes] :is(.uc-home-greeting,.uc-welcome){border-top:4px solid var(--birthday-edge)}
+uc-birthday-wish:not(:empty),.birthday-card{display:block;background:var(--birthday-surface);color:var(--birthday-ink);border:1px solid var(--birthday-edge);border-radius:1rem;padding:1rem 1.25rem}
+uc-birthday-wish:not(:empty) :is(h1,p),.birthday-card p{color:inherit;line-height:1.65}
+.uc-home-greeting div:has(>uc-birthday-wish:not(:empty))> :is(small,h1,p),.uc-welcome:has(>uc-birthday-wish:not(:empty))> :is(small,h1){display:none}
+.birthday-card{position:fixed;z-index:1200;inset:max(1rem,env(safe-area-inset-top)) 1rem auto;margin:auto;max-width:26rem;box-shadow:0 .5rem 2rem #21102033;text-align:center;animation:birthday-arrive .8s ease-out}
+.birthday-candles{display:block;font-size:2.1rem;animation:birthday-glow 2s ease-in-out 3 alternate}
+.birthday-card strong{font-size:1.3rem}.birthday-card button{color:#fff;background:#773852;border:1px solid #eac0be;border-radius:1rem;min-height:44px;padding:.45rem 1rem;margin:.2rem}
+@keyframes birthday-arrive{from{opacity:0;transform:translateY(-1rem)}}
+@keyframes birthday-glow{to{filter:drop-shadow(0 0 .5rem #f9a34a);transform:scale(1.08)}}
+@media(prefers-reduced-motion:reduce){.birthday-card,.birthday-candles{animation:none}}

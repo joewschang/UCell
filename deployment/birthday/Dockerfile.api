@@ -1,0 +1,10 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:597bbce985d24a655091ec5d64586eb54fb798b53d5ac9c7ac9eb46386d8fc84 AS live
+FROM scratch
+COPY --from=live / /
+WORKDIR /app
+ENV NODE_ENV=production NODE_PATH=/opt/greeting/node_modules
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["sh","-c","node /app/company-sponsor/migrate.cjs && exec node /app/apps/api/dist/main.js"]
+COPY service.cjs copy.json menu.jpg /app/apps/api/dist/birthday/
+COPY patch-api.cjs /tmp/patch-birthday.cjs
+RUN node /tmp/patch-birthday.cjs && node -e "require('/app/apps/api/dist/birthday/service.cjs')"
