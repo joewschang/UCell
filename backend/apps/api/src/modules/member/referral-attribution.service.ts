@@ -3,7 +3,7 @@ import {Prisma,PrismaService} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
-import {MemberShareLinkService} from './member-share-link.service';
+import {MemberShareLinkService,shortTokenPattern} from './member-share-link.service';
 
 const LOCK_WINDOW_MS=30*24*60*60*1000;
 
@@ -13,11 +13,11 @@ export class ReferralAttributionService {
 
  async land(token:string,anonymousId:string=randomUUID(),now=new Date()){
   const preview=await this.links.preview(token,now);
-  const payload=this.links.verify(token,now),tokenHash=this.links.hash(token),correlationId=randomUUID();
+  const payload=shortTokenPattern.test(token)?null:this.links.verify(token,now),tokenHash=this.links.hash(token),correlationId=randomUUID();
   try{const result=await this.db.$transaction(async tx=>{
    await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${anonymousId},0))) AS lock_row`;
    const link=await tx.referralLink.findUnique({where:{tokenHash}});
-   if(!link||link.status!=='ACTIVE'||link.expiresAt<=now||link.referrerQualificationId!==payload.qualificationId)throw new ServiceUnavailableException({code:'MEMBER_SHARE_TOKEN_INVALID'});
+   if(!link||link.status!=='ACTIVE'||link.expiresAt<=now||(payload && link.referrerQualificationId!==payload.qualificationId))throw new ServiceUnavailableException({code:'MEMBER_SHARE_TOKEN_INVALID'});
    const current=await tx.referralAttribution.findUnique({where:{anonymousId}});
    if(!current){
     const lockedUntil=new Date(now.getTime()+LOCK_WINDOW_MS);

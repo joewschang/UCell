@@ -1,7 +1,7 @@
-import {useCallback, useEffect, useRef, useState, type MouseEvent} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import GreetingShareIcon from './GreetingShareIcon';
 import liff from '@line/liff';
-import {dailyGreetingLineUrl, dailyGreetingSocialUrl, getDailyGreeting, type DailyGreeting} from './dailyGreeting';
+import {getDailyGreeting, type DailyGreeting} from './dailyGreeting';
 import './daily-greeting.css';
 
 type GreetingState = {loading: boolean; data?: DailyGreeting; error?: string};
@@ -71,16 +71,12 @@ function GreetingPoster({greeting, refresh}: {greeting: DailyGreeting; refresh: 
   const [busy, setBusy] = useState<'share' | 'save' | null>(null);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
-  const [manualShare,setManualShare]=useState(false);
-  const [linkOnly, setLinkOnly] = useState(false);
   const flight = useRef(false);
   const alive = useRef(true);
   const download = useRef<AbortController>();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const objectUrls = useRef<string[]>([]);
   const ready = imageState === 'ready' && !busy;
-  const secure = greeting.imageUrl.startsWith('https:') && greeting.shareUrl.startsWith('https:');
-  const pickerAvailable = !linkOnly && imagePickerAvailable();
 
   useEffect(() => {
     alive.current = true;
@@ -106,32 +102,26 @@ function GreetingPoster({greeting, refresh}: {greeting: DailyGreeting; refresh: 
     flight.current = false;
     if (alive.current) setBusy(null);
   }
-  function shareLine(event: MouseEvent<HTMLAnchorElement>) {
-    if (!secure || !canAct()) {event.preventDefault(); return;}
-    setError(''); setNotice('');
-    const usePicker = !linkOnly && imagePickerAvailable();
-    flight.current = true;
-    setBusy('share');
-    if (!usePicker) {
-      // Let the real anchor navigate during the original user gesture, never after an await.
-      setNotice('請在 LINE 選擇分享對象並確認送出。');
-      timers.current.push(setTimeout(finish, 1000));
-      return;
-    }
-    event.preventDefault();
-    const failed = () => {
-      if (!alive.current) return;
-      setLinkOnly(true);
-      setError('LINE 圖片分享未完成，請點「LINE 連結分享」重試，或儲存圖片後分享。');
-    };
-    try {
-      // Call the SDK synchronously in the click handler so its picker keeps user activation.
-      liff.shareTargetPicker([{type: 'image', originalContentUrl: greeting.imageUrl, previewImageUrl: greeting.imageUrl}])
-        .then(result => {if (alive.current) setNotice(result?.status === 'success' ? '已透過 LINE 分享圖片。' : '已取消分享，尚未送出圖片。');})
-        .catch(failed).finally(finish);
-    } catch {failed(); finish();}
+  const [file,setFile]=useState<File>();
+  useEffect(()=>{
+    const controller=new AbortController();
+    fetch(greeting.imageUrl,{signal:controller.signal,credentials:'omit'}).then(async r=>{
+      if(!r.ok) return;
+      const blob=await r.blob();
+      if(blob.type==='image/png'&&!controller.signal.aborted)setFile(new File([blob],'UCell-'+greeting.date+'.png',{type:'image/png'}));
+    }).catch(()=>{});
+    return ()=>controller.abort();
+  },[greeting.imageUrl,greeting.date]);
+  async function shareImage(platform:string){
+    if(!canAct())return;
+    flight.current=true;setBusy('share');setError('');setNotice('');
+    try{
+      if(platform==='LINE'&&imagePickerAvailable())await liff.shareTargetPicker([{type:'image',originalContentUrl:greeting.imageUrl,previewImageUrl:greeting.imageUrl}]);
+      else if(file&&navigator.canShare?.({files:[file]}))await navigator.share({files:[file]});
+      else setNotice('請先儲存圖片，再從 '+platform+' 選取這張圖分享。');
+    }catch(e){if(!(e instanceof Error&&e.name==='AbortError'))setError('圖片分享未完成，可儲存後再分享。');}
+    finally{finish();}
   }
-
   async function saveImage() {
     if (!canAct()) return;
     flight.current = true;
@@ -178,18 +168,12 @@ function GreetingPoster({greeting, refresh}: {greeting: DailyGreeting; refresh: 
       <h2>{greeting.title}</h2>
       <p className="uc-daily-message">{greeting.message}</p>
       <div className="uc-daily-actions">
-        <a className="uc-daily-line" href={imageState === 'ready' && secure ? dailyGreetingLineUrl(greeting) : undefined} aria-disabled={!ready || !secure} role={!ready || !secure ? 'link' : undefined} target="_blank" rel="noopener noreferrer" onClick={shareLine}>{busy === 'share' ? '正在開啟 LINE…' : pickerAvailable ? 'LINE 圖片分享' : 'LINE 連結分享'}</a>
+        <button className="uc-share-line" disabled={!ready} onClick={()=>shareImage('LINE')}>分享LINE好友</button>
         <button onClick={() => void saveImage()} disabled={!ready}>{busy === 'save' ? '正在準備圖片…' : '儲存圖片'}</button>
       </div>
       <div className="uc-daily-actions uc-social-logos" role="group" aria-label="其他平台分享">
-        {(['facebook','threads','x'] as const).map(platform=><a key={platform} aria-label={{facebook:"Facebook 連結分享",threads:"Threads 連結分享",x:"X 連結分享"}[platform]} href={ready&&secure?dailyGreetingSocialUrl(platform,greeting):undefined} aria-disabled={!ready||!secure} target="_blank" rel="noopener noreferrer" onClick={event=>{if(!secure||!canAct()){event.preventDefault();return;}setNotice('請在平台確認內容後自行發布；UCell 不會代替您發文。');}}><GreetingShareIcon platform={platform}/></a>)}
-        <button aria-label="Instagram 圖片發布步驟" aria-expanded={manualShare} disabled={!ready} onClick={()=>{if(canAct())setManualShare(value=>!value)}}><GreetingShareIcon platform="instagram"/></button>
+        {(['facebook','threads','x','instagram'] as const).map(p=><button key={p} disabled={!ready} aria-label={'分享圖片至 '+p} onClick={()=>shareImage(p)}><GreetingShareIcon platform={p}/></button>)}
       </div>
-      <p className="uc-daily-note">Facebook、Threads、X 分享的是公開連結，預覽圖由平台決定。若無法開啟，請複製下方連結到平台，或先儲存圖片再自行發布。</p>
-      {imageState==='ready'&&secure&&<label className="uc-daily-note">公開分享連結（可選取複製）<input aria-label="公開分享連結" readOnly value={greeting.shareUrl} onFocus={event=>event.currentTarget.select()} style={{width:'100%'}}/></label>}
-      {manualShare&&<div className="uc-daily-note" role="note"><strong>Instagram：先儲存圖片，再自行發布</strong><ol><li>點「儲存圖片」；iPhone 或應用程式內無法下載時，點「開啟原圖」後長按儲存。</li><li>開啟 Instagram 應用程式（或電腦版網站），建立貼文並選取剛儲存的圖片。</li><li>確認裁切、文字與 品牌標誌 完整後，再自行按發布。</li></ol><a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">開啟 Instagram（不會自動帶入圖片）</a><p>FB、Threads、X 的圖片貼文也可採相同步驟。iOS、Android 的系統分享選單顯示哪些應用程式 由裝置決定；桌面瀏覽器可先下載再上傳。</p></div>}
-      <p className="uc-daily-note">LINE 會讓您選擇分享對象；一般瀏覽器以公開問候頁連結分享。</p>
-      {!secure && <p className="uc-daily-note">LINE 分享需使用 HTTPS 網址，請改用正式會員網站。</p>}
       {imageState === 'ready' && <p className="uc-daily-note"><a href={greeting.imageUrl} target="_blank" rel="noopener noreferrer" aria-disabled={!!busy} onClick={event => {if (!canAct()) event.preventDefault();}}>開啟原圖</a> · 手機或 LINE 內無法下載時，可開啟後長按儲存。</p>}
       {notice && <p role="status" className="uc-daily-feedback">{notice}</p>}
       {error && <p role="alert" className="uc-daily-feedback">{error}</p>}

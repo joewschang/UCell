@@ -71,3 +71,14 @@ it('escapes social preview markup and renders no member data in a private previe
  expect(html).not.toContain('<script>alert');expect(html).toContain('&lt;script&gt;');expect(html.match(/<script /g)).toHaveLength(1);
  expect(shareCardHtml(null)).not.toContain('og:image');
 });
+
+it('resolves a short game invitation for the issuing qualification and rejects revoked or altered codes', async()=>{
+ const h=harness(),link=await h.service.create('person','ball',now,undefined,{},'egfr',true);
+ const token=new URL(link.shareUrl).pathname.slice(3);
+ expect(token).toMatch(/^s3_[A-Za-z0-9_-]{22}$/);
+ expect(h.links.get(h.service.hash(token)).referrerQualificationId).toBe('ball');
+ await expect(h.service.preview(token,now)).resolves.toMatchObject({destination:'/health/egfr/'});
+ await expect(h.service.preview(token.replace('s3_','s1_'),now)).rejects.toThrow();
+ h.links.get(h.service.hash(token)).status='REVOKED';
+ await expect(h.service.preview(token,now)).rejects.toThrow();
+});

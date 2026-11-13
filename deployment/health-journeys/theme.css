@@ -84,3 +84,15 @@ html[data-season-dark=yes] #page :is(.pill,.notice,.badge,.choices button[aria-p
 .j-page .art:has(img) { padding:0; overflow:hidden }
 .j-page .art span { min-block-size:32px; display:grid; place-items:center }
 .j-page .choices button[aria-pressed=true] { border-color:var(--j-accent) }
+
+.j-tile .j-pad{min-width:0}
+.j-start-share,.j-share-icons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem}
+.j-share-icons{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:.4rem}
+.j-start-share>a,.j-start-share>button,.j-share-icons>button{min-height:44px;min-width:0;margin:0;padding:.4rem;text-align:center;align-content:center}
+.j-start-share>button{background:#00663d;color:white;border:1px solid #619f87;border-radius:.5rem}
+.j-share-icons>button{color:var(--j-ink);background:var(--j-card);border:1px solid var(--j-muted);border-radius:.5rem}
+.j-share-icons svg{width:23px;height:23px;vertical-align:middle}
+.j-game-share [role=status]{overflow-wrap:anywhere}.j-game-share [role=status]:empty{display:none}
+@media(max-width:540px){.j-tile:has(.j-game-share){display:block}.j-tile:has(.j-game-share)>img{float:left;width:72px;margin:.8rem .8rem .25rem}.j-game-share{clear:both}}
+
+.j-pad .j-game-share{align-self:stretch;width:100%}.j-pad .j-start-share>.j-primary{margin:0}.j-start-share{align-items:stretch}

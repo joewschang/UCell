@@ -17,6 +17,7 @@ export function memberEntryDestination(location:{pathname:string;search:string})
 /** Only exact application routes may come back from referral landing. */
 export function shareDestination(value:unknown){
  if(typeof value!=='string'||!value.startsWith('/')||value.startsWith('//'))return '/';
+ if(['/health/?game=sarcopenia','/health/diabetes/','/health/egfr/','/health/blood-pressure/','/health/cognition/'].includes(value))return value;
  const url=new URL(value,'https://member.ucell.life');
  const safe=memberEntryDestination(url);
  return safe===value?safe:'/';

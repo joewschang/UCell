@@ -1,3 +1,4 @@
+import {shareControls} from './share-controls.js';
 import {apiFor,el,box,btn,link} from '../context-ui.js';
 export const member=!!sessionStorage.getItem('ucell_member_token');
 export const api=apiFor(member?'member':'public');
@@ -38,38 +39,7 @@ export async function session(id){
    if(!started)start();
    const ok=await send('finish');if(ok){completed=true;if(!member)sessionStorage.setItem('ucell.health.claim',JSON.stringify({game:id,attempt,visitor,expires:Date.now()+3600000}));}return ok;
  }
- function sharing(){
-   const scope=el('select');scope.setAttribute('aria-label','邀請內容');
-   for(const [val,name] of [['game','邀請體驗這支遊戲'],['all','通用邀請・只顯示健康中心']]){
-     const opt=el('option',name);opt.value=val;scope.append(opt);
-   }
-   const out=el('div',null,'j-share-output');out.setAttribute('aria-live','polite');
-   const row=el('div',null,'j-actions');
-   async function share(channel){
-     row.querySelectorAll('button').forEach(b=>b.disabled=true);
-     out.replaceChildren(el('span','正在準備邀請…'));
-     try{
-       const generic=scope.value==='all';
-       const {id:code}=await api('/journey/invite','POST',{visitor,game:id,generic,channel});
-       const url=location.origin+dest+'journey/invite/'+(generic?'':id+'/')+'?id='+code;
-       const input=el('input');input.readOnly=true;input.value=url;input.setAttribute('aria-label','邀請連結');input.onclick=()=>input.select();
-       if(channel==='qr'){
-         const {toDataURL}=await import('./qr.js');
-         const image=el('img');image.src=await toDataURL(url,{width:240,margin:4});image.alt='健康中心邀請 QR Code';out.replaceChildren(image,input);
-       }else if(channel==='line'){
-         const next=link('開啟 LINE 選擇分享對象','https://line.me/R/share?text='+encodeURIComponent((generic?'邀你來玩 UCell 健康中心。':game.invite)+' '+url),'j-primary');
-         out.replaceChildren(next,input);next.focus();
-       }else{
-         try{await navigator.clipboard.writeText(url);out.replaceChildren(el('p','已複製邀請連結。'),input);}
-         catch{out.replaceChildren(el('p','長按或選取下方連結即可複製。'),input);input.focus();input.select();}
-       }
-     }catch(e){out.replaceChildren(el('p',e.message),link('開啟可手動分享的頁面',scope.value==='all'?dest:game.href));}
-     finally{row.querySelectorAll('button').forEach(b=>b.disabled=false);}
-   }
-   scope.onchange=()=>out.replaceChildren();
-   for(const [key,title] of [['line','LINE 邀請'],['copy','複製連結'],['qr','顯示 QR Code']])row.append(btn(title,()=>share(key)));
-   return box('div','j-share',scope,row,out,...(member?[]:[login('/health/?passport=1')]));
- }
+ const sharing=()=>gameShare(game);
  function explore(){
    const list=el('div',null,'j-related');const open=btn('我想'+game.interest,async()=>{
      open.disabled=true;
@@ -92,4 +62,26 @@ export async function session(id){
    return box('section','j-next',el('h2','接下來想了解什麼？'),open,list);
  }
  return {member,start,finish,calculated(){if(!started||completed)start();return send('calculate');},sharing,explore};
+}
+
+export function gameShare(game,start){
+ return shareControls(start,async platform=>{
+   let qualificationId=sessionStorage.getItem('ucell_qualification_id');
+   const base=location.hostname.endsWith('.ucell.life')?'https://api.ucell.life/api/v1':'/api/v1';
+   const token=sessionStorage.getItem('ucell_member_token');
+   if(member&&!qualificationId){
+     const response=await fetch(base+'/member/qualifications',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(15000)});
+     if(!response.ok)throw Error('無法取得推薦資格，請再試一次。');
+     const {data}=await response.json();qualificationId=data[0]?.id;
+   }
+   if(member&&qualificationId){
+     const response=await fetch(base+'/member/content-share-links',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+sessionStorage.getItem('ucell_member_token')},body:JSON.stringify({qualificationId,healthGame:game.id}),signal:AbortSignal.timeout(15000)});
+     if(!response.ok)throw Error('暫時無法建立會員推薦連結，請再試一次。');
+     const {data}=await response.json();return data.shareUrl;
+   }
+   const {id}=await api('/journey/invite','POST',{visitor,game:game.id,generic:false,channel:platform==='line'?'line':'native'});
+   const bytes=id.replaceAll('-','').match(/../g).map(pair=>parseInt(pair,16));
+   const key=btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
+   return location.origin+'/health/?i='+key;
+ });
 }

@@ -6,6 +6,9 @@ import { PrismaService } from '@ucell/database';
 import { QualificationAccessService } from '../auth/qualification-access.service';
 
 type ShareTokenPayload={version:1;qualificationId:string;issuedAt:string;expiresAt:string;contentId?:string;contentVersionId?:string;productSku?:string;eventCode?:string};
+const games=['game','diabetes','egfr','blood-pressure','cognition'];
+const paths=['/health/?game=sarcopenia','/health/diabetes/','/health/egfr/','/health/blood-pressure/','/health/cognition/'];
+export const shortTokenPattern=/^s[0-5]_[A-Za-z0-9_-]{22}$/;
 type TransitionPayload={version:1;kind:'REFERRAL_TRANSITION';anonymousId:string;referralAttributionId:string;referrerQualificationId:string;attributionVersion:number;issuedAt:string;expiresAt:string};
 
 @Injectable()
@@ -20,17 +23,22 @@ export class MemberShareLinkService {
   if(url.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(url.hostname))throw new ServiceUnavailableException({code:'MEMBER_SHARE_CONFIGURATION_INVALID'});
   return {key:createHash('sha256').update(secret).digest(),url,ttl};
  }
- async create(personId:string,qualificationId:string,now=new Date(),contentId?:string,target:ShareTarget={}){
+ async create(personId:string,qualificationId:string,now=new Date(),contentId?:string,target:ShareTarget={},healthGame?:string,compact=false){
   await this.access.assertHolder(personId,qualificationId,now);
-  if([contentId,target.productSku,target.eventCode].filter(Boolean).length>1)throw new UnprocessableEntityException({code:'SHARE_TARGET_AMBIGUOUS'});
+  if([contentId,target.productSku,target.eventCode,healthGame].filter(Boolean).length>1)throw new UnprocessableEntityException({code:'SHARE_TARGET_AMBIGUOUS'});
   const resource=await currentShareTarget(this.db,target,now);
   if((target.productSku||target.eventCode)&&!resource)throw new UnprocessableEntityException({code:'SHARE_TARGET_UNAVAILABLE'});
   const content=contentId?await currentContent(this.db,contentId,now):null;
   if(contentId&&(!content||!content.shareable||!['PUBLIC','NETWORK_MEMBER'].includes(content.audiencePolicy)))throw new UnprocessableEntityException({code:'CONTENT_NOT_SHAREABLE'});
-  const {key,url,ttl}=this.configuration(),iv=randomBytes(12),expiresAt=new Date(now.getTime()+ttl*1000);
+  const {key,url,ttl}=this.configuration(),expiresAt=new Date(now.getTime()+ttl*1000);
+  const gameIndex=healthGame?games.indexOf(healthGame):-1;
+  if(healthGame && gameIndex<0)throw new UnprocessableEntityException();
+  const token=(compact||healthGame)?'s'+(gameIndex+1)+'_'+randomBytes(16).toString('base64url'):(()=>{
+  const iv=randomBytes(12);
   const payload:ShareTokenPayload={version:1,qualificationId,issuedAt:now.toISOString(),expiresAt:expiresAt.toISOString(),...(resource?target:{}),...(content?{contentId:content.id,contentVersionId:content.versionId}:{})};
   const cipher=createCipheriv('aes-256-gcm',key,iv),encrypted=Buffer.concat([cipher.update(JSON.stringify(payload),'utf8'),cipher.final()]),tag=cipher.getAuthTag();
-  const token=Buffer.concat([iv,tag,encrypted]).toString('base64url');
+  return Buffer.concat([iv,tag,encrypted]).toString('base64url');
+  })();
   const data={tokenHash:this.hash(token),referrerQualificationId:qualificationId,policyVersion:'NR-DEC-003-V1',createdAt:now,expiresAt};
   if(content||resource)await this.db.$transaction(async tx=>{
    const link=await tx.referralLink.create({data});
@@ -40,7 +48,14 @@ export class MemberShareLinkService {
   return {qualificationId,shareUrl:new URL(`/r/${token}`,url).toString(),expiresAt:expiresAt.toISOString()};
  }
  async preview(token:string,now=new Date()){
-  const payload=this.verify(token,now),link=await this.db.referralLink.findUnique({where:{tokenHash:this.hash(token)}});
+  const link=await this.db.referralLink.findUnique({where:{tokenHash:this.hash(token)},include:{contentShare:true,resourceShare:true}});
+  if(!link||link.status!=='ACTIVE'||link.expiresAt<=now)throw new NotFoundException();
+  const payload=shortTokenPattern.test(token)?{
+    qualificationId:link.referrerQualificationId,contentId:link.contentShare?.contentId,
+    productSku:link.resourceShare?.targetType==='PRODUCT'?link.resourceShare.targetReference:undefined,
+    eventCode:link.resourceShare?.targetType==='EVENT'?link.resourceShare.targetReference:undefined
+  }:this.verify(token,now);
+  if(shortTokenPattern.test(token)&&token[1]!=='0')return {content:null,requiresLogin:false,expiresAt:link.expiresAt.toISOString(),destination:paths[Number(token[1])-1]};
   if(!link||link.status!=='ACTIVE'||link.expiresAt<=now||link.referrerQualificationId!==payload.qualificationId)throw new NotFoundException({code:'SHARE_LINK_UNAVAILABLE'});
   if(payload.productSku||payload.eventCode){const resource=await currentShareTarget(this.db,payload,now);if(!resource)throw new NotFoundException({code:'SHARE_TARGET_UNAVAILABLE'});return {content:null,resource,requiresLogin:false,expiresAt:link.expiresAt.toISOString(),destination:resource.destination};}
   if(!payload.contentId)return {content:null,requiresLogin:false,expiresAt:link.expiresAt.toISOString(),destination:'/'};

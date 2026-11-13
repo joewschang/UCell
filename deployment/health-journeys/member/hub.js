@@ -1,5 +1,5 @@
 import {el,box,btn,link,show} from '../ui.js';
-import {api,member,login} from './session.js';
+import {api,member,login,gameShare} from './session.js';
 const params=new URLSearchParams(location.search);
 function reminder(){
  const date=new Date(Date.now()+7*86400000).toISOString().slice(0,10).replaceAll('-','');
@@ -23,7 +23,7 @@ async function home(){
     const url=new URL(g.href,location.origin);if(params.get('invite'))url.searchParams.set('invite',params.get('invite'));
     const a=g.membersOnly&&!member?login(url.pathname+url.search):link(g.id==='egfr'?'開始換算':'開始觀察',url.href,'j-primary');
     a.setAttribute('aria-label',a.textContent+'：'+g.name);
-    return box('article','j-tile',img,box('div','j-pad',g.id===featured?el('small','本週任務','j-week'):null,el('h2',g.name),el('p',g.description),a));
+    return box('article','j-tile',img,box('div','j-pad',g.id===featured?el('small','本週任務','j-week'):null,el('h2',g.name),el('p',g.description),gameShare(g,a)));
   });
   const records=(passport||[]).filter(p=>p.n);
   const names={game:'肌少症',diabetes:'糖尿病',egfr:'eGFR','blood-pressure':'血壓監測',cognition:'認知觀察'};
@@ -34,4 +34,10 @@ async function home(){
     box('details','',el('summary','設定每週行事曆提醒'),el('p','將每週任務加入個人行事曆，之後可在行事曆調整或取消。'),btn('下載行事曆提醒',reminder))),topics);
  }catch(e){show(el('h1','健康中心'),el('p',e.message),btn('重新載入',home));}
 }
-if(['play','game','from','read','tag'].some(k=>params.has(k)))await import('../sarcopenia.js?journey=1');else home();
+const inviteKey=params.get('i');
+if(inviteKey&&/^[A-Za-z0-9_-]{22}$/.test(inviteKey)){
+ const raw=atob(inviteKey.replaceAll('-','+').replaceAll('_','/')+'==');
+ const hex=Array.from(raw,c=>c.charCodeAt(0).toString(16).padStart(2,'0')).join('');
+ const uuid=[hex.slice(0,8),hex.slice(8,12),hex.slice(12,16),hex.slice(16,20),hex.slice(20)].join('-');
+ location.replace('/health/journey/invite/?id='+uuid);
+}else if(['play','game','from','read','tag'].some(k=>params.has(k)))await import('../sarcopenia.js?journey=1');else home();

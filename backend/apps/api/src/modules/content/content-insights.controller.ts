@@ -19,11 +19,11 @@ export class AdminContentInsightsController{
  @Get() get(){return this.service.read();}
 }
 
-class ShareDto extends InsightsQuery { @ApiProperty({format:'uuid',required:false}) @IsOptional() @IsUUID() contentId?:string; @ApiProperty({required:false}) @IsOptional() @Matches(/^TIP-\d{3}$/) productSku?:string; @ApiProperty({required:false}) @IsOptional() @Matches(/^[A-Z][A-Z0-9_-]{2,39}$/) eventCode?:string; }
+class ShareDto extends InsightsQuery { @ApiProperty({required:false}) @IsOptional() @Matches(/^(game|diabetes|egfr|blood-pressure|cognition)$/) healthGame?:string; @ApiProperty({format:'uuid',required:false}) @IsOptional() @IsUUID() contentId?:string; @ApiProperty({required:false}) @IsOptional() @Matches(/^TIP-\d{3}$/) productSku?:string; @ApiProperty({required:false}) @IsOptional() @Matches(/^[A-Z][A-Z0-9_-]{2,39}$/) eventCode?:string; }
 @ApiTags('Member - Content') @ApiBearerAuth('memberBearer') @UseGuards(MemberAuthenticationGuard)
 @Controller('member/content-share-links')
 export class MemberContentShareController {
  constructor(private readonly links:MemberShareLinkService){}
- @Post() create(@Req() req:any,@Body() body:ShareDto){return this.links.create(req.user.personId,body.qualificationId,new Date(),body.contentId,{productSku:body.productSku,eventCode:body.eventCode});}
+ @Post() create(@Req() req:any,@Body() body:ShareDto){return this.links.create(req.user.personId,body.qualificationId,new Date(),body.contentId,{productSku:body.productSku,eventCode:body.eventCode},body.healthGame,true);}
  @Post(':id/revoke') revoke(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:InsightsQuery){return this.links.revoke(req.user.personId,body.qualificationId,id);}
 }
