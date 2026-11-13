@@ -1,3 +1,4 @@
+@import url("/assets/share-platforms-v2.css");
 .uc-share-actions{margin-block:.75rem;overflow-wrap:anywhere}
 button.uc-share-line,.uc-share-actions button.uc-share-line{background:#006b40;color:white;border:1px solid #579d7b;min-height:44px;border-radius:.65rem;padding:.5rem 1rem;font-weight:700}
 .uc-share-social{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem;margin-top:.45rem}

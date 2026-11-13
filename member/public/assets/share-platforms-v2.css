@@ -1,0 +1,51 @@
+:root {
+  --share-tile: #fff;
+  --share-outline: #576b76;
+  --share-ink: #141b21;
+  --share-facebook: #0866da;
+  --share-instagram: #ac2176;
+}
+:root:is(.dark, [data-theme="dark"], [data-season-dark="yes"], [data-j-theme="dark"]) {
+  --share-tile: #152633;
+  --share-outline: #aabfc9;
+  --share-ink: #fff;
+  --share-facebook: #78baff;
+  --share-instagram: #ff93c9;
+}
+
+/* Keep brand colors paired even when a seasonal theme styles interactive states. */
+:is(button.uc-share-line, .j-game-share .j-start-share > button) {
+  background: #007d36 !important;
+  color: #fff !important;
+  border: 1px solid #69bc89 !important;
+}
+:is(button.uc-share-line, .j-game-share .j-start-share > button):enabled:is(:hover,:focus-visible,:active) {
+  background: #00632b !important;
+}
+:is(.uc-share-social,.uc-social-logos,.j-share-icons) > button {
+  display: inline-grid;
+  place-items: center;
+  min-height: 44px;
+  background: var(--share-tile) !important;
+  color: var(--share-ink) !important;
+  border: 1px solid var(--share-outline) !important;
+}
+:is(.uc-share-social,.uc-social-logos,.j-share-icons) > button[aria-label$=" facebook" i] {
+  color: var(--share-facebook) !important;
+}
+:is(.uc-share-social,.uc-social-logos,.j-share-icons) > button[aria-label$=" instagram" i] {
+  color: var(--share-instagram) !important;
+}
+:is(.uc-share-social,.uc-social-logos,.j-share-icons) > button svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+:is(.uc-share-social,.uc-social-logos,.j-share-icons) > button:enabled:is(:hover,:active) {
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+:is(.uc-share-social,.uc-social-logos,.j-share-icons,.j-start-share) > button:focus-visible,
+button.uc-share-line:focus-visible {
+  outline: 3px solid var(--share-outline) !important;
+  outline-offset: 2px;
+}

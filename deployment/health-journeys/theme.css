@@ -1,3 +1,4 @@
+@import url("/assets/share-platforms-v2.css");
 :root{--j-bg:var(--us-bg,#f6f6ee);--j-card:#fffef9;--j-ink:#153a34;--j-muted:#4b615a;--j-line:#c6d2c8;--j-accent:#12634f;--j-tint:#e6efe5;color-scheme:light}
 [data-season-dark=yes],:root.dark,:root[data-j-theme=dark]{--j-bg:#0b1d24;--j-card:#142e36;--j-ink:#f3f7ed;--j-muted:#c2d5cf;--j-line:#456169;--j-accent:#8be2c3;--j-tint:#20403e;color-scheme:dark}
 :root[data-j-theme=light]{--j-bg:#f6f6ee;--j-card:#fffef9;--j-ink:#153a34;--j-muted:#4b615a;--j-line:#c6d2c8;--j-accent:#12634f;--j-tint:#e6efe5;color-scheme:light}
