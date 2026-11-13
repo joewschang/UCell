@@ -1,0 +1,10 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:44cf534e2251402e702a517da8ce4862e5d24329f0dc21a64600923d63336164 AS original
+FROM node:22-alpine AS build
+COPY --from=original /usr/share/nginx/html /site
+COPY *.js *.cjs /work/
+RUN node /work/package.cjs /site admin
+FROM original
+COPY --from=build /site/ /usr/share/nginx/html/
+COPY audio/ /usr/share/nginx/html/seasons/audio/
+COPY app_entry_many_coins.mp3 /usr/share/nginx/html/seasons/audio/app_entry_many_coins.mp3
+COPY admin-calendar.css /usr/share/nginx/html/seasons/admin-calendar.css

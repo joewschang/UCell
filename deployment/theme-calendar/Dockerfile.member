@@ -1,0 +1,9 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:7165905498ba6712485bd070ac0fdf24c9356e5eb6c41564a2ef64f5858b0a64 AS original
+FROM node:22-alpine AS build
+COPY --from=original /usr/share/nginx/html /site
+COPY *.js *.cjs /work/
+RUN node /work/package.cjs /site member
+FROM original
+COPY --from=build /site/ /usr/share/nginx/html/
+COPY audio/christmas_app_welcome_chime.mp3 audio/app_new_year_welcome_ringtone.mp3 /usr/share/nginx/html/seasons/audio/
+COPY admin-calendar.css /usr/share/nginx/html/seasons/admin-calendar.css
