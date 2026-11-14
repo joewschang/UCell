@@ -1,3 +1,5 @@
 FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:f48c46914e09eaecd34b6f14f81741b01161104fc70b90ae47a2a214052aa1bf
 COPY calendar.cjs /app/apps/api/dist/modules/content/theme-calendar.cjs
 RUN node -e "const f=require('fs'),p='/app/apps/api/dist/modules/content/content.controller.js';f.appendFileSync(p, '\nrequire(\x27./theme-calendar.cjs\x27).register(exports.PublicContentController,exports.AdminContentController);\n')"
+
+COPY birthday-month.cjs /app/apps/api/dist/modules/content/birthday-month.cjs

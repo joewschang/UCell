@@ -39,6 +39,7 @@ function register(pub,admin){
  verb(url)(cls.prototype,key,d);
  }
  route(pub,'currentThemeCalendar',Get,'themes/current',async function(){return current(await list(this.service.db))});
+ route(admin,'readBirthdayMonth',Get,'themes/birthday-month',function(){return require('./birthday-month.cjs').monthlyBirthdays(this.service.db)});
  route(admin,'readThemeCalendar',Get,'themes/calendar',function(){return list(this.service.db)});
  route(admin,'writeThemeCalendar',Post,'themes/calendar',function(req,body){return save(this.service.db,body,String(req.user?.personId||req.user?.subject||req.user?.role))},true);
 }
