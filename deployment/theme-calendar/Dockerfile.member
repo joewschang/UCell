@@ -5,5 +5,5 @@ COPY *.js *.cjs /work/
 RUN node /work/package.cjs /site member
 FROM original
 COPY --from=build /site/ /usr/share/nginx/html/
-COPY audio/christmas_app_welcome_chime.mp3 audio/app_new_year_welcome_ringtone.mp3 /usr/share/nginx/html/seasons/audio/
+COPY audio/christmas_app_welcome_chime.mp3 audio/app_new_year_welcome_ringtone.mp3 audio/chinese_new_year_app_welcome.mp3 /usr/share/nginx/html/seasons/audio/
 COPY admin-calendar.css /usr/share/nginx/html/seasons/admin-calendar.css
