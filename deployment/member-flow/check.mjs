@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {rect,estimate} from './member/crop.mjs';
+import {orderedTags,contentTopic} from './member/topics.mjs';
+const image=new Uint8ClampedArray(160*120*4);
+assert.deepEqual(estimate(image,160,120),rect());
+for(let y=20;y<100;y++)for(let x=20;x<140;x++) image.fill(200,(y*160+x)*4,(y*160+x)*4+3);
+const [left,,right]=estimate(image,160,120);
+assert(left.x>0 && left.x<20/160 && right.y>100/120 && right.y<1);
+assert.deepEqual(orderedTags(['木','B','一','A','二']),['A','B','一','二','木']);
+assert.equal(contentTopic({title:'UCell TIP–363'}),'商品介紹');
+assert.equal(contentTopic({title:'血糖觀察'}),'健康知識');
+console.log('PASS photo bounds, full-image fallback, stroke and alphabet order, topical classification');
