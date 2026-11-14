@@ -13,3 +13,29 @@
 .package-product-list{display:grid;gap:10px;margin:16px 0}.package-product-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #ded8c9;border-radius:10px}.package-product-icon{width:48px;height:48px;object-fit:contain;flex:0 0 48px}.package-product-description{flex:1;min-width:0}.package-product-description h4,.package-product-description p{margin:0}.package-product-description p{font-size:.85rem;color:#666}.package-product-row .quantity{flex-shrink:0}@media(max-width:480px){.package-product-row{flex-wrap:wrap}.package-product-row .quantity{margin-left:auto}}
 
 .uc-art-emblem{display:inline-flex;align-items:center;gap:8px;vertical-align:middle;flex-shrink:0}.uc-art-emblem img{width:48px;height:48px;object-fit:contain;border-radius:8px}.uc-art-emblem span{font-size:.85rem;font-weight:700}.uc-ball-rank,.uc-ball-identity-emblems{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.uc-ball-rank-state{display:block;font-size:.8rem}.uc-identity-badge .uc-ball-rank{justify-content:center}.uc-identity-badge .uc-art-emblem span{color:inherit}
+
+/* Keep the quantity controls in row one even when either button explains a limit. */
+#root :is(.package-product-row .quantity,.cart-quantity,.product-detail-quantity) {
+  display:grid;
+  grid-template-columns:auto minmax(2ch,1fr) auto;
+  align-items:center;
+  gap:.45rem;
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+#root :is(.package-product-row .quantity,.cart-quantity,.product-detail-quantity) > .member-action-shell { display:contents; }
+#root :is(.package-product-row .quantity,.cart-quantity,.product-detail-quantity) button[aria-label^="減少"] {grid-area:1 / 1;}
+#root :is(.package-product-row .quantity,.cart-quantity,.product-detail-quantity) > :is(output,label) {grid-area:1 / 2;min-width:0;text-align:center;}
+#root :is(.package-product-row .quantity,.cart-quantity,.product-detail-quantity) button[aria-label^="增加"] {grid-area:1 / 3;}
+#root :is(.package-product-row .quantity,.cart-quantity,.product-detail-quantity) button {min-width:44px;min-height:44px;font-size:1.25rem;}
+#root :is(.package-product-row .quantity,.cart-quantity,.product-detail-quantity) :is(.member-action-error,.member-action-progress) {
+  grid-column:1 / -1;grid-row:2;position:static;box-sizing:border-box;
+  min-width:0;max-width:100%;width:auto;white-space:normal;overflow-wrap:anywhere;
+}
+#root .package-product-row:has(.has-feedback) {flex-wrap:wrap;}
+#root .package-product-row .quantity:has(.has-feedback) {flex-basis:100%;}
+@media(max-width:540px){
+  #root .package-product-row {flex-wrap:wrap;}
+  #root .package-product-row .quantity {flex-basis:100%;margin:0;}
+}

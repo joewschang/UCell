@@ -54,9 +54,9 @@ function PackageItems({offer,choice,update}:{offer:PackageOffer;choice:PackageDr
         const id=product.productRuleProfileId,quantity=choice.quantities[id]??0;
         const step=(n:1|-1)=>quantityStep({...choice,quote:pricing.data},product,n);
         return <div key={id} className="eb-product"><span>{product.displayName}</span><div className="eb-counter">
-          <button type="button" disabled={quantity===0} aria-label={'減少'+product.displayName} onClick={()=>update({...choice,quantities:{...choice.quantities,[id]:step(-1)}})}>−</button>
+          <button type="button" disabled={quantity===0} aria-label={'減少'+product.displayName} onClick={()=>update({...choice,quantities:{...choice.quantities,[id]:step(-1)}})}>-</button>
           <output aria-label={product.displayName+'盒數'}>{quantity}</output>
-          <button type="button" disabled={step(1)===quantity} aria-label={'增加'+product.displayName} onClick={()=>update({...choice,quantities:{...choice.quantities,[id]:step(1)}})}>＋</button>
+          <button type="button" disabled={step(1)===quantity} aria-label={'增加'+product.displayName} onClick={()=>update({...choice,quantities:{...choice.quantities,[id]:step(1)}})}>+</button>
         </div></div>;
       })}
     </>}
