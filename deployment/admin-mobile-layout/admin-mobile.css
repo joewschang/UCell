@@ -1,0 +1,44 @@
+@media (max-width: 767px) {
+  .ops-data-grid, .table-wrap, .ops-grid-tools, .filter-bar, .toolbar,
+  .card, .card-body, main { min-inline-size: 0; }
+  .table-wrap {
+    max-inline-size: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  .table-wrap > table {
+    table-layout: auto;
+    min-inline-size: 100%;
+  }
+  .table-wrap :is(th, td) { vertical-align: middle; }
+  .table-wrap :is(th,td) :is(button:not(.list-row),a.button),
+  .table-wrap td :is(.badge,.status-badge) {
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+    max-inline-size: none;
+  }
+  .table-wrap :is(th,td) button { min-block-size: 44px; }
+  .ops-data-grid[aria-label="會員清單"] table { width: max-content; }
+  .ops-data-grid[aria-label="會員清單"] :is(td,th) {
+    padding: .45rem .65rem;
+    white-space: nowrap;
+    word-break: normal;
+  }
+  .ops-data-grid[aria-label="會員清單"] td {
+    max-inline-size: 18rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .ops-grid-tools, .ops-grid-pages, .button-row, .toolbar, .filter-bar {
+    flex-wrap: wrap;
+    row-gap: .5rem;
+  }
+  :is(.toolbar,.filter-bar,.ops-grid-tools) > * { min-inline-size: 0; max-inline-size: 100%; }
+  :is(.toolbar,.filter-bar,.ops-grid-tools) :is(input:not([type=checkbox]):not([type=radio]),select) {
+    box-sizing: border-box; max-inline-size: 100%; min-block-size: 44px;
+  }
+  .ops-grid-columns { grid-template-columns: repeat(auto-fit,minmax(min(9rem,100%),1fr)); }
+  .ops-grid-columns label, .ops-grid-tools summary { min-block-size: 44px; align-content: center; }
+  .identity-summary dl { grid-template-columns: minmax(0,auto) minmax(0,1fr); }
+}
