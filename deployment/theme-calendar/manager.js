@@ -7,7 +7,7 @@ function birthdayPreview(){
  const panel=el('section'),heading=el('h3','會員生日'),audio=el('audio'),list=el('ul'),status=el('p');
  const open=el('button','預覽當月壽星'),previous=el('button','上一頁'),next=el('button','下一頁');
  const pager=el('div'),results=el('div');let members=[],month='',page=0;
- panel.className='card';audio.controls=true;audio.preload='none';audio.src='/seasons/audio/birthday-chime.wav';audio.setAttribute('aria-label','生日主題音樂');
+ panel.className='card';audio.controls=true;audio.preload='none';audio.src='/seasons/audio/birthday_app_welcome.mp3';audio.setAttribute('aria-label','生日主題音樂');
  audio.style.maxWidth='100%';status.setAttribute('role','status');
  for(const button of [open,previous,next])button.type='button';
  pager.className='button-row';pager.append(previous,next);

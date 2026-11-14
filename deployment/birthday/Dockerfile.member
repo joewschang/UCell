@@ -5,4 +5,4 @@ COPY patch.cjs /patch.cjs
 RUN node /patch.cjs /site
 FROM live
 COPY --from=build /site /usr/share/nginx/html
-COPY entry.js date.js copy.json birthday.css chime.wav /usr/share/nginx/html/birthday/v1/
+COPY entry.js date.js copy.json birthday.css birthday_app_welcome.mp3 /usr/share/nginx/html/birthday/v1/

@@ -5,7 +5,7 @@ const pref='ucell.line-welcome-sound.v1';
 function stop(){playing?.pause();playing=null;card?.remove();card=null}
 function reset(){stop();profile=null;delete document.documentElement.dataset.birthday;document.querySelectorAll('uc-birthday-wish').forEach(el=>el.refresh())}
 function enabled(){return localStorage.getItem(pref)!=='off'}
-async function music(){if(!enabled()||!profile)return;playing??=new Audio('/birthday/v1/chime.wav');try{await playing.play()}catch{}}
+async function music(){if(!enabled()||!profile)return;playing??=new Audio('/birthday/v1/birthday_app_welcome.mp3');try{await playing.play()}catch{}}
 function intro(){
  const key='ucell.birthday.'+profile.memberNo+'.'+day;if(localStorage.getItem(key))return;
  localStorage.setItem(key,'1');card=document.createElement('aside');card.className='birthday-card';card.setAttribute('aria-label','生日賀卡');
@@ -15,7 +15,7 @@ function intro(){
  const close=document.createElement('button');close.textContent='收下祝福';close.onclick=stop;
  card.append(star,heading,note);
  if(enabled()){const replay=document.createElement('button');replay.textContent='播放生日樂音';replay.onclick=music;card.append(replay)}
- card.append(close);document.body.append(card);music();const current=card;setTimeout(()=>{if(card===current)stop()},10000);
+ card.append(close);document.body.append(card);music();const current=card;setTimeout(()=>{if(card!==current)return;if(playing&&!playing.paused&&!playing.ended){playing.addEventListener("ended",()=>{if(card===current)stop()},{once:true})}else stop()},10000);
 }
 export function check(){
  const token=sessionStorage.getItem('ucell_member_token'),today=taipeiDay();
