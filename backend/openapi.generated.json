@@ -12393,6 +12393,14 @@
             }
           },
           {
+            "name": "sourceChannel",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "description": "主檔搜尋頁次，從 1 開始。",
             "in": "query",

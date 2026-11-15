@@ -68,6 +68,7 @@ export class AdminFormalMemberApplicationController {
  @ApiOperation({operationId:'adminCreatePaperFormalMemberApplication',description:'Back-office entry for paper INDIVIDUAL or LEGAL_ENTITY formal applications. Corporate applications are paper-only. Creates no Qualification/Ball.'})
  createPaper(@Body() body:AdminPaperFormalApplicationDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createPaper(body,req.user?.personId,key,req.requestId);}
  @Get() @ApiOperation({operationId:'adminListFormalMemberApplications',description:'Read-only metadata queue. The encrypted application payload is never decrypted or returned.'})
+ @ApiQuery({name:'sourceChannel',required:false})
  @ApiQuery({name:'page',required:false,description:'主檔搜尋頁次，從 1 開始。'})
  @ApiQuery({name:'q',required:false,description:'依正式會員主檔條件搜尋。'})
  @Header('Cache-Control','private, no-store')
