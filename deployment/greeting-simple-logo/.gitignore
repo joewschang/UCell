@@ -2,3 +2,4 @@ tools/
 candidate/
 preview/
 prepare.cjs
+*-prepare.cjs

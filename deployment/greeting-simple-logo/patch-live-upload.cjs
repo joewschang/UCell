@@ -1,0 +1,11 @@
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const root=process.argv[2]||'/app/apps/api/dist/modules/daily-greetings';
+const file=path.join(root,'greeting-upload.js'),source=fs.readFileSync(file,'utf8');
+assert(source.includes('3_145_728'),'Current 3 MiB limit is required');
+assert(source.includes('4_194_304'),'Current base64 limit is required');
+const old='<image href="data:image/jpeg;base64,${logo}" x="380" y="890" width="320" height="180" preserveAspectRatio="xMidYMid meet"/>';
+assert.equal(source.split(old).length,2,'Expected one legacy appended brand');
+const output='const greetingBrandPatch = require("./greeting-brand");\n'+source.replace(old,'${greetingBrandPatch.greetingBrandSvg()}');
+assert(output.includes('3_145_728')&&output.includes('4_194_304'));
+fs.writeFileSync(file,output);
+console.log('Brand-only upload patch applied; live upload limits retained');

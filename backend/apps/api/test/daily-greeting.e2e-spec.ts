@@ -29,9 +29,10 @@ describe('Daily greeting published schedule and PNG',()=>{
   expect(greetingCopy('2027-09-15').title).toContain('中秋');
  });
  it('contains artwork and brand with distinct daily palettes and copy',()=>{
-  expect(greetingSvg('2026-11-11',logo)).toContain(logo);
+  expect(greetingSvg('2026-11-11',logo)).not.toContain(logo);
+  expect(greetingSvg('2026-11-11',logo)).toContain('data:image/png;base64,');
   expect(greetingSvg('2026-11-11',logo)).toContain('preserveAspectRatio="xMidYMid meet"');
-  expect(greetingSvg('2026-11-11',logo)).toContain('<path');
+  expect(greetingSvg('2026-11-11',logo)).toContain('x="864" y="888"');
   expect(greetingSvg('2026-11-11',logo)).not.toBe(greetingSvg('2026-11-12',logo));
  });
  it('renders a stable real 1080px PNG and plain public share metadata',async()=>{

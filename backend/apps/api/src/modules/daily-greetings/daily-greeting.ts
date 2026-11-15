@@ -1,6 +1,7 @@
-import {greetingTheme,greetingArtwork,THEME_LABELS} from './greeting-art';
+import {greetingPhotoSvg} from './greeting-photo';
+import {greetingTheme} from './greeting-art';
 /** Versioned, reviewed copy. No member data, health claims or monetary rules. */
-export const GREETING_VERSION='template-v2-themes';
+export const GREETING_VERSION='template-v3-generated-photo';
 export const TIME_ZONE='Asia/Taipei';
 const DAY=86_400_000;
 export function greetingDate(now=new Date()) { return new Date(now.getTime()+8*3_600_000-7*3_600_000).toISOString().slice(0,10); }
@@ -59,7 +60,6 @@ export function greetingCopy(date:string):GreetingCopy {
 export const escapeHtml=(value:string)=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function greetingSvg(date:string,logoDataUri:string):string {
  if(!logoDataUri.startsWith('data:image/jpeg;base64,'))throw new Error('GREETING_OFFICIAL_LOGO_REQUIRED');
- const copy=greetingCopy(date),theme=greetingTheme(date,copy.category==='節慶');
- const ink=theme==='festival'?'#8d3038':'#214e49';
- return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><defs><linearGradient id="art-sky" x2="0" y2="1"><stop stop-color="#f8f1df"/><stop offset="1" stop-color="#aed5cf"/></linearGradient></defs>${greetingArtwork(theme)}<rect x="48" y="40" width="984" height="600" rx="32" fill="#fffdf7"/><g font-family="Noto Sans CJK TC" fill="${ink}"><image href="${logoDataUri}" x="60" y="48" width="400" height="225" preserveAspectRatio="xMidYMid meet"/><text x="960" y="158" text-anchor="end" font-size="28" letter-spacing="3">${THEME_LABELS[theme]}</text><path d="M100 285H980" stroke="${ink}" stroke-width="2" opacity=".18"/><text x="100" y="380" font-size="${copy.title.length>14?52:58}" font-weight="700">${escapeHtml(copy.title)}</text>${copy.lines.map((line,i)=>`<text x="104" y="${465+i*59}" font-size="36">${escapeHtml(line)}</text>`).join('')}<text x="104" y="590" font-size="25" letter-spacing="2">${date.replaceAll('-',' . ')}</text><text x="976" y="590" text-anchor="end" font-size="24">${theme==='weather'?'晴雨意象・非即時預報':'UCell・每日一份溫暖'}</text></g></svg>`;
+ const title=greetingCopy(date).title.split(/[，、]/)[0];
+ return greetingPhotoSvg(escapeHtml(title),date);
 }
