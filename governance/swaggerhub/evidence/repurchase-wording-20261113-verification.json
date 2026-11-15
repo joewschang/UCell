@@ -1,0 +1,20 @@
+{
+  "tool": "oasdiff 1.32.1",
+  "toolArchiveSha256": "7c8939fc49b75ee11fec66a5b83b37a2fca6aee109fed85013b1ba2ac2a1ee7f",
+  "comparison": "existing unmodified comparisonView: header deduplication and URI-parameter normalization",
+  "breakingExit": 0,
+  "changes": [
+    {
+      "jsonPointer": "/paths/~1api~1v1~1admin~1subscriptions/post/summary",
+      "before": "建立重銷（三個月）、重銷（六個月）、重銷（十二個月）訂閱與逐月排程",
+      "after": "建立重銷（三個月）、重銷（六個月）、重銷（十二月）訂閱與逐月排程"
+    }
+  ],
+  "structuralEqualityExcludingSummary": true,
+  "localGovernanceTests": {
+    "passed": 29,
+    "skipped": 1
+  },
+  "remoteGate": "PENDING",
+  "provenance": "Verified on cloud branch d6aacb058c88b6de8c14d0f54ad3715d25655a86; restored byte-identical old/new baseline on desktop; not a new desktop oasdiff execution."
+}

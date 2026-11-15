@@ -30,7 +30,7 @@ Member loads package version V1. Admin publishes/switches to V2 before checkout.
 PACKAGE_CONFIG_MANAGE can edit DRAFT but cannot approve if separation-of-duties policy forbids self-approval. Unauthorized Admin cannot mutate. Every publish/approve/retire action audited with before/after hash/version.
 
 ## Golden P10 — Six initial packages
-Seed/config verification: 啟航 14,400/3; 菁英 43,200/9; 領袖 72,000/15; 重銷（三個月） 6,000/2; 重銷（六個月） 12,000/4; 重銷（十二個月） 24,000/8. Display name exactly 啟航. These values come from DB version configuration, not frontend constants.
+Seed/config verification: 啟航 14,400/3; 菁英 43,200/9; 領袖 72,000/15; 重銷（三個月） 6,000/2; 重銷（六個月） 12,000/4; 重銷（十二月） 24,000/8. Display name exactly 啟航. These values come from DB version configuration, not frontend constants.
 
 ## Required UI behavior
 Package cards show server price and selectable count. Product picker shows eligible products only, +/- quantity, selected/required counter, validation messages and review summary. Qualification active packages prompt target Ball when needed. Checkout review shows package, selected products and total payable package price. Do not show inferred PV/BV unless authoritative API provides it under approved policy.
