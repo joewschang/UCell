@@ -2,7 +2,7 @@ import {PrismaService} from '@ucell/database';
 import {AuditService} from '../src/common/audit/audit.service';
 import {CloudGreetingService} from '../src/modules/daily-greetings/cloud-greeting.service';
 import {readFileSync} from 'node:fs';import {join} from 'node:path';
-jest.mock('../src/modules/daily-greetings/cloud-greeting-render',()=>({renderCloudGreeting:jest.fn(async (png:Buffer)=>png)}));
+jest.mock('../src/modules/daily-greetings/cloud-greeting-render',()=>({renderGeneratedGreeting:jest.fn(async (png:Buffer)=>({image:png,backgroundHash:png.toString('hex').slice(0,64)}))}));
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('Isolated cloud greeting publication transactions',()=>{
  let db:PrismaService,service:CloudGreetingService;const provider={generate:jest.fn()},saved={...process.env};

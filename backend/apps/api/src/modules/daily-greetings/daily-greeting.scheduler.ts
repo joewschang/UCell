@@ -21,6 +21,7 @@ export class DailyGreetingScheduler implements OnApplicationBootstrap,OnModuleDe
  /** One iteration, also used by isolated tests. Template publishing keeps its review controls; cloud uses its approved automatic policy. */
  async runOnce(){
   if(!this.enabled()||this.stopped)return {date:greetingDate(),status:'DISABLED'};
+  if(process.env.GREETING_PUSH_ENABLED==='true')return {date:greetingDate(),status:'EXTERNAL_PUSH_MANAGED'};
   if(process.env.DAILY_GREETING_CLOUD_ENABLED==='true'){if(!this.cloud)throw new ServiceUnavailableException({code:'GREETING_CLOUD_NOT_CONFIGURED'});return this.cloud.run(greetingDate());}
   if(!this.publications?.enabled())throw new ServiceUnavailableException({code:'GREETING_PUBLISHING_NOT_CONFIGURED'});
   // At most one date-boundary retry: never backfill an unbounded outage history.

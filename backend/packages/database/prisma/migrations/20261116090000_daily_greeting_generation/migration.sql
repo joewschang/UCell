@@ -4,5 +4,5 @@ CREATE TABLE learning.daily_greeting_generation (
  status text NOT NULL CHECK (status IN ('RUNNING','FAILED','PUBLISHED','SKIPPED')),
  lease_owner uuid NOT NULL, lease_until timestamptz, attempts integer NOT NULL CHECK (attempts BETWEEN 1 AND 3),
  actor_subject text NOT NULL, retry_at timestamptz, error_code text,
- background_hash text UNIQUE, publication_id uuid, created_at timestamptz NOT NULL DEFAULT now()
+ request_id uuid UNIQUE, request_hash text, background_hash text UNIQUE, publication_id uuid, created_at timestamptz NOT NULL DEFAULT now()
 );

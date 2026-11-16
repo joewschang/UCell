@@ -5383,6 +5383,8 @@ model CompensationAuditCase {
 }
 
 model DailyGreetingGeneration {
+  requestId String? @unique @map("request_id") @db.Uuid
+  requestHash String? @map("request_hash")
   greetingDate String @id @map("greeting_date")
   status String
   leaseOwner String @map("lease_owner") @db.Uuid
