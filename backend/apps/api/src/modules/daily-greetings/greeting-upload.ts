@@ -1,7 +1,7 @@
 import {inflateSync} from 'node:zlib';
 import {BadRequestException,ServiceUnavailableException} from '@nestjs/common';
-import {readFileSync} from 'node:fs';
-import {join} from 'node:path';
+import {greetingBrandSvg} from './greeting-brand';
+
 import {renderGreeting} from './render-greeting';
 let active=0;
 export function imageType(bytes:Buffer):'png' {
@@ -36,8 +36,7 @@ export async function normalizeGreetingUpload(contentBase64:string):Promise<Buff
  if(active>=2)throw new ServiceUnavailableException({code:'GREETING_UPLOAD_BUSY'});
  active++;
  try{
-  const logo=readFileSync(join(__dirname,'assets/ucell-official-logo.jpeg')).toString('base64');
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080"><rect width="1080" height="1080" fill="white"/><image href="data:image/${type};base64,${bytes.toString('base64')}" x="0" y="0" width="1080" height="880" preserveAspectRatio="xMidYMid meet"/><image href="data:image/jpeg;base64,${logo}" x="380" y="890" width="320" height="180" preserveAspectRatio="xMidYMid meet"/></svg>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080"><rect width="1080" height="1080" fill="white"/><image href="data:image/${type};base64,${bytes.toString('base64')}" x="0" y="0" width="1080" height="880" preserveAspectRatio="xMidYMid meet"/>${greetingBrandSvg()}</svg>`;
   return await renderGreeting(svg,'');
  }catch{throw new BadRequestException({code:'GREETING_IMAGE_DECODE_FAILED'});}finally{active--;}
 }

@@ -24,9 +24,8 @@ describe('Reviewed daily theme rotation',()=>{
   for(let i=0;i<730;i++){
    const date=new Date(Date.UTC(2026,0,1+i)).toISOString().slice(0,10),copy=greetingCopy(date),svg=greetingSvg(date,logo);
    expect(copy.title.length).toBeLessThanOrEqual(16);copy.lines.forEach(line=>expect(line.length).toBeLessThanOrEqual(24));
-   expect(svg).toContain(logo);expect(svg).toContain('width="1080" height="1080"');
-   if(greetingTheme(date,copy.category==='節慶')==='weather')expect(svg).toContain('非即時預報');
+   expect(svg).not.toContain(logo);expect(svg).toContain('data:image/png;base64,');expect(svg).toContain('width="1080" height="1080"');
   }
-  expect(GREETING_VERSION).toBe('template-v2-themes');
+  expect(GREETING_VERSION).toBe('template-v3-generated-photo');
  });
 });
