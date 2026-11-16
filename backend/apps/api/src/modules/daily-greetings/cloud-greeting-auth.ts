@@ -6,8 +6,12 @@ import {randomUUID} from 'node:crypto';
 const guid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export interface GreetingMachineConfig {tenant:string;audience:string;client:string;objectId:string;}
 export async function verifyGreetingMachine(token:string,c:GreetingMachineConfig,key:JWTVerifyGetKey,role:'Greeting.Generate'|'Greeting.Publish'='Greeting.Generate'){
- const {payload:p}=await jwtVerify(token,key,{issuer:`https://login.microsoftonline.com/${c.tenant}/v2.0`,audience:c.audience,algorithms:['RS256'],clockTolerance:5,maxTokenAge:'1h'});
- if(p.tid!==c.tenant||p.azp!==c.client||p.oid!==c.objectId||p.idtyp!=='app'||p.scp!==undefined||!Array.isArray(p.roles)||p.roles.length!==1||p.roles[0]!==role||typeof p.iat!=='number'||typeof p.exp!=='number'||p.exp-p.iat>3600||p.exp<=p.iat)throw new Error('claims');
+ const {payload:p}=await jwtVerify(token,key,{issuer:`https://login.microsoftonline.com/${c.tenant}/v2.0`,audience:c.audience,algorithms:['RS256'],clockTolerance:0,maxTokenAge:'1h'});
+ // Entra normally issues 60–90 minute tokens. Accept only their first hour,
+ // with no expiry/age grace; never alter tenant token-lifetime policy.
+ const now=Math.floor(Date.now()/1000);
+ if(!Number.isSafeInteger(p.iat)||!Number.isSafeInteger(p.exp)||typeof p.iat!=='number'||typeof p.exp!=='number'||p.iat<0||p.iat>now||now>=p.iat+3600||now>=p.exp||p.exp<=p.iat||p.exp-p.iat>5400)throw new Error('claims');
+ if(p.tid!==c.tenant||p.azp!==c.client||p.oid!==c.objectId||p.idtyp!=='app'||p.scp!==undefined||!Array.isArray(p.roles)||p.roles.length!==1||p.roles[0]!==role)throw new Error('claims');
  return `SYSTEM:greeting-machine:${c.objectId}`;
 }
 @Injectable()

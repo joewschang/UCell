@@ -6,11 +6,31 @@ describe('Cloud greeting machine and provider boundaries',()=>{
  const c:GreetingMachineConfig={tenant:'11111111-1111-4111-8111-111111111111',audience:'22222222-2222-4222-8222-222222222222',client:'33333333-3333-4333-8333-333333333333',objectId:'44444444-4444-4444-8444-444444444444'};
  let keys:any,privateKey:any;const saved={...process.env};
  beforeAll(async()=>{const pair=await generateKeyPair('RS256');privateKey=pair.privateKey;keys=createLocalJWKSet({keys:[{...await exportJWK(pair.publicKey),kid:'test',alg:'RS256',use:'sig'}]});});
- afterEach(()=>{process.env={...saved};jest.restoreAllMocks();});
+ afterEach(()=>{process.env={...saved};jest.restoreAllMocks();jest.useRealTimers();});
  async function sign(change:any={}){const now=Math.floor(Date.now()/1000);return new SignJWT({tid:c.tenant,azp:c.client,oid:c.objectId,idtyp:'app',roles:['Greeting.Generate'],iss:`https://login.microsoftonline.com/${c.tenant}/v2.0`,aud:c.audience,iat:now,exp:now+300,...change}).setProtectedHeader({alg:'RS256',kid:'test'}).sign(privateKey);}
  it('accepts only the exact app principal, audience and single narrow role',async()=>expect(await verifyGreetingMachine(await sign(),c,keys)).toBe('SYSTEM:greeting-machine:'+c.objectId));
  it.each([{tid:'other'},{azp:'other'},{oid:'other'},{aud:'other'},{iss:'https://evil.invalid'},{idtyp:'user'},{scp:'Greeting.Generate'},{roles:['Admin']},{roles:['Greeting.Generate','Admin']},{exp:1},{exp:Math.floor(Date.now()/1000)+7200}])('rejects incorrect, delegated, broad or expired claims %j',async change=>{await expect(verifyGreetingMachine(await sign(change),c,keys)).rejects.toThrow();});
  it('separates publish credentials from generation and rejects role combinations',async()=>{const token=await sign({roles:['Greeting.Publish']});expect(await verifyGreetingMachine(token,c,keys,'Greeting.Publish')).toContain(c.objectId);await expect(verifyGreetingMachine(token,c,keys)).rejects.toThrow();await expect(verifyGreetingMachine(await sign(),c,keys,'Greeting.Publish')).rejects.toThrow();await expect(verifyGreetingMachine(await sign({roles:['Greeting.Publish','Greeting.Generate']}),c,keys,'Greeting.Publish')).rejects.toThrow();});
+ it.each(['Greeting.Generate','Greeting.Publish'] as const)('enforces strict token times for %s',async role=>{
+  const now=1_800_000_000;jest.useFakeTimers({doNotFake:['nextTick','setImmediate']});jest.setSystemTime(now*1000);
+  const cases:Array<[Record<string,unknown>,boolean]>=[
+   [{iat:now,exp:now+3600},true],[{iat:now,exp:now+5400},true],
+   [{iat:now-3599,exp:now+1801},true],[{iat:now-3600,exp:now+1800},false],
+   [{iat:now-3601,exp:now+1799},false],[{iat:now+1,exp:now+300},false],
+   [{iat:now-300,exp:now},false],[{iat:now-300,exp:now-1},false],
+   [{iat:now-300,exp:now+1},true],[{iat:now,exp:now+5401},false],
+   [{iat:now,exp:now},false],[{iat:now,exp:now-1},false],
+   [{iat:undefined},false],[{exp:undefined},false],[{iat:'1800000000'},false],
+   [{exp:'1800000300'},false],[{iat:null},false],[{exp:null},false],
+   [{iat:now-0.5},false],[{exp:now+300.5},false],[{iat:-1},false],
+   [{iat:NaN},false],[{exp:Infinity},false],[{exp:Number.MAX_SAFE_INTEGER+1},false],
+   [{nbf:now+1},false],
+  ];
+  for(const [change,accepted] of cases){
+   const result=verifyGreetingMachine(await sign({...change,roles:[role]}),c,keys,role);
+   if(accepted)await expect(result).resolves.toContain(c.objectId);else await expect(result).rejects.toThrow();
+  }
+ });
  it('rejects tampered signatures',async()=>{const token=await sign(),parts=token.split('.');parts[1]=Buffer.from('{"roles":["Greeting.Generate"]}').toString('base64url');await expect(verifyGreetingMachine(parts.join('.'),c,keys)).rejects.toThrow();});
  it('never touches 11/16 and only accepts the currently released Taipei date',()=>{expect(()=>cloudDate('2026-11-16',new Date('2026-11-16T01:00:00Z'))).toThrow();expect(cloudDate('2026-11-17',new Date('2026-11-16T23:00:00Z'))).toBe('2026-11-17');expect(()=>cloudDate('2026-11-18',new Date('2026-11-16T23:00:00Z'))).toThrow();expect(()=>cloudDate('2026-11-17',new Date('2026-11-16T22:59:59Z'))).toThrow();});
  it('fails closed without explicit cloud/budget/model configuration',()=>{delete process.env.DAILY_GREETING_CLOUD_ENABLED;expect(()=>cloudConfiguration()).toThrow();process.env.DAILY_GREETING_CLOUD_ENABLED='true';process.env.DAILY_GREETING_IMAGE_BUDGET_APPROVED='true';process.env.AI_AZURE_ENDPOINT='http://169.254.169.254';process.env.AI_AZURE_KEY='TEST_ONLY';process.env.DAILY_GREETING_IMAGE_DEPLOYMENT='image-test';expect(()=>cloudConfiguration()).toThrow();});
