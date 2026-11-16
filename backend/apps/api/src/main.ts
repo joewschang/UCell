@@ -1,3 +1,4 @@
+import {configureGreetingUploadTransport} from './modules/daily-greetings/greeting-upload-transport';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -20,6 +21,7 @@ async function bootstrap() {
 
   const config = app.get(ConfigService);
   configureLineWebhookTransport(app);
+  configureGreetingUploadTransport(app);
   await app.register(helmet);
   await app.register(cors, memberEntryCors(process.env));
 

@@ -14,7 +14,7 @@ describe('Greeting publishing controls',()=>{
  afterEach(()=>{if(enabled===undefined)delete process.env.DAILY_GREETING_PUBLISHING_ENABLED;else process.env.DAILY_GREETING_PUBLISHING_ENABLED=enabled;jest.useRealTimers();});
  it('accepts bounded RGB PNG; rejects SVG, corruption, JPEG and oversized input',async()=>{
   expect(imageType(png)).toBe('png');const corrupt=Buffer.from(png);corrupt[50]^=1;
-  for(const image of [corrupt,Buffer.from('<svg>'+ 'x'.repeat(100)+'</svg>'),Buffer.alloc(600001),Buffer.from([255,216,...Array(100).fill(0)])])expect(()=>imageType(image)).toThrow();
+  for(const image of [corrupt,Buffer.from('<svg>'+ 'x'.repeat(100)+'</svg>'),Buffer.alloc(3_145_729),Buffer.from([255,216,...Array(100).fill(0)])])expect(()=>imageType(image)).toThrow();
   await expect(normalizeGreetingUpload('not base64')).rejects.toThrow();
  });
  it('re-encodes pixels into a 1080px branded PNG',async()=>{

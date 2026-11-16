@@ -1,0 +1,6 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:28c1034e6bea8974fc306f77e8c05340301f5946dfe1d8fb89b4207c731b9ec9
+COPY patch-api.cjs test-image.cjs /tmp/artwork/
+RUN node /tmp/artwork/patch-api.cjs
+COPY greeting-upload.js greeting-brand.js /app/apps/api/dist/modules/daily-greetings/
+COPY assets/ /app/apps/api/dist/modules/daily-greetings/assets/
+RUN node /tmp/artwork/test-image.cjs
