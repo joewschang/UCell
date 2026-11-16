@@ -1,0 +1,3 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:54b4b703dbc53dd855964e02c2f206db533848a66d7041903a7101cecd03045f
+COPY admin-artwork.js /usr/share/nginx/html/greetings/artwork-mode-261116.js
+RUN test -f /usr/share/nginx/html/index.html && ! grep -q artwork-mode-261116 /usr/share/nginx/html/index.html && sed -i 's@</head>@<script src="/greetings/artwork-mode-261116.js"></script></head>@' /usr/share/nginx/html/index.html && grep -q artwork-mode-261116 /usr/share/nginx/html/index.html

@@ -1,0 +1,7 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const root=process.argv[2]||'/app/apps/api/dist/modules/daily-greetings';
+const {createRequire}=require('node:module'),req=createRequire(path.join(root,'greeting-upload.js'));
+const {Resvg}=req('@resvg/resvg-js'),{normalizeGreetingUpload}=req('./greeting-upload'),{greetingBrandSvg}=req('./greeting-brand');
+const source=Buffer.from(new Resvg(`<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080"><rect width="1080" height="1080" fill="#92c4ea"/><rect width="120" height="100" fill="red"/>${greetingBrandSvg()}</svg>`).render().asPng());
+const pixels=b=>Buffer.from(new Resvg(`<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080"><image href="data:image/png;base64,${b.toString('base64')}" width="1080" height="1080"/></svg>`).render().pixels);
+(async()=>{const artwork=await normalizeGreetingUpload(source.toString('base64'),'artwork'),background=await normalizeGreetingUpload(source.toString('base64'),'background');assert(pixels(artwork).equals(pixels(source)));assert(!pixels(background).equals(pixels(source)));await assert.rejects(()=>normalizeGreetingUpload(source.toString('base64'),'guess'));await assert.rejects(()=>normalizeGreetingUpload(Buffer.alloc(3145729).toString('base64'),'artwork'));console.log('ARTWORK_NATIVE_PIXELS_LOGO_QR_AND_LIMITS_PASS');})().catch(e=>{console.error(e.message);process.exitCode=1});
