@@ -65,3 +65,14 @@ The review branch is based on integration/member-backend-mvp at 26fa675da0132646
 Read-only GitHub checks on 2026-09-18 found no environments, no SWAGGERHUB_API_KEY repository secret, and no main branch protection. The environment/protection setup was blocked by automatic approval review pending explicit approval; no such settings were changed. The dedicated SwaggerHub key must be entered directly into approved environment secret storage, never chat.
 
 The approved baseline has a -text Git attribute so its byte hash survives Windows and Linux checkouts. The diff configuration uses LF to preserve its review-boundary comparison.
+
+## Publication paused by owner (2026-11-16)
+
+The owner requested: 「我們以後都不主動更新Swagger，等待系統成熟之後再一次更新即可」。
+The workflow's publication job is therefore disabled for push and manual dispatch.
+Do not retry earlier publication runs or invoke the publisher manually during this pause.
+OpenAPI generation, baseline review, validation, breaking-change checks, security tests,
+and gated artifact retention remain active. This does not change application deployment gates.
+Resume publication only after a new explicit owner decision and a reviewed workflow change;
+first read the remote version and permissions, then publish the current verified artifact.
+Do not force an upload or bypass the existing private-visibility/readback safeguards.
