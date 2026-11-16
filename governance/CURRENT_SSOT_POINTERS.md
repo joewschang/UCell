@@ -44,5 +44,5 @@ R1.0B frozen originals remain historical baselines. Product-next 72-hour/BFS pla
 
 ## 重銷套組名稱（2026-11-11）
 
-會員和管理後台、商品目錄與訂單使用「重銷（三個月）」、「重銷（六個月）」、「重銷（十二個月）」。三種名稱依序對應 ACTIVE_QUARTER、ACTIVE_HALF_YEAR、ACTIVE_YEAR。
+會員和管理後台、商品目錄與訂單使用「重銷（三個月）」、「重銷（六個月）」、「重銷（十二月）」。三種名稱依序對應 ACTIVE_QUARTER、ACTIVE_HALF_YEAR、ACTIVE_YEAR。
 現行[會員制度與獎金計算說明手冊](../Docs/current/UCell_R1_0_會員制度與獎金計算說明手冊_多資格獨立經營版_v1_5.docx)、[後台系統規格書](../Docs/current/UCell_R1_0B_後台MVP細部系統規格書_v1_0.docx)與[獎金引擎規格書](../Docs/current/UCell_R1_0B_獎金引擎與核心邏輯規格書_v4_2_20261003.docx)均採用上述名稱。

@@ -25,6 +25,17 @@
       "decisionDocument": "governance/swaggerhub/FORMAL_ENROLLMENT_BASELINE_PROMOTION_20261003.md",
       "archivedBaseline": "governance/swaggerhub/baselines/baseline.openapi.1.1.0-b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2.json",
       "breakingDiffEvidence": "governance/swaggerhub/evidence/formal-enrollment-openapi-breaking-diff-20261003.json"
+    },
+    {
+      "phase": "PRE_GA",
+      "approvalDate": "2026-11-13",
+      "approvingDecision": "Owner explicitly directed documentation wording: 重銷（三個月）、重銷（六個月）、重銷（十二月）; see exact instruction",
+      "candidateHead": "43eaab4cb70b657cce53c0d75bbbdf597def0e98",
+      "previousBaselineSha256": "ee3ed58ae6502c41ca93199edb0a87e14bcb83c382e048b2e3305a58d9f0baaa",
+      "newBaselineSha256": "ce7165674f053fd4b77ecfa7956aff284c5334a9a2d039456fa8c70c91f58b1f",
+      "decisionDocument": "governance/swaggerhub/REPURCHASE_WORDING_BASELINE_DECISION_20261113.md",
+      "archivedBaseline": "governance/swaggerhub/baselines/baseline.openapi.pre-wording-20261113-ee3ed58ae6502c41ca93199edb0a87e14bcb83c382e048b2e3305a58d9f0baaa.json",
+      "breakingDiffEvidence": "governance/swaggerhub/evidence/repurchase-wording-20261113-breaking-diff.json"
     }
   ]
 }
