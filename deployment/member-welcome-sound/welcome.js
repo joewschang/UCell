@@ -1,5 +1,5 @@
 const preference='ucell.line-welcome-sound.v1',playedKey='ucell.line-welcome-played.v1';
-const clip='/welcome-sound/app_entry_heavenly.mp3';
+const clip='/welcome-sound/epic_space_app_welcome_10s.mp3';
 let muted=false,initialized=false,pending=false,played=false,player,preview,revision=0;
 try{muted=localStorage.getItem(preference)==='off';}catch{}
 function stopPending(){
@@ -24,7 +24,7 @@ function attempt(automatic){
  if(muted||played||document.hidden)return;
  stopPending();
  const ticket=++revision;
- player??=new Audio(clip);
+ player??=new Audio(window.ucThemeCalendar?.audio('member')||clip);
  player.play().then(()=>{
   if(ticket!==revision)return;
   played=true;
@@ -47,7 +47,7 @@ export function enterMemberCenter(inLine){
  if(document.hidden){
   const onVisible=()=>{if(!document.hidden){document.removeEventListener('visibilitychange',onVisible);attempt(true);}};
   document.addEventListener('visibilitychange',onVisible);
- }else attempt(true);
+ }else Promise.resolve(window.ucThemeCalendar?.ready()).then(()=>attempt(true));
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden){cancel();preview?.pause();}});
 window.addEventListener('pagehide',()=>{cancel();preview?.pause();});
@@ -67,7 +67,7 @@ class WelcomeSound extends HTMLElement{
   const sample=document.createElement('button');sample.type='button';sample.textContent='試聽迎賓音';
   const feedback=document.createElement('span');feedback.setAttribute('role','status');
   sample.onclick=()=>{
-   cancel();preview??=new Audio(clip);preview.currentTime=0;
+   cancel();preview?.pause();preview=new Audio(window.ucThemeCalendar?.audio('member')||clip);preview.currentTime=0;
    preview.play().then(()=>{feedback.textContent='';}).catch(()=>{feedback.textContent='暫時無法播放，請再試一次。';});
   };
   this.append(label,note,sample,feedback);this.refresh();

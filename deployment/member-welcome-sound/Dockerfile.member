@@ -1,8 +1,2 @@
-FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:6d7b23519bab64d3e36ab898f1bb15d46e9409a603e1484c4dbc1bbb96cf92b4 AS original
-FROM node:22-alpine AS build
-COPY --from=original /usr/share/nginx/html /site
-COPY patch.cjs /
-RUN node /patch.cjs /site
-FROM original
-COPY --from=build /site/ /usr/share/nginx/html/
-COPY app_entry_heavenly.mp3 welcome.js style.css /usr/share/nginx/html/welcome-sound/
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:d8d06488ea272533556b4fbaa8e6d6950bd939c59b2f5e7c2ea70af7b57c109d
+COPY epic_space_app_welcome_10s.mp3 welcome.js /usr/share/nginx/html/welcome-sound/
