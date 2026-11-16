@@ -5,7 +5,7 @@ import {Roles} from '../auth/roles.decorator';
 import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
 import {GreetingPublicationService} from './greeting-publication.service';
 class GreetingDraftDto {
- @ApiPropertyOptional({enum:['background','artwork'],default:'background',description:'artwork preserves the complete canvas; background adds the trusted brand footer'}) @IsOptional() @IsIn(['background','artwork']) imageMode?:'background'|'artwork';
+ @ApiPropertyOptional({enum:['background','artwork'],description:'artwork preserves the complete canvas; background adds the trusted brand footer'}) @IsOptional() @IsIn(['background','artwork']) imageMode?:'background'|'artwork';
  @ApiProperty({format:"date",description:"Publication date in Asia/Taipei"}) @IsString() @MinLength(10) @MaxLength(10) date!:string;
  @ApiProperty({maxLength:160}) @IsString() @MinLength(1) @MaxLength(160) title!:string;
  @ApiProperty({maxLength:1000}) @IsString() @MinLength(1) @MaxLength(1000) message!:string;

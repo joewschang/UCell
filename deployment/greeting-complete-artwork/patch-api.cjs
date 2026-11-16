@@ -11,7 +11,7 @@ fs.appendFileSync(controller,`
 // Explicit complete-artwork field only; all original guards and handlers remain.
 require('class-validator').IsOptional()(GreetingDraftDto.prototype,'imageMode');
 require('class-validator').IsIn(['background','artwork'])(GreetingDraftDto.prototype,'imageMode');
-require('@nestjs/swagger').ApiPropertyOptional({enum:['background','artwork'],default:'background'})(GreetingDraftDto.prototype,'imageMode');
+require('@nestjs/swagger').ApiPropertyOptional({enum:['background','artwork']})(GreetingDraftDto.prototype,'imageMode');
 Reflect.defineMetadata('design:type',String,GreetingDraftDto.prototype,'imageMode');
 `);
 console.log('ARTWORK_LIVE_SERVICE_DTO_PATCH_PASS');
