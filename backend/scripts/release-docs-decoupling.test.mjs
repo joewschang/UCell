@@ -7,3 +7,14 @@ test('publication failure or approval wait does not block successful verify evid
 test('failed verification and expired evidence still block release',async()=>{await assert.rejects(()=>run('failure'));await assert.rejects(()=>run('success','failure',true));});
 test('contract binding remains strict without any SwaggerHub receipt or key',()=>{const b=Buffer.from(JSON.stringify({openapi:'3.0.0',info:{version:'1'},paths:{}}));const e={executionContext:'github-actions',status:'PASS',commit:'sha',gates:Object.fromEntries(requiredGates.map(g=>[g,'PASS'])),generated:inventory(b),baselineSha256:sha256(b)};assert.doesNotThrow(()=>verifyGates(e,b,b,'sha'));assert.throws(()=>verifyGates(e,b,b,'other'));for(const g of requiredGates)assert.throws(()=>verifyGates({...e,gates:{...e.gates,[g]:'FAIL'}},b,b,'sha'));assert.throws(()=>verifyGates(e,Buffer.from('{}'),b,'sha'));});
 test('release keeps UAT/security and demotes only cloud publication',()=>{const g=JSON.parse(fs.readFileSync(new URL('../release/R6_RELEASE_GATE.json',import.meta.url)));for(const x of ['UAT_P0_PASS','UAT_P1_PASS','SECURITY_E2E_PASS','DB_GOLDEN_E2E_PASS','BACKUP_RESTORE_DRILL_PASS','OPENAPI_CONTRACT_GATES_PASS'])assert(g.required.includes(x));assert(!g.required.includes('SWAGGERHUB_SYNC_PASS'));assert(g.advisory.includes('SWAGGERHUB_SYNC_PASS'));assert(workflow.includes('uat-gate.mjs'));assert(!workflow.includes('swaggerhub-receipt.zip'));});
+
+test('owner pause disables publication without disabling contract verification',()=>{
+ const sync=fs.readFileSync(new URL('../../.github/workflows/swaggerhub-sync.yml',import.meta.url),'utf8');
+ const [verification,publication]=sync.split('  publish:\n');
+ assert(publication);assert.match(publication,/^    needs: verify\n(?:    #.*\n)*    if: \$\{\{ false \}\}/);
+ assert(verification.includes('  pull_request:'));assert(verification.includes('  push:'));assert(verification.includes('  workflow_dispatch:'));
+ assert(verification.includes('  verify:\n    runs-on:'));
+ assert(verification.includes('node backend/scripts/openapi-baseline-review.mjs'));
+ assert(verification.includes('node scripts/openapi-governance.mjs gate'));
+ assert(verification.includes('name: openapi-gated-${{ github.sha }}'));
+});
