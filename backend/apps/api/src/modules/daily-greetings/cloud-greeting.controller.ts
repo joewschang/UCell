@@ -1,7 +1,9 @@
+import {ApiBearerAuth} from '@nestjs/swagger';
 import {Body,Controller,HttpCode,Post,Req,UseGuards,BadRequestException} from '@nestjs/common';
 import {GreetingMachineGuard} from './cloud-greeting-auth';
 import {CloudGreetingService} from './cloud-greeting.service';
 /** Narrow trigger only: caller cannot upload arbitrary images, choose prompts, replace, archive or read drafts. */
+@ApiBearerAuth('greetingMachineBearer')
 @Controller('integrations/dot/daily-greetings') @UseGuards(GreetingMachineGuard)
 export class CloudGreetingController {
  constructor(private cloud:CloudGreetingService){}

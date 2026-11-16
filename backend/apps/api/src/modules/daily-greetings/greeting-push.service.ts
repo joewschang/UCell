@@ -15,7 +15,7 @@ export function validateGreetingPush(body:unknown,key:string):GreetingPush{
  cloudDate(b.date);
  // Plain short copy only; no controls, links, markup or hidden direction changes.
  for(const [text,max] of [[b.title,8],[b.message,60]] as const)if(!text.trim()||text!==text.trim()||Array.from(text).length>max||/[<>\x00-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2060-\u206f]|https?:|www\./i.test(text))fail();
- if(b.contentBase64.length<60||b.contentBase64.length>10_666_668||!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(b.contentBase64))fail();
+ if(b.contentBase64.length%4!==0||b.contentBase64.length<60||b.contentBase64.length>10_666_668||!/^[A-Za-z0-9+/]+={0,2}$/.test(b.contentBase64))fail();
  return b;
 }
 @Injectable()
@@ -23,7 +23,7 @@ export class GreetingPushService {
  constructor(private db:PrismaService,private audit:AuditService){}
  async publish(body:unknown,key:string,actor:string){
   if(process.env.GREETING_PUSH_ENABLED!=='true'||process.env.DAILY_GREETING_PUBLISHING_ENABLED!=='true')throw new ServiceUnavailableException({code:'GREETING_PUSH_NOT_CONFIGURED'});
-  if(!actor?.startsWith('SYSTEM:greeting-machine:'))throw new BadRequestException({code:'GREETING_PUSH_ACTOR_REQUIRED'});
+  if(!/^SYSTEM:greeting-machine:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actor??''))throw new BadRequestException({code:'GREETING_PUSH_ACTOR_REQUIRED'});
   const b=validateGreetingPush(body,key),background=Buffer.from(b.contentBase64,'base64');
   const requestHash=createHash('sha256').update(JSON.stringify([b.date,b.title,b.message,createHash('sha256').update(background).digest('hex')])).digest('hex');
   const previous=await this.db.$queryRaw<any[]>`SELECT g.*,p.status AS publication_status FROM learning.daily_greeting_generation g LEFT JOIN learning.daily_greeting_publication p ON p.id=g.publication_id WHERE g.request_id=${key}::uuid`;
