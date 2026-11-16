@@ -5381,3 +5381,19 @@ model CompensationAuditCase {
   @@map("compensation_audit_case")
   @@schema("ledger")
 }
+
+model DailyGreetingGeneration {
+  greetingDate String @id @map("greeting_date")
+  status String
+  leaseOwner String @map("lease_owner") @db.Uuid
+  leaseUntil DateTime? @map("lease_until") @db.Timestamptz(6)
+  attempts Int
+  actorSubject String @map("actor_subject")
+  retryAt DateTime? @map("retry_at") @db.Timestamptz(6)
+  errorCode String? @map("error_code")
+  backgroundHash String? @unique @map("background_hash")
+  publicationId String? @map("publication_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  @@map("daily_greeting_generation")
+  @@schema("learning")
+}

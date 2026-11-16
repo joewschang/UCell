@@ -4,8 +4,8 @@ import {greetingBrandSvg} from './greeting-brand';
 
 import {renderGreeting} from './render-greeting';
 let active=0;
-export function imageType(bytes:Buffer):'png' {
- if(bytes.length<45||bytes.length>600_000)throw new BadRequestException({code:'GREETING_IMAGE_SIZE'});
+export function imageType(bytes:Buffer,maxBytes=600_000):'png' {
+ if(bytes.length<45||bytes.length>maxBytes)throw new BadRequestException({code:'GREETING_IMAGE_SIZE'});
  const fail=()=>{throw new BadRequestException({code:'GREETING_IMAGE_INVALID'});};
  if(bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')fail();
  let offset=8,width=0,height=0,channels=0,ended=false;const data:Buffer[]=[];
