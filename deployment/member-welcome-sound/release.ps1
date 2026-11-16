@@ -1,8 +1,8 @@
 $part='member'
 $ErrorActionPreference='Stop'
 $reg='ucellprodacrm3z2zx4ohqyui'
-$base="$reg.azurecr.io/ucell-member@sha256:d8d06488ea272533556b4fbaa8e6d6950bd939c59b2f5e7c2ea70af7b57c109d"
-$tag='welcome-space-261116'
+$base="$reg.azurecr.io/ucell-member@sha256:ecacb7629d70f0466be414fbec03418cf826d5a18c6244d52437e0acefc9e878"
+$tag='welcome-space-v2-261116'
 $digest=az acr repository show -n $reg --image "ucell-${part}:$tag" --query digest -o tsv
 if($LASTEXITCODE -or !$digest -or $digest -notmatch '^sha256:[a-f0-9]{64}$'){throw 'No build'}
 $current=az containerapp show -g rg-ucell-production -n "ucell-prod-$part" --query properties.template.containers[0].image -o tsv
