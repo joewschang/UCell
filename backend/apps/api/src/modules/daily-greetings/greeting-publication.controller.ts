@@ -1,14 +1,15 @@
 import {Body,Controller,Get,Header,Headers,Param,ParseUUIDPipe,Post,Req,ServiceUnavailableException,StreamableFile,UseGuards} from '@nestjs/common';
-import {ApiBearerAuth,ApiTags,ApiProperty,ApiOperation} from '@nestjs/swagger';
-import {IsString,MaxLength,MinLength} from 'class-validator';
+import {ApiBearerAuth,ApiTags,ApiProperty,ApiOperation,ApiPropertyOptional} from '@nestjs/swagger';
+import {IsString,MaxLength,MinLength,IsOptional,IsIn} from 'class-validator';
 import {Roles} from '../auth/roles.decorator';
 import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
 import {GreetingPublicationService} from './greeting-publication.service';
 class GreetingDraftDto {
+ @ApiPropertyOptional({enum:['background','artwork'],default:'background',description:'artwork preserves the complete canvas; background adds the trusted brand footer'}) @IsOptional() @IsIn(['background','artwork']) imageMode?:'background'|'artwork';
  @ApiProperty({format:"date",description:"Publication date in Asia/Taipei"}) @IsString() @MinLength(10) @MaxLength(10) date!:string;
  @ApiProperty({maxLength:160}) @IsString() @MinLength(1) @MaxLength(160) title!:string;
  @ApiProperty({maxLength:1000}) @IsString() @MinLength(1) @MaxLength(1000) message!:string;
- @ApiProperty({description:"RGB/RGBA PNG bytes, base64, at most 600000 decoded bytes"}) @IsString() @MinLength(32) @MaxLength(800000) contentBase64!:string;
+ @ApiProperty({description:"RGB/RGBA PNG bytes, base64, at most 3145728 decoded bytes"}) @IsString() @MinLength(32) @MaxLength(4194304) contentBase64!:string;
 }
 class GreetingApprovalDto {@ApiProperty({maxLength:200}) @IsString() @MinLength(1) @MaxLength(200) approvalReference!:string;}
 @ApiTags('Admin - Daily greetings') @ApiBearerAuth('adminBearer')

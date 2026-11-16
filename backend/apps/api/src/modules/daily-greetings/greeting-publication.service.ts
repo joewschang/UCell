@@ -5,7 +5,7 @@ import {AuditService} from '../../common/audit/audit.service';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
 import {normalizeGreetingUpload} from './greeting-upload';
 export interface GreetingPublication {id:string;greeting_date:string;title:string;message:string;image_hash:string;status:string;created_at:Date;publish_at:Date;approval_reference:string|null;image?:Buffer;}
-export interface GreetingDraft {date:string;title:string;message:string;contentBase64:string;}
+export interface GreetingDraft {date:string;title:string;message:string;contentBase64:string;imageMode?:'background'|'artwork';}
 @Injectable()
 export class GreetingPublicationService {
  constructor(private db:PrismaService,private idem:IdempotencyService,private audit:AuditService){}
@@ -23,7 +23,7 @@ export class GreetingPublicationService {
  async draft(input:GreetingDraft,key:string,requestId:string,actor:string){
   this.check();const {date,title,message}=input;
   if(!/^20[0-9]{2}-[0-9]{2}-[0-9]{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T00:00:00Z'))||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date||!title.trim()||title.length>160||!message.trim()||message.length>1000)throw new BadRequestException({code:'GREETING_DRAFT_INVALID'});
-  const png=await normalizeGreetingUpload(input.contentBase64);return this.storeDraft({date,title,message},png,key,requestId,actor);
+  const png=await normalizeGreetingUpload(input.contentBase64,input.imageMode);return this.storeDraft({date,title,message},png,key,requestId,actor);
  }
  private async storeDraft(input:{date:string;title:string;message:string},png:Buffer,key:string,requestId:string,actor:string){
   const {date,title,message}=input,hash=createHash('sha256').update(png).digest('hex');

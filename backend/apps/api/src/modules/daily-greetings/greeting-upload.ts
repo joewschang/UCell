@@ -5,7 +5,7 @@ import {greetingBrandSvg} from './greeting-brand';
 import {renderGreeting} from './render-greeting';
 let active=0;
 export function imageType(bytes:Buffer):'png' {
- if(bytes.length<45||bytes.length>600_000)throw new BadRequestException({code:'GREETING_IMAGE_SIZE'});
+ if(bytes.length<45||bytes.length>3_145_728)throw new BadRequestException({code:'GREETING_IMAGE_SIZE'});
  const fail=()=>{throw new BadRequestException({code:'GREETING_IMAGE_INVALID'});};
  if(bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')fail();
  let offset=8,width=0,height=0,channels=0,ended=false;const data:Buffer[]=[];
@@ -30,13 +30,19 @@ export function imageType(bytes:Buffer):'png' {
  return 'png';
 }
 /** Decode and re-encode pixels; metadata is discarded and the official artwork is appended unmodified. */
-export async function normalizeGreetingUpload(contentBase64:string):Promise<Buffer>{
- if(contentBase64.length>800_000||! /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(contentBase64))throw new BadRequestException({code:'GREETING_IMAGE_BASE64'});
+export async function normalizeGreetingUpload(contentBase64:string,imageMode:'background'|'artwork'='background'):Promise<Buffer>{
+ if(contentBase64.length%4!==0||contentBase64.length>4_194_304||! /^[A-Za-z0-9+/]+={0,2}$/.test(contentBase64))throw new BadRequestException({code:'GREETING_IMAGE_BASE64'});
+ if(!['background','artwork'].includes(imageMode))throw new BadRequestException({code:'GREETING_IMAGE_MODE'});
  const bytes=Buffer.from(contentBase64,'base64'),type=imageType(bytes);
  if(active>=2)throw new ServiceUnavailableException({code:'GREETING_UPLOAD_BUSY'});
  active++;
  try{
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080"><rect width="1080" height="1080" fill="white"/><image href="data:image/${type};base64,${bytes.toString('base64')}" x="0" y="0" width="1080" height="880" preserveAspectRatio="xMidYMid meet"/>${greetingBrandSvg()}</svg>`;
-  return await renderGreeting(svg,'');
+  const width=bytes.readUInt32BE(16),height=bytes.readUInt32BE(20);
+  // Explicit complete-artwork mode preserves the full canvas, including existing logo and QR.
+  const complete=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><image href="data:image/${type};base64,${bytes.toString('base64')}" width="${width}" height="${height}"/></svg>`;
+  const svg=imageMode==='artwork'?complete:`<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080"><rect width="1080" height="1080" fill="white"/><image href="data:image/${type};base64,${bytes.toString('base64')}" x="0" y="0" width="1080" height="880" preserveAspectRatio="xMidYMid meet"/>${greetingBrandSvg()}</svg>`;
+  const result=await renderGreeting(svg,'');
+  if(result.length>5_242_880)throw new BadRequestException({code:'GREETING_RENDERED_IMAGE_SIZE'});
+  return result;
  }catch{throw new BadRequestException({code:'GREETING_IMAGE_DECODE_FAILED'});}finally{active--;}
 }
