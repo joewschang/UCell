@@ -2,6 +2,8 @@
 
 This implementation is prepared for integration, not activated. No actual auth or network request is made by importing these modules. Use Node >=24.5 on a Linux local filesystem with reliable SQLite locking/fsync, not NFS, object storage or independent copies on multiple hosts.
 
+Unsupported platforms fail with `JOURNAL_PLATFORM_UNSUPPORTED` before journal initialization creates any directory or file. Node SQLite availability alone is insufficient: Windows needs a separately reviewed ACL and durability implementation; POSIX mode/UID checks must not be skipped.
+
 ## Explicit setup and invocation
 
 - `initializeJournal(absoluteDirectory)` creates a new private directory (0700) and two SQLite files (0600). It fails if the directory already exists. Call once as an explicit provisioning step, never automatically when a scheduled run cannot find state. No runtime journal was provisioned by this engineering task; tests use disposable synthetic directories.

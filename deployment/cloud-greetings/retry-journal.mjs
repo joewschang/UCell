@@ -5,6 +5,11 @@ import {join, resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {createUploader, prepareRequest, endpoint, releasedDate} from './uploader.mjs';
 const fail = code => { throw new Error(code); };
+// The reviewed durability/ownership contract is Linux-only; never substitute
+// Windows mode bits for ACL validation or omit the directory fsync requirement.
+function requireSupportedPlatform() {
+  if (process.platform !== 'linux' || typeof process.getuid !== 'function') fail('JOURNAL_PLATFORM_UNSUPPORTED');
+}
 const hash = value => createHash('sha256').update(value).digest('hex');
 const states = ['READY', 'IN_FLIGHT', 'RETRYABLE', 'SUCCEEDED', 'BLOCKED', 'EXPIRED', 'EXHAUSTED'];
 const terminal = ['SUCCEEDED', 'BLOCKED', 'EXPIRED', 'EXHAUSTED'];
@@ -25,6 +30,7 @@ function configure(db) {
 }
 /** Explicit one-time creation only. Never silently recreates an existing or missing journal. */
 export function initializeJournal(directory) {
+  requireSupportedPlatform();
   let jobs, lock;
   try {
     if (typeof directory !== 'string' || resolve(directory) !== directory) fail('JOURNAL_PATH_INVALID');
@@ -46,6 +52,7 @@ export function initializeJournal(directory) {
   finally { jobs?.close(); lock?.close(); }
 }
 async function exclusive(directory, action) {
+  requireSupportedPlatform();
   let jobs, lock, acquired = false;
   try {
     privateDirectory(directory);
