@@ -1,3 +1,4 @@
+import {configureGreetingPushTransport} from './modules/daily-greetings/greeting-push-transport';
 import {configureGreetingUploadTransport} from './modules/daily-greetings/greeting-upload-transport';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -22,6 +23,7 @@ async function bootstrap() {
   const config = app.get(ConfigService);
   configureLineWebhookTransport(app);
   configureGreetingUploadTransport(app);
+  configureGreetingPushTransport(app);
   await app.register(helmet);
   await app.register(cors, memberEntryCors(process.env));
 
@@ -42,6 +44,7 @@ async function bootstrap() {
     .setVersion('1.0.0')
     .addBearerAuth(undefined, 'adminBearer')
     .addBearerAuth(undefined, 'memberBearer')
+    .addBearerAuth(undefined, 'greetingMachineBearer')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

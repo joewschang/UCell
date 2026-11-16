@@ -18,6 +18,7 @@ async function main(){
     .setVersion('1.1.0')
     .addBearerAuth(undefined,'adminBearer')
     .addBearerAuth(undefined,'memberBearer')
+    .addBearerAuth(undefined,'greetingMachineBearer')
     .build();
 
   const doc=SwaggerModule.createDocument(app,config);

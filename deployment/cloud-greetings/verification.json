@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-16",
+  "baseCommit": "f27015f",
+  "isolatedMigrations": "PASS",
+  "databaseAssertions": 162,
+  "focusedSuites": 7,
+  "focusedTests": 53,
+  "apiBuild": "PASS",
+  "offlinePreflights": "PASS",
+  "nativeWorker": {
+    "source": "existing fixture; no model call",
+    "width": 1080,
+    "height": 1080,
+    "bytes": 1947952,
+    "qr": "https://lin.ee/pqS11xX",
+    "invalidPngRejected": true,
+    "visualInspection": "PASS"
+  },
+  "productionDeployment": "NOT_ATTEMPTED",
+  "liveModelUat": "BLOCKED_NO_IMAGE_DEPLOYMENT_OR_BUDGET_APPROVAL",
+  "dotAuthorization": "NOT_PROVISIONED",
+  "swaggerHub": "PAUSED"
+}
