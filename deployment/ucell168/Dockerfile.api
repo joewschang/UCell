@@ -1,0 +1,5 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:d53aaf9b37480b54a777e1451cd7581db672c810cd6a9b641fc570ec9adbf88a
+COPY core-coupon.cjs /app/apps/api/dist/modules/order/
+COPY install.cjs /tmp/install168.cjs
+RUN node /tmp/install168.cjs && node --check /app/apps/api/dist/modules/member/member.controller.js && node --check /app/apps/api/dist/modules/epv/epv.service.js
+

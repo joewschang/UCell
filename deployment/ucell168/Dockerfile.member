@@ -1,0 +1,8 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:e8b0769fd15f95d9ea87fdf31fa2a0dfb9447ad86658b84307a5353a89fe13ba AS original
+FROM node:22-alpine AS build
+COPY --from=original /usr/share/nginx/html /usr/share/nginx/html
+COPY web.cjs /tmp/
+RUN node /tmp/web.cjs member
+FROM original
+COPY --from=build /usr/share/nginx/html/ /usr/share/nginx/html/
+

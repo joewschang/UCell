@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-worker@sha256:f03a4f9d1ef20030ae18909e19a44954448b3a8bfd96e3e1165e4812866675c4
+COPY install.cjs /tmp/install168.cjs
+RUN node /tmp/install168.cjs --worker
+
