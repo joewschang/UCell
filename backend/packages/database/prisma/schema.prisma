@@ -477,6 +477,15 @@ enum ReturnStatus {
   @@schema("commerce")
 }
 
+enum ShipmentExchangeStatus {
+  REQUESTED
+  RECEIVED
+  REPLACEMENT_CREATED
+  CANCELLED
+
+  @@schema("commerce")
+}
+
 enum RecoveryStatus {
   OPEN
   OFFSETTING
@@ -2356,6 +2365,8 @@ model Fulfillment {
   serialAllocations FulfillmentSerialAllocation[]
   erpHandoffs FulfillmentErpHandoff[]
   deliverySnapshots FulfillmentDeliverySnapshot[]
+  exchanges ShipmentExchangeCase[] @relation("ExchangeOriginalFulfillment")
+  replacementExchange ShipmentExchangeCase? @relation("ExchangeReplacementFulfillment")
 
   @@unique([orderId, fulfillmentKey])
   @@index([orderId, createdAt])
@@ -2589,6 +2600,7 @@ model Shipment {
   stateTransitions          ShipmentStateTransition[]
   operationClaims           ShipmentOperationClaim[]
   serialBindings            ShipmentSerialBinding[]
+  exchanges                 ShipmentExchangeCase[]
 
   @@unique([provider, connectionId, providerShipmentRef])
   @@index([fulfillmentId, createdAt])
@@ -3687,8 +3699,52 @@ model ShipmentSerialBinding {
   shipment Shipment @relation(fields:[shipmentId],references:[shipmentId])
   allocation FulfillmentSerialAllocation @relation(fields:[fulfillmentSerialAllocationId],references:[fulfillmentSerialAllocationId])
   returnReceipt ReturnSerialReceipt?
+  exchangeItems ShipmentExchangeItem[]
   @@index([shipmentId])
   @@map("shipment_serial_binding")
+  @@schema("commerce")
+}
+
+/// Physical same-product exchange only. The original order remains the economic authority.
+model ShipmentExchangeCase {
+  shipmentExchangeCaseId String @id @default(uuid()) @map("shipment_exchange_case_id") @db.Uuid
+  exchangeNo String @unique @map("exchange_no")
+  originalFulfillmentId String @map("original_fulfillment_id") @db.Uuid
+  originalShipmentId String @map("original_shipment_id") @db.Uuid
+  replacementFulfillmentId String? @unique @map("replacement_fulfillment_id") @db.Uuid
+  status ShipmentExchangeStatus @default(REQUESTED)
+  reason String @db.VarChar(500)
+  requestKey String @unique @map("request_key") @db.Uuid
+  requestHash String @map("request_hash") @db.Char(64)
+  createdByActor String @map("created_by_actor")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  receivedAt DateTime? @map("received_at") @db.Timestamptz(6)
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  cancelledByActor String? @map("cancelled_by_actor")
+  originalFulfillment Fulfillment @relation("ExchangeOriginalFulfillment",fields:[originalFulfillmentId],references:[fulfillmentId])
+  originalShipment Shipment @relation(fields:[originalShipmentId],references:[shipmentId])
+  replacementFulfillment Fulfillment? @relation("ExchangeReplacementFulfillment",fields:[replacementFulfillmentId],references:[fulfillmentId])
+  items ShipmentExchangeItem[]
+
+  @@index([originalFulfillmentId,createdAt])
+  @@map("shipment_exchange_case")
+  @@schema("commerce")
+}
+
+model ShipmentExchangeItem {
+  shipmentExchangeItemId String @id @default(uuid()) @map("shipment_exchange_item_id") @db.Uuid
+  shipmentExchangeCaseId String @map("shipment_exchange_case_id") @db.Uuid
+  shipmentSerialBindingId String @map("shipment_serial_binding_id") @db.Uuid
+  receivedAt DateTime? @map("received_at") @db.Timestamptz(6)
+  receivedByActor String? @map("received_by_actor")
+  releasedAt DateTime? @map("released_at") @db.Timestamptz(6)
+  exchangeCase ShipmentExchangeCase @relation(fields:[shipmentExchangeCaseId],references:[shipmentExchangeCaseId])
+  shipmentBinding ShipmentSerialBinding @relation(fields:[shipmentSerialBindingId],references:[shipmentSerialBindingId])
+
+  // SQL owns the active-claim unique index (released_at IS NULL).
+  @@unique([shipmentExchangeCaseId,shipmentSerialBindingId])
+  @@index([shipmentSerialBindingId])
+  @@map("shipment_exchange_item")
   @@schema("commerce")
 }
 

@@ -1,6 +1,6 @@
 import { Roles } from '../auth/roles.decorator';
 import { Body, Controller, Get, Headers, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentConfirmationDto } from './dto/payment-confirmation.dto';
@@ -16,17 +16,20 @@ export class OrderController {
 
   @Get()
   @ApiOperation({operationId:'adminSearchOrders',summary:'搜尋／列出訂單'})
+  @ApiQuery({name:'orderNo',required:false,type:String,description:'精確訂單號（十進位字串）；省略時沿用既有搜尋。'})
   async search(
     @Query('status') status?: string,
     @Query('qualificationId') qualificationId?: string,
     @Query('q') q?: string,
     @Query('take') take?: string,
+    @Query('orderNo') orderNo?: string,
   ){
     return {data:await this.service.search({
       status:status || undefined,
       qualificationId:qualificationId || undefined,
       q:q || undefined,
       take:Number(take ?? 50),
+      orderNo,
     })};
   }
 

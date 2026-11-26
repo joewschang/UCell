@@ -89,6 +89,7 @@ export class FulfillmentSerialProvenanceService{
      const prior=ret.lines.find(l=>l.returnLineId===binding.returnReceipt!.returnLineId)!;
      results.push({serialNo:allocation.serializedUnit.serialNo,receiptType:binding.returnReceipt.receiptType,economicPurpose:prior.orderLine.linePurpose,replayed:true});continue;
     }
+    if(await tx.shipmentExchangeItem.count({where:{shipmentSerialBindingId:binding.shipmentSerialBindingId,releasedAt:null}}))throw new ConflictException({code:'RETURN_SERIAL_PENDING_EXCHANGE'});
     if(!hasDispatchEvidence(binding.shipment)||unit?.status!=='SHIPPED')throw new ConflictException({code:'RETURN_SERIAL_NOT_SHIPPED'});
     let line=ret.lines.find(l=>l.orderLineId===allocation.sourceAllocation.orderLineId),receiptType='EXACT_SOURCE';
     if(!line){

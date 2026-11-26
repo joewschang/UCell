@@ -1,14 +1,15 @@
 import {uiValue,uiText} from "../../../../shared/design-system/i18n";
-import {useState} from 'react';
+import {useRef,useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {Link,useSearchParams} from 'react-router-dom';
 import {useAuth} from '../auth/auth';
 import {command,get,ApiError} from '../../lib/api';
 import {Card,ErrorBox,Field,PageHeader} from '../../components/ui';
 import {DeliveryCaptureForm,ShipmentRegistrationForm} from './FulfillmentShippingForms';
+import {FulfillmentExchangeHistory,ShipmentAfterSalesActions,fulfillmentAnchor,type FulfillmentExchange,type ExchangeShipment} from './FulfillmentExchangeForms';
 type Source={sourceReference:string;sku:string;quantity:string;serialNos:string[]};
 type AcceptedReturn={returnReference:string;occurredAt:string;lines:{sku:string;purpose:string|null;quantity:string;received:number;receipts:{serialNo:string;receiptType:string;originalPurpose:string|null;substitutionRuleVersion:string|null;receivedAt:string}[]}[]};
-type Fulfillment={fulfillmentKey:string;status:string;sources:Source[];deliverySnapshot?:null|{version:number;shippingMethod:string;capturedAt:string};shipments?:{shipmentReference:string;status:string;trackingNo:string|null;serials:{serialNo:string;returned:boolean}[]}[];packVerification:null|{status:string;occurredAt:string};erpHandoff:null|{providerCode:string;requestedAt:string;deliveryState?:string;dispatch?:null|{outcome:string;attemptNumber:number};results?:{outcome:string;occurredAt:string;recordedAt:string;resultHash:string}[]}};
+type Fulfillment={fulfillmentKey:string;status:string;sources:Source[];deliverySnapshot?:null|{version:number;shippingMethod:string;capturedAt:string};shipments?:(ExchangeShipment&{trackingNo:string|null})[];exchanges?:FulfillmentExchange[];packVerification:null|{status:string;occurredAt:string};erpHandoff:null|{providerCode:string;requestedAt:string;deliveryState?:string;dispatch?:null|{outcome:string;attemptNumber:number};results?:{outcome:string;occurredAt:string;recordedAt:string;resultHash:string}[]}};
 type Order={orderNo:string;status:string;returns?:AcceptedReturn[];fulfillments:Fulfillment[]};
 const shipmentStatuses:Record<string,string>={READY:'準備中',LABEL_CREATED:'已建物流單',PICKED_UP:'物流已收件',IN_TRANSIT:'配送中',DELIVERED:'已送達',DELIVERY_FAILED:'配送失敗',RETURNING:'退回中',RETURNED:'已退回',CANCELLED:'已取消'};
 const statuses:Record<string,string>={READY:'待揀貨',ALLOCATED:'已配置',PICKING:'揀貨中',PICKED:'已揀貨',QC_PENDING:'待檢查',QC_PASSED:'檢查完成',PACKED:'已裝箱',SHIPPING_REQUESTED:'已提出出貨請求',SHIPPED:'已出貨',DELIVERED:'已送達',EXCEPTION:'待處理異常',CANCELLED:'已取消'};
@@ -17,23 +18,46 @@ function warehouseError(error:unknown){
  if(error instanceof ApiError){const body=error.body as any,code=body?.error?.code??body?.code??body?.message?.code;if(errors[code])return new Error(errors[code]);}
  return error;
 }
+Object.assign(errors,{
+ EXCHANGE_SERIAL_INPUT_INVALID:'請選擇 1 至 100 件商品，每個序號只能選取一次。',
+ EXCHANGE_INPUT_INVALID:'換貨資料格式不正確，請核對序號與原因。',
+ EXCHANGE_IDEMPOTENCY_CONFLICT:'這次換貨請求已保存不同內容，請重新載入並核對既有申請。',
+ EXCHANGE_ORDER_NOT_ELIGIBLE:'此訂單目前無法申請換貨，請先核對訂單與退貨紀錄。',
+ EXCHANGE_SHIPMENT_NOT_SHIPPED:'尚無實際出貨證據，請先核對這張物流單。',
+ EXCHANGE_SERIAL_SOURCE_MISMATCH:'所選序號不屬於這張出貨單，請重新選擇。',
+ EXCHANGE_SERIAL_NOT_SHIPPED:'商品目前不符合換貨條件，可能已退回或尚未出貨，請重新核對。',
+ EXCHANGE_SERIAL_ALREADY_CLAIMED:'商品已有換貨申請，請重新載入查看處理紀錄。',
+ EXCHANGE_PENDING_RETURN:'此商品有已入帳但尚未收回的退貨，請先完成退貨驗收。',
+ EXCHANGE_ORDER_LINE_RETURNED:'此商品的原交易已退貨，無法再建立換貨補寄。',
+ EXCHANGE_QUANTITY_EXCEEDED:'申請數量超過扣除已退貨及處理中換貨後的可換貨數量，請重新核對。',
+ RETURN_SERIAL_PENDING_EXCHANGE:'此商品序號已有換貨申請，請先完成換貨，或取消尚未驗收的申請，再辦理退貨驗收。',
+ EXCHANGE_NOT_FOUND:'找不到這張出貨單的換貨申請，請重新載入。',
+ EXCHANGE_CANCELLED:'此換貨申請已取消，請重新載入查看紀錄。',
+ EXCHANGE_STATE_CONFLICT:'換貨狀態已變更，請重新載入後繼續處理。',
+ EXCHANGE_RECEIPT_REQUIRED:'請先驗收全部退回商品，再建立補寄出貨單。',
+ EXCHANGE_CANCELLATION_NOT_ALLOWED:'已有退回商品完成驗收，無法取消此換貨申請。',
+ EXCHANGE_CONCURRENT_CONFLICT:'其他人員正在更新此商品，請保留原內容重試，並核對處理紀錄。',
+});
 export function FulfillmentPage(){
  const [params]=useSearchParams(),{user}=useAuth();
  const initial=params.get('orderNo')??'';
  const [input,setInput]=useState(initial),[orderNo,setOrderNo]=useState(/^\d+$/.test(initial)?initial:''),[busy,setBusy]=useState(false),[error,setError]=useState<unknown>(null),[notice,setNotice]=useState('');
+ const commandInFlight=useRef(false);
  const query=useQuery({queryKey:['fulfillment-order',orderNo],queryFn:()=>get<{data:Order}>(`/admin/fulfillment/orders/${encodeURIComponent(orderNo)}`),enabled:!!orderNo});
  const canWrite=user?.role==='SUPER_ADMIN'||user?.role==='ORDER_OPS';
  async function run(key:string,action:string,body:unknown={}){
+  if(commandInFlight.current||!canWrite||query.isFetching)return false;
+  commandInFlight.current=true;
   setBusy(true);setError(null);setNotice('');
-  try{const result=await command<{data?:{version?:number;currentVersion?:number;substitutedCount?:number}}>(`/admin/fulfillment/orders/${encodeURIComponent(orderNo)}${key?'/'+encodeURIComponent(key):''}/${action}`,body);await query.refetch();setNotice(action==='delivery-snapshot'&&Number(result?.data?.currentVersion)>Number(result?.data?.version)?'此操作先前已保存，但配送資料已有較新版本，請核對目前版本。':action==='delivery-snapshot'?'宅配資料已加密保存。':action==='shipments'?'物流單與序號已保存，等待物流收件證據。':action==='shipment-serials'?'物流與原序號對應已核對。':action==='return-serials'&&Number(result?.data?.substitutedCount)>0?uiText("退貨序號已驗收，並依同訂單同出貨群組同 SKU 規則記錄替代證據。"):action==='return-serials'?'退貨序號已驗收。':action==='erp-retry'?uiText("已重新排程，Worker 將先核對 ERP 是否受理。"):action==='erp-results'?uiText("ERP 回報已保存，請查看對帳紀錄。"):action==='prepare'?'出貨配置已建立。':action==='scans'?'序號已核對。':action==='pack-verification'?'裝箱驗證完成。':uiText("交付請求已保存，等待 ERP 處理與對帳。"));return true;}
-  catch(e){setError(warehouseError(e));return false;}finally{setBusy(false);}
+  try{const result=await command<{data?:{version?:number;currentVersion?:number;substitutedCount?:number}}>(`/admin/fulfillment/orders/${encodeURIComponent(orderNo)}${key?'/'+encodeURIComponent(key):''}/${action}`,body);const refreshed=await query.refetch();setNotice(refreshed.error?'操作已保存，但最新資料尚未載入；請重新載入出貨明細後繼續。':action==='exchanges'?'同品換貨申請已建立，請待商品退回後驗收。':action.startsWith('exchanges/')&&action.endsWith('/receive')?'換貨退回商品已驗收，請查看已收數量。':action.startsWith('exchanges/')&&action.endsWith('/replacement')?'同品補寄出貨單已建立，請繼續完成商品核對與物流出貨。':action.startsWith('exchanges/')&&action.endsWith('/cancel')?'換貨申請已取消，原申請紀錄已保留。':action==='delivery-snapshot'&&Number(result?.data?.currentVersion)>Number(result?.data?.version)?'此操作先前已保存，但配送資料已有較新版本，請核對目前版本。':action==='delivery-snapshot'?'宅配資料已加密保存。':action==='shipments'?'物流單與序號已保存，等待物流收件證據。':action==='shipment-serials'?'物流與原序號對應已核對。':action==='return-serials'&&Number(result?.data?.substitutedCount)>0?uiText("退貨序號已驗收，並依同訂單同出貨群組同 SKU 規則記錄替代證據。"):action==='return-serials'?'退貨序號已驗收。':action==='erp-retry'?uiText("已重新排程，Worker 將先核對 ERP 是否受理。"):action==='erp-results'?uiText("ERP 回報已保存，請查看對帳紀錄。"):action==='prepare'?'出貨配置已建立。':action==='scans'?'序號已核對。':action==='pack-verification'?'裝箱驗證完成。':uiText("交付請求已保存，等待 ERP 處理與對帳。"));return true;}
+  catch(e){setError(warehouseError(e));return false;}finally{commandInFlight.current=false;setBusy(false);}
  }
  return <><PageHeader title="出貨與序號核對" subtitle="依訂單載入需求，掃描商品與序號，再確認裝箱。" actions={<Link to="/orders">返回訂單與收款</Link>}/>
   <Card><form onSubmit={e=>{e.preventDefault();setError(null);setNotice('');if(input.trim()===orderNo)void query.refetch();else setOrderNo(input.trim());}}><Field label="訂單號"><input required pattern="[0-9]{1,19}" value={input} onChange={e=>setInput(e.target.value)} inputMode="numeric" disabled={busy}/></Field><button disabled={busy||query.isFetching}>載入出貨明細</button></form></Card>
   <ErrorBox error={error||query.error}/>{query.isFetching&&<p role="status">正在載入出貨資料…</p>}{notice&&<p role="status">{notice}</p>}
   {!orderNo&&<p>輸入或掃描訂單號開始核對。</p>}
   {query.data&&!query.error&&query.data.data.fulfillments.length===0&&<Card><p>此訂單尚無出貨配置。</p>{canWrite&&query.data.data.status==='PAID'?<button disabled={busy||query.isFetching} onClick={()=>run('','prepare')}>依付款明細建立出貨配置</button>:<p>完成付款後，由倉務人員建立出貨配置。</p>}</Card>}
-  {!query.error&&query.data?.data.fulfillments.map(f=><Card key={f.fulfillmentKey} title={`出貨單 ${f.fulfillmentKey}`}>
+  {!query.error&&query.data?.data.fulfillments.map(f=><div key={`${orderNo}:${f.fulfillmentKey}`} id={fulfillmentAnchor(f.fulfillmentKey)}><Card title={`出貨單 ${f.fulfillmentKey}`}>
    <p>狀態：{statuses[f.status]??'待確認'}{f.packVerification?' · 裝箱驗證完成':''}</p>
    {f.sources.map(s=><SourceScan key={s.sourceReference} source={s} disabled={busy||query.isFetching||!canWrite||!!f.packVerification||!!f.erpHandoff} scan={body=>run(f.fulfillmentKey,'scans',body)}/>)}
    {!canWrite&&<p>目前為唯讀檢視；掃描與交付需倉務權限。</p>}
@@ -42,9 +66,11 @@ export function FulfillmentPage(){
    {canWrite&&f.packVerification&&f.deliverySnapshot&&!f.shipments?.length&&<ShipmentRegistrationForm disabled={busy||query.isFetching} submit={body=>run(f.fulfillmentKey,'shipments',body)}/>}
    <h3>物流與序號追溯</h3>{!f.shipments?.length&&<p>尚無物流單。裝箱完成不代表已出貨。</p>}
    {f.shipments?.map((shipment,index)=><section key={shipment.shipmentReference}><p>物流單 {shipment.trackingNo??index+1} · {shipmentStatuses[shipment.status]??'待確認'} · 已綁定 {shipment.serials.length} 件</p>
-    <details><summary>查看物流單序號</summary>{shipment.serials.length?<ul>{shipment.serials.map(s=><li key={s.serialNo}>{s.serialNo}{s.returned?' · 已驗收退貨':''}</li>)}</ul>:<p>尚未綁定產品序號。</p>}</details>
+    <details><summary>查看物流單序號</summary>{shipment.serials.length?<ul>{shipment.serials.map(s=><li key={s.serialNo}>{s.serialNo}{s.returned?' · 已驗收退回商品':s.exchangePending?' · 已申請換貨':''}</li>)}</ul>:<p>尚未綁定產品序號。</p>}</details>
     {canWrite&&!['CANCELLED','RETURNING','RETURNED'].includes(shipment.status)&&<button disabled={busy||query.isFetching} onClick={()=>run(f.fulfillmentKey,'shipment-serials',{shipmentReference:shipment.shipmentReference})}>核對序號與物流證據</button>}
+    {canWrite&&<ShipmentAfterSalesActions shipment={shipment} orderNo={String(query.data?.data.orderNo??orderNo)} disabled={busy||query.isFetching} submit={body=>run(f.fulfillmentKey,'exchanges',body)}/>}
    </section>)}
+   <FulfillmentExchangeHistory exchanges={f.exchanges??[]} canWrite={canWrite} disabled={busy||query.isFetching} run={(reference,action,body)=>run(f.fulfillmentKey,`exchanges/${encodeURIComponent(reference)}/${action}`,body)}/>
    {canWrite&&!!query.data?.data.returns?.length&&!!f.shipments?.some(s=>s.serials.length)&&<ReturnReceiptForm returns={query.data.data.returns} disabled={busy||query.isFetching} submit={body=>run(f.fulfillmentKey,'return-serials',body)}/>}
    {canWrite&&<div className="actions"><button disabled={busy||query.isFetching||!!f.packVerification||!!f.erpHandoff} onClick={()=>run(f.fulfillmentKey,'pack-verification')}>確認裝箱</button><button disabled={busy||query.isFetching||!f.packVerification||!f.deliverySnapshot||!!f.erpHandoff} onClick={()=>run(f.fulfillmentKey,'erp-handoff')}>{uiText("建立 ERP 交付請求")}</button></div>}
    {f.erpHandoff&&<><p>{uiText("ERP 交付請求已保存；實際出貨仍待處理與對帳。")}</p>
@@ -53,7 +79,7 @@ export function FulfillmentPage(){
     <h3>{uiText("ERP 對帳紀錄（最近 50 筆）")}</h3>{f.erpHandoff.results?.length?<ul>{f.erpHandoff.results.map(r=><li key={r.resultHash+r.recordedAt}>{({MATCHED:'商品與序號全部相符',PARTIAL:'部分回報，尚未完成',MISMATCH:'商品、數量或序號不符'} as Record<string,string>)[r.outcome]??'待確認'} · 回報時間 {new Date(r.occurredAt).toLocaleString('zh-TW')}</li>)}</ul>:<p>{uiText("尚無 ERP 結果。交付請求不代表已出貨。")}</p>}
     {canWrite&&<ErpResultForm disabled={busy||query.isFetching} submit={body=>run(f.fulfillmentKey,'erp-results',body)}/>}
    </>}
-  </Card>)}
+  </Card></div>)}
  </>;
 }
 function ReturnReceiptForm({returns,disabled,submit}:{returns:AcceptedReturn[];disabled:boolean;submit:(body:unknown)=>Promise<boolean>}){

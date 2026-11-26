@@ -10,7 +10,7 @@ vi.mock('../auth/auth',()=>({useAuth:()=>({user:{role:auth.role}})}));
 vi.mock('../../lib/api',()=>({get:vi.fn(),command:vi.fn(),ApiError:class extends Error{}}));
 const sourceReference='a'.repeat(64);
 beforeEach(()=>{auth.role='ORDER_OPS';vi.mocked(command).mockReset().mockResolvedValue({data:{}});vi.mocked(get).mockReset().mockResolvedValue({data:{orderNo:'123',fulfillments:[{fulfillmentKey:'F-123',status:'READY',sources:[{sourceReference,sku:'TIP-363',quantity:'1',serialNos:[]}],packVerification:null,erpHandoff:null}]}});});
-async function render(marker='TIP-363'){let view:ReturnType<typeof create>;await act(async()=>{view=create(<MemoryRouter initialEntries={['/fulfillment?orderNo=123']}><QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><FulfillmentPage/></QueryClientProvider></MemoryRouter>);});await vi.waitFor(()=>expect(JSON.stringify(view!.toJSON())).toContain(marker));return view!;}
+async function render(marker='TIP-363',path='/fulfillment?orderNo=123'){let view:ReturnType<typeof create>;await act(async()=>{view=create(<MemoryRouter initialEntries={[path]}><QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><FulfillmentPage/></QueryClientProvider></MemoryRouter>);});await vi.waitFor(()=>expect(JSON.stringify(view!.toJSON())).toContain(marker));return view!;}
 it('submits scanned SKU/serial with server source reference and keeps ERP disabled until verified',async()=>{
  const view=await render();
  const inputs=view.root.findAllByType('input');
@@ -79,4 +79,43 @@ it('links shipment evidence and receives only the selected return with scanned s
  await act(async()=>{await view.root.findAllByType('form')[1].props.onSubmit({preventDefault(){}});});
  expect(command).toHaveBeenCalledWith('/admin/fulfillment/orders/123/F-123/return-serials',{returnReference,serialNos:['A0010001']});
  expect(view.root.findAllByType('input')[1].props.value).toBe('');expect(JSON.stringify(view.toJSON())).toContain('已接受（同訂單同 SKU 替代）');act(()=>view.unmount());
+});
+it('creates a same-product exchange from its shipment and routes receipt to the same case',async()=>{
+ const shipmentReference='d'.repeat(64),exchangeReference='e'.repeat(64);
+ const exchange={exchangeReference,exchangeNo:'EX123-0001',status:'REQUESTED',reason:'外箱破損',createdAt:'2026-11-26T01:00:00Z',receivedAt:null,replacementFulfillmentKey:null,items:[{serialNo:'A0010001',sku:'TIP-363',receivedAt:null}]};
+ const fulfillment={fulfillmentKey:'F-123',status:'SHIPPED',sources:[],shipments:[{shipmentReference,status:'DELIVERED',trackingNo:'T-123',serials:[{serialNo:'A0010001',returned:false,exchangePending:false}]}],exchanges:[] as any[],packVerification:{status:'PACK_VERIFIED'},erpHandoff:null};
+ let data={orderNo:'123',status:'PAID',fulfillments:[fulfillment]};
+ vi.mocked(get).mockImplementation(async()=>({data}) as any);
+ vi.mocked(command).mockImplementation(async(path)=>{
+  if(path.endsWith('/exchanges'))data={...data,fulfillments:[{...fulfillment,exchanges:[exchange],shipments:[{...fulfillment.shipments[0],serials:[{serialNo:'A0010001',returned:false,exchangePending:true}]}]}]};
+  return {data:{}} as any;
+ });
+ const view=await render('已送達');
+ await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='退換貨')!.props.onClick());
+ act(()=>{view.root.findAllByType('input').find(input=>input.props['aria-label']==='換貨商品 A0010001')!.props.onChange({target:{checked:true}});view.root.findByType('textarea').props.onChange({target:{value:'外箱破損'}});});
+ await act(async()=>view.root.findAllByType('form')[1].props.onSubmit({preventDefault(){}}));
+ expect(command).toHaveBeenCalledWith('/admin/fulfillment/orders/123/F-123/exchanges',{shipmentReference,serialNos:['A0010001'],reason:'外箱破損',requestKey:expect.any(String)});
+ await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('EX123-0001'));
+ act(()=>view.root.findAllByType('input').find(input=>input.props['aria-label']==='驗收商品 A0010001')!.props.onChange({target:{checked:true}}));
+ await act(async()=>view.root.findAllByType('form')[1].props.onSubmit({preventDefault(){}}));
+ expect(command).toHaveBeenLastCalledWith(`/admin/fulfillment/orders/123/F-123/exchanges/${exchangeReference}/receive`,{serialNos:['A0010001']});
+ act(()=>view.unmount());
+});
+it('shows auditors exchange history and replacement anchors without return or exchange actions',async()=>{
+ auth.role='COMPLIANCE_AUDIT';
+ const replacementKey='FEX123-0001';
+ vi.mocked(get).mockResolvedValue({data:{orderNo:'123',status:'PAID',fulfillments:[{fulfillmentKey:'F-123',status:'SHIPPED',sources:[],shipments:[{shipmentReference:'a'.repeat(64),status:'DELIVERED',trackingNo:'T123',serials:[{serialNo:'A0010001',returned:false,exchangePending:true}]}],packVerification:{status:'PACK_VERIFIED'},erpHandoff:null,exchanges:[{exchangeReference:'b'.repeat(64),exchangeNo:'EX123-0001',status:'REPLACEMENT_CREATED',reason:'外箱破損',createdAt:'2026-11-26T01:00:00Z',receivedAt:'2026-11-26T02:00:00Z',replacementFulfillmentKey:replacementKey,replacementStatus:'READY',items:[{serialNo:'A0010001',sku:'TIP-363',receivedAt:'2026-11-26T02:00:00Z'}]}]},{fulfillmentKey:replacementKey,status:'READY',sources:[],shipments:[],packVerification:null,erpHandoff:null}]}});
+ const view=await render('EX123-0001');
+ expect(view.root.findAllByType('button').map(button=>button.children.join(''))).toEqual(['載入出貨明細']);
+ expect(view.root.findAllByType('a').some(link=>link.props.href===`#fulfillment-${replacementKey}`)).toBe(true);
+ expect(view.root.findAllByType('div').some(div=>div.props.id===`fulfillment-${replacementKey}`)).toBe(true);
+ expect(command).not.toHaveBeenCalled();act(()=>view.unmount());
+});
+it('uses the server canonical order number for the financial-return link',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{orderNo:'123',status:'PAID',fulfillments:[{fulfillmentKey:'F-123',status:'SHIPPED',sources:[],shipments:[{shipmentReference:'a'.repeat(64),status:'DELIVERED',trackingNo:'T123',serials:[{serialNo:'A0010001',returned:false}]}],packVerification:{status:'PACK_VERIFIED'},erpHandoff:null}]}});
+ const view=await render('已送達','/fulfillment?orderNo=000123');
+ act(()=>view.root.findAllByType('button').find(button=>button.children.join('')==='退換貨')!.props.onClick());
+ expect(view.root.findAllByType('a').some(link=>link.props.href==='/returns?orderNo=123')).toBe(true);
+ expect(view.root.findAllByType('a').some(link=>link.props.href==='/returns?orderNo=000123')).toBe(false);
+ act(()=>view.unmount());
 });

@@ -1,3 +1,5 @@
+import {FulfillmentExchangeController} from './fulfillment-exchange.controller';
+import {FulfillmentExchangeService} from './fulfillment-exchange.service';
 import {ErpAccountingMappingController} from './erp-accounting-mapping.controller';
 import {ErpAccountingMappingService} from './erp-accounting-mapping.service';
 import {ErpPaymentProjectionController} from './erp-payment-projection.controller';
@@ -20,5 +22,5 @@ import {ErpBusinessProjectionService} from './erp-business-projection.service';
 import {ErpBusinessProjectionController} from './erp-business-projection.controller';
 import {ErpCompensationProjectionController} from './erp-compensation-projection.controller';
 import {ErpCompensationProjectionService} from './erp-compensation-projection.service';
-@Module({exports:[ErpBusinessProjectionService,ErpReconciliationBridgeService],controllers:[FulfillmentOperationsController,ErpReconciliationBridgeController,ErpBusinessProjectionController,ErpCompensationProjectionController,ErpPaymentProjectionController,ErpAccountingMappingController],providers:[FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService,FulfillmentDeliveryService,PiiCryptoService,FulfillmentShipmentService,ErpReconciliationBridgeService,ErpBusinessProjectionService,ErpCompensationProjectionService,ErpPaymentProjectionService,ErpAccountingMappingService]})
+@Module({exports:[ErpBusinessProjectionService,ErpReconciliationBridgeService],controllers:[FulfillmentExchangeController,FulfillmentOperationsController,ErpReconciliationBridgeController,ErpBusinessProjectionController,ErpCompensationProjectionController,ErpPaymentProjectionController,ErpAccountingMappingController],providers:[FulfillmentExchangeService,FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService,FulfillmentDeliveryService,PiiCryptoService,FulfillmentShipmentService,ErpReconciliationBridgeService,ErpBusinessProjectionService,ErpCompensationProjectionService,ErpPaymentProjectionService,ErpAccountingMappingService]})
 export class FulfillmentOperationsModule{}
