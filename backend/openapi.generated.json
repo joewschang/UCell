@@ -1,6 +1,1416 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/admin/ai/capabilities": {
+      "get": {
+        "operationId": "AdminAiController_capabilities",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/admin/ai/conversations": {
+      "post": {
+        "operationId": "AdminAiController_conversation",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/admin/ai/conversations/{id}/turns": {
+      "post": {
+        "operationId": "AdminAiController_turn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/admin/ai/turns/{id}": {
+      "get": {
+        "operationId": "AdminAiController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/admin/ai/turns/{id}/cancel": {
+      "post": {
+        "operationId": "AdminAiController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/admin/ai/turns/{id}/feedback": {
+      "post": {
+        "operationId": "AdminAiController_feedback",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/admin/ai/report-jobs": {
+      "post": {
+        "operationId": "AdminAiController_report",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/admin/ai/report-jobs/{id}/download": {
+      "get": {
+        "operationId": "AdminAiController_download",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/admin/ai/knowledge": {
+      "get": {
+        "operationId": "AdminAiController_knowledge",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      },
+      "post": {
+        "operationId": "AdminAiController_createKnowledge",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/admin/ai/knowledge/{id}/{action}": {
+      "post": {
+        "operationId": "AdminAiController_knowledgeAction",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/admin/ai/audit": {
+      "get": {
+        "operationId": "AdminAiController_audit",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAi"
+        ]
+      }
+    },
+    "/api/v1/member/ai/capabilities": {
+      "get": {
+        "operationId": "MemberAiController_capabilities",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "MemberAi"
+        ]
+      }
+    },
+    "/api/v1/member/ai/conversations": {
+      "post": {
+        "operationId": "MemberAiController_conversation",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "MemberAi"
+        ]
+      }
+    },
+    "/api/v1/member/ai/conversations/{id}/turns": {
+      "post": {
+        "operationId": "MemberAiController_turn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "MemberAi"
+        ]
+      }
+    },
+    "/api/v1/member/ai/turns/{id}": {
+      "get": {
+        "operationId": "MemberAiController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "MemberAi"
+        ]
+      }
+    },
+    "/api/v1/member/ai/turns/{id}/cancel": {
+      "post": {
+        "operationId": "MemberAiController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "MemberAi"
+        ]
+      }
+    },
+    "/api/v1/member/ai/turns/{id}/feedback": {
+      "post": {
+        "operationId": "MemberAiController_feedback",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "MemberAi"
+        ]
+      }
+    },
+    "/api/v1/auth/member/contact-verification/policy": {
+      "get": {
+        "description": "Public contact requirements by purpose. Registration may defer contact verification by explicit configuration; deferred contacts remain unverified. Profile requirements are unchanged.",
+        "operationId": "getContactVerificationPolicy",
+        "parameters": [
+          {
+            "name": "purpose",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "REGISTRATION",
+                "PROFILE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Contact Verification"
+        ]
+      }
+    },
+    "/api/v1/auth/member/contact-verification/challenges": {
+      "post": {
+        "description": "Requires a local account identifier or server-verified Google or LINE identity. Sends contact verification code with persistent destination and subject quotas. No membership is created.",
+        "operationId": "sendRegistrationContactCode",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Contact Verification"
+        ]
+      }
+    },
+    "/api/v1/auth/member/contact-verification/verify": {
+      "post": {
+        "description": "Verifies a code bound to identity, destination, channel and purpose; returns a short-lived proof consumed atomically by registration.",
+        "operationId": "verifyRegistrationContactCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationVerifyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Contact Verification"
+        ]
+      }
+    },
+    "/api/v1/member/contact-verification/challenges": {
+      "post": {
+        "description": "Sends code bound to the authenticated Person, destination and purpose. Does not change contacts until proof consumption.",
+        "operationId": "sendMemberContactCode",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Contact Verification"
+        ]
+      }
+    },
+    "/api/v1/member/contact-verification/verify": {
+      "post": {
+        "operationId": "verifyMemberContactCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberVerifyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Contact Verification"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/entra/exchange": {
+      "post": {
+        "operationId": "adminEntraExchange",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "驗證Microsoft Entra ID Token並交換UCell短效Backend Session",
+        "tags": [
+          "Admin - Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/me": {
+      "get": {
+        "operationId": "adminMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "目前Admin Session",
+        "tags": [
+          "Admin - Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/logout": {
+      "post": {
+        "operationId": "adminLogout",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "撤銷目前Admin Session",
+        "tags": [
+          "Admin - Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/otp/challenges": {
+      "post": {
+        "description": "Dormant future-channel endpoint. Creates a 6-digit, five-minute OTP challenge only when SMS OTP is explicitly enabled by an approved deployment configuration.",
+        "operationId": "createOtpChallenge",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOtpChallengeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "503": {
+            "description": "SMS OTP feature disabled or provider configuration pending"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Authentication - OTP"
+        ]
+      }
+    },
+    "/api/v1/auth/otp/challenges/{id}/verify": {
+      "post": {
+        "description": "Verifies under a database row lock; five failed attempts lock the challenge.",
+        "operationId": "verifyOtpChallenge",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpChallengeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Authentication - OTP"
+        ]
+      }
+    },
+    "/api/v1/member/registration/network": {
+      "post": {
+        "description": "Requires authenticated LINE-backed UCell session and verified mobile/email proofs, records contract consent and completes NETWORK_MEMBER profile. Contact verification is not KYC. No Qualification is created.",
+        "operationId": "registerLineNetworkMember",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NetworkRegistrationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Registration"
+        ]
+      }
+    },
+    "/api/v1/auth/member/google/exchange": {
+      "post": {
+        "description": "Verify Google OIDC server-side, resolve an explicitly linked GOOGLE ProviderIdentity and issue the standard opaque Member session.",
+        "operationId": "memberGoogleExchange",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleExchangeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/member/password/login": {
+      "post": {
+        "description": "Login using local account, member number, email or mobile plus a dedicated Member password credential. Ambiguous identifiers and invalid credentials fail without selecting an arbitrary account.",
+        "operationId": "memberPasswordLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/member/password/forgot": {
+      "post": {
+        "description": "Always returns accepted. If an eligible account/email exists, sends a short-lived single-use reset link through the configured provider.",
+        "operationId": "memberForgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/member/password/reset": {
+      "post": {
+        "description": "Consume a single-use reset token, set a new password hash and revoke active Member sessions.",
+        "operationId": "memberResetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/member/register/contract": {
+      "get": {
+        "description": "Public effective Network Member contract required before Web registration. No identity or qualification data is returned.",
+        "operationId": "memberWebRegistrationContract",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Web Registration"
+        ]
+      }
+    },
+    "/api/v1/auth/member/register/complete": {
+      "post": {
+        "description": "Complete local account, Google- or LINE-verified Network Member registration. Creates Person/memberNo and local password credential only; no Qualification/Ball. Existing identities cannot be reassigned.",
+        "operationId": "memberWebRegistrationComplete",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteWebRegistrationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Web Registration"
+        ]
+      }
+    },
+    "/api/v1/member/identity": {
+      "get": {
+        "description": "Return linked provider statuses for the authenticated Person without identity subjects or tokens.",
+        "operationId": "memberLoginMethods",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Identity Linking"
+        ]
+      }
+    },
+    "/api/v1/member/identity/line/link": {
+      "post": {
+        "description": "Link a server-verified LINE subject to the authenticated existing Person. Never creates or merges members, never links by matching email, and never replaces another LINE identity.",
+        "operationId": "memberLinkLineIdentity",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkGoogleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Identity Linking"
+        ]
+      }
+    },
+    "/api/v1/member/identity/google/link": {
+      "post": {
+        "description": "Link a server-verified Google subject to the authenticated Person. Email equality never auto-links identities.",
+        "operationId": "memberLinkGoogleIdentity",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkGoogleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Identity Linking"
+        ]
+      }
+    },
+    "/api/line/webhook": {
+      "post": {
+        "operationId": "lineStageWebhook",
+        "parameters": [
+          {
+            "name": "x-line-signature",
+            "required": true,
+            "in": "header",
+            "description": "LINE raw-body HMAC-SHA256 signature; verified before durable receipt",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verified events or empty verification accepted"
+          },
+          "401": {
+            "description": "Invalid signature or payload"
+          },
+          "503": {
+            "description": "Channel secret is not configured"
+          }
+        },
+        "summary": "LINE OA raw-body webhook; metadata-only durable receipt",
+        "tags": [
+          "Integrations - LINE Messaging"
+        ]
+      }
+    },
+    "/api/v1/admin/persons/{personId}/account-security/lock": {
+      "post": {
+        "description": "Idempotent, audited security containment. It does not alter qualification, GPV, awards, settlement, carry, or payout facts.",
+        "operationId": "adminLockPersonAccount",
+        "parameters": [
+          {
+            "name": "personId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountSecurityReasonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Person is SECURITY_LOCKED and active LINE sessions were revoked"
+          },
+          "409": {
+            "description": "Idempotency key reused with different command"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "安全鎖定 Person 並撤銷所有 LINE sessions",
+        "tags": [
+          "Admin - Account Security"
+        ]
+      }
+    },
+    "/api/v1/admin/persons/{personId}/account-security/line-binding/revoke": {
+      "post": {
+        "description": "Idempotent, audited identity containment. Revoked bindings cannot authenticate a Member session.",
+        "operationId": "adminRevokePersonLineBinding",
+        "parameters": [
+          {
+            "name": "personId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountSecurityReasonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Active LINE bindings and sessions revoked"
+          },
+          "409": {
+            "description": "Idempotency key reused with different command"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "撤銷 Person 的所有 active LINE bindings",
+        "tags": [
+          "Admin - Account Security"
+        ]
+      }
+    },
+    "/api/v1/admin/persons/{personId}/account-security/line-rebind-requests": {
+      "post": {
+        "description": "Creates a PENDING recovery request with an auditable verification reference. It accepts no LINE token, bank account, or raw identity document.",
+        "operationId": "adminCreateLineRebindRequest",
+        "parameters": [
+          {
+            "name": "personId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LineRebindRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "PENDING LINE_REBIND request created or returned by the same idempotency key"
+          },
+          "409": {
+            "description": "Completed rebind cooldown is active"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立 LINE 換綁申請",
+        "tags": [
+          "Admin - Account Security"
+        ]
+      }
+    },
+    "/api/v1/integrations/line/messaging/webhook": {
+      "post": {
+        "description": "Validates x-line-signature over untouched UTF-8 bytes, deduplicates metadata into the IDENTITY inbox, then returns quickly. Raw payloads and secrets are never persisted.",
+        "operationId": "lineMessagingWebhook",
+        "parameters": [
+          {
+            "name": "x-line-signature",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verified webhook accepted for asynchronous processing"
+          },
+          "401": {
+            "description": "Signature or payload invalid"
+          },
+          "503": {
+            "description": "LINE Messaging configuration is unavailable"
+          }
+        },
+        "summary": "LINE Messaging raw-body webhook ingress",
+        "tags": [
+          "Integrations - LINE Messaging"
+        ]
+      }
+    },
+    "/api/v1/admin/integrations/line/status": {
+      "get": {
+        "description": "Returns configuration presence and aggregate delivery state only. It never returns LINE secrets, access tokens, raw webhook payloads, or LINE subjects.",
+        "operationId": "adminLineIntegrationStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Read-only LINE readiness and aggregate delivery queue state"
+          },
+          "403": {
+            "description": "Role denied"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Read LINE integration readiness and notification delivery summary",
+        "tags": [
+          "Admin - LINE Integration"
+        ]
+      }
+    },
+    "/api/v1/existing-member-line-links/requests": {
+      "post": {
+        "description": "A verified LINE subject requests an existing-member link. memberNo alone is insufficient; Support must review the verification reference.",
+        "operationId": "requestExistingMemberLineLink",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Existing Member LINE Link"
+        ]
+      }
+    },
+    "/api/v1/existing-member-line-links/complete": {
+      "post": {
+        "description": "Consumes one approved short-lived token only for the requesting verified LINE subject. It never creates a Person, Ball, Sponsor, placement or economic effect.",
+        "operationId": "completeExistingMemberLineLink",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Existing Member LINE Link"
+        ]
+      }
+    },
+    "/api/v1/admin/existing-member-line-links": {
+      "get": {
+        "description": "Authorized queue for existing-member LINE link requests. Tokens and raw LINE credentials are never returned.",
+        "operationId": "adminListExistingMemberLineLinks",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Existing Member LINE Link"
+        ]
+      }
+    },
+    "/api/v1/admin/existing-member-line-links/{id}/approve": {
+      "post": {
+        "description": "Authorized admin approves a pending request and receives a token only for approved out-of-band delivery.",
+        "operationId": "approveExistingMemberLineLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Existing Member LINE Link"
+        ]
+      }
+    },
+    "/api/v1/public/website/content": {
+      "get": {
+        "operationId": "publicWebsiteContent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Explicitly approved public videos and resources within their publication period",
+        "tags": [
+          "Public - Website"
+        ]
+      }
+    },
+    "/api/v1/public/website/products": {
+      "get": {
+        "operationId": "publicWebsiteProducts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Public catalog without member or compensation data"
+          }
+        },
+        "summary": "Published TIP product names, prices and order availability",
+        "tags": [
+          "Public - Website"
+        ]
+      }
+    },
+    "/api/v1/public/website/events": {
+      "get": {
+        "operationId": "publicWebsiteEvents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Public announcements; registration still requires member authentication"
+          }
+        },
+        "summary": "Published upcoming member event announcements without meeting credentials",
+        "tags": [
+          "Public - Website"
+        ]
+      }
+    },
     "/api/v1/admin/organization/geo/summary": {
       "get": {
         "operationId": "adminGeoSummary",
@@ -982,6 +2392,106 @@
         ]
       }
     },
+    "/api/v1/admin/compensation-period-control/verification": {
+      "get": {
+        "operationId": "CompensationAuditController_periods",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Compensation Period Control"
+        ]
+      }
+    },
+    "/api/v1/admin/compensation-period-control/verification/{id}/cases": {
+      "get": {
+        "operationId": "CompensationAuditController_cases",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Compensation Period Control"
+        ]
+      }
+    },
+    "/api/v1/admin/compensation-period-control/verification/{id}/reverify": {
+      "post": {
+        "operationId": "CompensationAuditController_verify",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Compensation Period Control"
+        ]
+      }
+    },
     "/api/v1/admin/settlement-jobs": {
       "post": {
         "operationId": "adminCreateSettlementJob",
@@ -1466,6 +2976,198 @@
         "summary": "查核並保存期別階段觀察",
         "tags": [
           "Admin - Compensation Stage History"
+        ]
+      }
+    },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/exchanges": {
+      "post": {
+        "operationId": "adminCreateShipmentExchange",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShipmentExchangeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "對已出貨原序號申請同商品換貨，不改寫原訂單金額或業績",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/exchanges/{exchangeReference}/receive": {
+      "post": {
+        "operationId": "adminReceiveShipmentExchange",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exchangeReference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExchangeReceiptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "逐件驗收換貨退回品，保留原序號並列為退回待處理",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/exchanges/{exchangeReference}/replacement": {
+      "post": {
+        "operationId": "adminCreateExchangeReplacement",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exchangeReference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "全部驗收後依原品項建立一次換貨補寄出貨配置",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/exchanges/{exchangeReference}/cancel": {
+      "post": {
+        "operationId": "adminCancelShipmentExchange",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exchangeReference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "撤銷完全尚未驗收的換貨申請，保留案件歷史",
+        "tags": [
+          "Admin - Fulfillment"
         ]
       }
     },
@@ -5157,779 +6859,6 @@
         ]
       }
     },
-    "/api/v1/auth/admin/entra/exchange": {
-      "post": {
-        "operationId": "adminEntraExchange",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "驗證Microsoft Entra ID Token並交換UCell短效Backend Session",
-        "tags": [
-          "Admin - Authentication"
-        ]
-      }
-    },
-    "/api/v1/auth/admin/me": {
-      "get": {
-        "operationId": "adminMe",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "目前Admin Session",
-        "tags": [
-          "Admin - Authentication"
-        ]
-      }
-    },
-    "/api/v1/auth/admin/logout": {
-      "post": {
-        "operationId": "adminLogout",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "撤銷目前Admin Session",
-        "tags": [
-          "Admin - Authentication"
-        ]
-      }
-    },
-    "/api/v1/auth/otp/challenges": {
-      "post": {
-        "description": "Dormant future-channel endpoint. Creates a 6-digit, five-minute OTP challenge only when SMS OTP is explicitly enabled by an approved deployment configuration.",
-        "operationId": "createOtpChallenge",
-        "parameters": [
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOtpChallengeDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "503": {
-            "description": "SMS OTP feature disabled or provider configuration pending"
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Authentication - OTP"
-        ]
-      }
-    },
-    "/api/v1/auth/otp/challenges/{id}/verify": {
-      "post": {
-        "description": "Verifies under a database row lock; five failed attempts lock the challenge.",
-        "operationId": "verifyOtpChallenge",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyOtpChallengeDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Authentication - OTP"
-        ]
-      }
-    },
-    "/api/v1/member/registration/network": {
-      "post": {
-        "description": "Requires authenticated LINE-backed UCell session, records contract consent and completes NETWORK_MEMBER profile. Mobile/email are contact data. No OTP or Qualification is created.",
-        "operationId": "registerLineNetworkMember",
-        "parameters": [
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NetworkRegistrationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Member - Registration"
-        ]
-      }
-    },
-    "/api/v1/auth/member/google/exchange": {
-      "post": {
-        "description": "Verify Google OIDC server-side, resolve an explicitly linked GOOGLE ProviderIdentity and issue the standard opaque Member session.",
-        "operationId": "memberGoogleExchange",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GoogleExchangeDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Member - Web Authentication"
-        ]
-      }
-    },
-    "/api/v1/auth/member/password/login": {
-      "post": {
-        "description": "Login using local account, member number, email or mobile plus a dedicated Member password credential. Ambiguous identifiers and invalid credentials fail without selecting an arbitrary account.",
-        "operationId": "memberPasswordLogin",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PasswordLoginDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Member - Web Authentication"
-        ]
-      }
-    },
-    "/api/v1/auth/member/password/forgot": {
-      "post": {
-        "description": "Always returns accepted. If an eligible account/email exists, sends a short-lived single-use reset link through the configured provider.",
-        "operationId": "memberForgotPassword",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ForgotPasswordDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Member - Web Authentication"
-        ]
-      }
-    },
-    "/api/v1/auth/member/password/reset": {
-      "post": {
-        "description": "Consume a single-use reset token, set a new password hash and revoke active Member sessions.",
-        "operationId": "memberResetPassword",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResetPasswordDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Member - Web Authentication"
-        ]
-      }
-    },
-    "/api/v1/auth/member/register/contract": {
-      "get": {
-        "description": "Public effective Network Member contract required before Web registration. No identity or qualification data is returned.",
-        "operationId": "memberWebRegistrationContract",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Member - Web Registration"
-        ]
-      }
-    },
-    "/api/v1/auth/member/register/complete": {
-      "post": {
-        "description": "Complete local account, Google- or LINE-verified Network Member registration. Creates Person/memberNo and local password credential only; no Qualification/Ball. Existing identities cannot be reassigned.",
-        "operationId": "memberWebRegistrationComplete",
-        "parameters": [
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CompleteWebRegistrationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Member - Web Registration"
-        ]
-      }
-    },
-    "/api/v1/member/identity/google/link": {
-      "post": {
-        "description": "Link a server-verified Google subject to the authenticated Person. Email equality never auto-links identities.",
-        "operationId": "memberLinkGoogleIdentity",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LinkGoogleDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "memberBearer": []
-          }
-        ],
-        "summary": "",
-        "tags": [
-          "Member - Identity Linking"
-        ]
-      }
-    },
-    "/api/line/webhook": {
-      "post": {
-        "operationId": "lineStageWebhook",
-        "parameters": [
-          {
-            "name": "x-line-signature",
-            "required": true,
-            "in": "header",
-            "description": "LINE raw-body HMAC-SHA256 signature; verified before durable receipt",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Verified events or empty verification accepted"
-          },
-          "401": {
-            "description": "Invalid signature or payload"
-          },
-          "503": {
-            "description": "Channel secret is not configured"
-          }
-        },
-        "summary": "LINE OA raw-body webhook; metadata-only durable receipt",
-        "tags": [
-          "Integrations - LINE Messaging"
-        ]
-      }
-    },
-    "/api/v1/admin/persons/{personId}/account-security/lock": {
-      "post": {
-        "description": "Idempotent, audited security containment. It does not alter qualification, GPV, awards, settlement, carry, or payout facts.",
-        "operationId": "adminLockPersonAccount",
-        "parameters": [
-          {
-            "name": "personId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AccountSecurityReasonDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Person is SECURITY_LOCKED and active LINE sessions were revoked"
-          },
-          "409": {
-            "description": "Idempotency key reused with different command"
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "安全鎖定 Person 並撤銷所有 LINE sessions",
-        "tags": [
-          "Admin - Account Security"
-        ]
-      }
-    },
-    "/api/v1/admin/persons/{personId}/account-security/line-binding/revoke": {
-      "post": {
-        "description": "Idempotent, audited identity containment. Revoked bindings cannot authenticate a Member session.",
-        "operationId": "adminRevokePersonLineBinding",
-        "parameters": [
-          {
-            "name": "personId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AccountSecurityReasonDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Active LINE bindings and sessions revoked"
-          },
-          "409": {
-            "description": "Idempotency key reused with different command"
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "撤銷 Person 的所有 active LINE bindings",
-        "tags": [
-          "Admin - Account Security"
-        ]
-      }
-    },
-    "/api/v1/admin/persons/{personId}/account-security/line-rebind-requests": {
-      "post": {
-        "description": "Creates a PENDING recovery request with an auditable verification reference. It accepts no LINE token, bank account, or raw identity document.",
-        "operationId": "adminCreateLineRebindRequest",
-        "parameters": [
-          {
-            "name": "personId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LineRebindRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "PENDING LINE_REBIND request created or returned by the same idempotency key"
-          },
-          "409": {
-            "description": "Completed rebind cooldown is active"
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "建立 LINE 換綁申請",
-        "tags": [
-          "Admin - Account Security"
-        ]
-      }
-    },
-    "/api/v1/integrations/line/messaging/webhook": {
-      "post": {
-        "description": "Validates x-line-signature over untouched UTF-8 bytes, deduplicates metadata into the IDENTITY inbox, then returns quickly. Raw payloads and secrets are never persisted.",
-        "operationId": "lineMessagingWebhook",
-        "parameters": [
-          {
-            "name": "x-line-signature",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Verified webhook accepted for asynchronous processing"
-          },
-          "401": {
-            "description": "Signature or payload invalid"
-          },
-          "503": {
-            "description": "LINE Messaging configuration is unavailable"
-          }
-        },
-        "summary": "LINE Messaging raw-body webhook ingress",
-        "tags": [
-          "Integrations - LINE Messaging"
-        ]
-      }
-    },
-    "/api/v1/admin/integrations/line/status": {
-      "get": {
-        "description": "Returns configuration presence and aggregate delivery state only. It never returns LINE secrets, access tokens, raw webhook payloads, or LINE subjects.",
-        "operationId": "adminLineIntegrationStatus",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Read-only LINE readiness and aggregate delivery queue state"
-          },
-          "403": {
-            "description": "Role denied"
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "Read LINE integration readiness and notification delivery summary",
-        "tags": [
-          "Admin - LINE Integration"
-        ]
-      }
-    },
-    "/api/v1/existing-member-line-links/requests": {
-      "post": {
-        "description": "A verified LINE subject requests an existing-member link. memberNo alone is insufficient; Support must review the verification reference.",
-        "operationId": "requestExistingMemberLineLink",
-        "parameters": [
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Existing Member LINE Link"
-        ]
-      }
-    },
-    "/api/v1/existing-member-line-links/complete": {
-      "post": {
-        "description": "Consumes one approved short-lived token only for the requesting verified LINE subject. It never creates a Person, Ball, Sponsor, placement or economic effect.",
-        "operationId": "completeExistingMemberLineLink",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CompleteDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Existing Member LINE Link"
-        ]
-      }
-    },
-    "/api/v1/admin/existing-member-line-links": {
-      "get": {
-        "description": "Authorized queue for existing-member LINE link requests. Tokens and raw LINE credentials are never returned.",
-        "operationId": "adminListExistingMemberLineLinks",
-        "parameters": [
-          {
-            "name": "status",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "",
-        "tags": [
-          "Admin - Existing Member LINE Link"
-        ]
-      }
-    },
-    "/api/v1/admin/existing-member-line-links/{id}/approve": {
-      "post": {
-        "description": "Authorized admin approves a pending request and receives a token only for approved out-of-band delivery.",
-        "operationId": "approveExistingMemberLineLink",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "",
-        "tags": [
-          "Admin - Existing Member LINE Link"
-        ]
-      }
-    },
     "/api/v1/admin/analytics/policy": {
       "get": {
         "operationId": "adminAnalyticsPolicy",
@@ -8846,7 +9775,7 @@
     },
     "/api/v1/member/formal-enrollment/fee-payment": {
       "post": {
-        "description": "Stage database/environment allowlist only. Server-fixed fee, one payment per member, no Qualification or approval.",
+        "description": "Always rejects with QUALIFICATION_PACKAGE_REQUIRED.",
         "operationId": "memberStageFormalEnrollmentFee",
         "parameters": [
           {
@@ -8876,7 +9805,7 @@
             "memberBearer": []
           }
         ],
-        "summary": "Stage 模擬支付 600 元正式會員申請費",
+        "summary": "已停用：單獨繳費加入正式會員",
         "tags": [
           "Member - Formal enrollment"
         ]
@@ -8884,7 +9813,7 @@
     },
     "/api/v1/member/formal-enrollment/package-payments/{id}": {
       "post": {
-        "description": "Owned formal-eligibility package only. Uses canonical order payment writer; no extra 600 fee and no automatic formal approval.",
+        "description": "Owned formal-eligibility package only. Uses canonical order payment writer; separate qualification fee included in order total; no automatic formal approval.",
         "operationId": "memberStageFormalEnrollmentPackagePayment",
         "parameters": [
           {
@@ -12181,6 +13110,52 @@
         ]
       }
     },
+    "/api/v1/referrals/card/{token}": {
+      "get": {
+        "operationId": "ReferralAttributionController_card",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Referral - Public"
+        ]
+      }
+    },
+    "/api/v1/referrals/preview/{token}": {
+      "get": {
+        "operationId": "ReferralAttributionController_preview",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Referral - Public"
+        ]
+      }
+    },
     "/api/v1/referrals/landing": {
       "post": {
         "description": "Record provisional referral attribution using server time. A 30-day lock does not create or rewrite a Sponsor relationship.",
@@ -12215,7 +13190,7 @@
     },
     "/api/v1/member/referrals/bind": {
       "post": {
-        "description": "Explicitly bind an eligible anonymous attribution to the authenticated LINE Person. Never creates or rewrites Sponsor.",
+        "description": "Explicitly bind an eligible anonymous attribution to the authenticated Person. Never creates or rewrites Sponsor.",
         "operationId": "memberBindReferralAttribution",
         "parameters": [
           {
@@ -12402,18 +13377,18 @@
           },
           {
             "name": "page",
-            "description": "主檔搜尋頁次，從 1 開始。",
-            "in": "query",
             "required": false,
+            "in": "query",
+            "description": "主檔搜尋頁次，從 1 開始。",
             "schema": {
               "type": "string"
             }
           },
           {
             "name": "q",
-            "description": "依正式會員主檔條件搜尋。",
-            "in": "query",
             "required": false,
+            "in": "query",
+            "description": "依正式會員主檔條件搜尋。",
             "schema": {
               "type": "string"
             }
@@ -13144,6 +14119,15 @@
             "name": "take",
             "required": true,
             "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderNo",
+            "required": false,
+            "in": "query",
+            "description": "精確訂單號（十進位字串）；省略時沿用既有搜尋。",
             "schema": {
               "type": "string"
             }
@@ -14330,6 +15314,218 @@
         ]
       }
     },
+    "/api/v1/admin/coupons": {
+      "get": {
+        "operationId": "AdminCouponController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Coupons"
+        ]
+      },
+      "post": {
+        "operationId": "AdminCouponController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Coupons"
+        ]
+      }
+    },
+    "/api/v1/admin/coupons/{id}/usage": {
+      "get": {
+        "operationId": "AdminCouponController_usage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Coupons"
+        ]
+      }
+    },
+    "/api/v1/admin/coupons/{id}": {
+      "post": {
+        "operationId": "AdminCouponController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Coupons"
+        ]
+      }
+    },
+    "/api/v1/member/package-quote": {
+      "post": {
+        "operationId": "MemberCouponController_quote",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Coupons"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-fees/{id}/refund-confirmations": {
+      "post": {
+        "operationId": "AdminQualificationFeeController_refund",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeeRefundDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Qualification fee"
+        ]
+      }
+    },
     "/api/v1/admin/qualifications": {
       "get": {
         "operationId": "adminSearchQualifications",
@@ -14923,6 +16119,81 @@
         ]
       }
     },
+    "/api/v1/admin/qualification-placements/return-reviews": {
+      "get": {
+        "operationId": "adminQualificationReturnReviews",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Qualification Placement"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-placements/{id}/return-review": {
+      "post": {
+        "operationId": "adminApproveQualificationReturnReview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualificationReturnReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Qualification Placement"
+        ]
+      }
+    },
     "/api/v1/admin/qualification-placements": {
       "get": {
         "operationId": "adminQualificationPlacementMonitor",
@@ -15448,119 +16719,6 @@
         ]
       }
     },
-    "/api/v1/admin/observability/organization/sponsor-map": {
-      "get": {
-        "description": "SUPER_ADMIN、MEMBERSHIP_OPS、COMPLIANCE_AUDIT 可檢視。同一截點包含已發球號且未作廢、未關閉的球，以及所有有效推薦邊的兩端。包括無上下線與未活躍的球。依建檔時間與資格 UUID 排序。回傳完整森林，資料缺漏或矛盾時整筆失敗。",
-        "operationId": "adminSponsorMap",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "完整推薦森林，沒有資料時 data 為空陣列。",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "id",
-                          "parentId",
-                          "ballNo",
-                          "name",
-                          "plan",
-                          "active",
-                          "sponsorSequenceNo",
-                          "createdAt"
-                        ],
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "parentId": {
-                            "type": "string",
-                            "format": "uuid",
-                            "nullable": true
-                          },
-                          "ballNo": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "plan": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "active": {
-                            "type": "boolean"
-                          },
-                          "sponsorSequenceNo": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          }
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "required": [
-                        "asOf",
-                        "complete",
-                        "total"
-                      ],
-                      "properties": {
-                        "asOf": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "complete": {
-                          "type": "boolean",
-                          "enum": [
-                            true
-                          ]
-                        },
-                        "total": {
-                          "type": "integer",
-                          "minimum": 0
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "角色無權檢視公司推薦全貌。"
-          },
-          "409": {
-            "description": "SPONSOR_MAP_INCONSISTENT。存在缺失端點、重複上線或循環，未回傳部分樹。"
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "全公司推薦樹全貌",
-        "tags": [
-          "Admin - Observability"
-        ]
-      }
-    },
     "/api/v1/admin/observability/qualifications/{qualificationId}/operations": {
       "get": {
         "operationId": "adminQualificationOperations",
@@ -15746,6 +16904,156 @@
         "summary": "獎金/結算/Recovery營運摘要",
         "tags": [
           "Admin - Organization & Compensation Observability"
+        ]
+      }
+    },
+    "/api/v1/admin/observability/organization/binary-map": {
+      "get": {
+        "operationId": "BinaryMapController_trees",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "BinaryMap"
+        ]
+      }
+    },
+    "/api/v1/admin/observability/organization/binary-map/{treeId}": {
+      "get": {
+        "operationId": "BinaryMapController_nodes",
+        "parameters": [
+          {
+            "name": "treeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "BinaryMap"
+        ]
+      }
+    },
+    "/api/v1/admin/observability/organization/sponsor-map": {
+      "get": {
+        "description": "SUPER_ADMIN、MEMBERSHIP_OPS、COMPLIANCE_AUDIT 可檢視。同一截點包含已發球號且未作廢、未關閉的球，以及所有有效推薦邊的兩端。包括無上下線與未活躍的球。依建檔時間與資格 UUID 排序。回傳完整森林，資料缺漏或矛盾時整筆失敗。",
+        "operationId": "adminSponsorMap",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "完整推薦森林，沒有資料時 data 為空陣列。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "parentId",
+                          "ballNo",
+                          "name",
+                          "plan",
+                          "active",
+                          "sponsorSequenceNo",
+                          "createdAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "parentId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "nullable": true
+                          },
+                          "ballNo": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "plan": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "sponsorSequenceNo": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "asOf",
+                        "complete",
+                        "total"
+                      ],
+                      "properties": {
+                        "asOf": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "complete": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "角色無權檢視公司推薦全貌。"
+          },
+          "409": {
+            "description": "SPONSOR_MAP_INCONSISTENT。存在缺失端點、重複上線或循環，未回傳部分樹。"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "全公司推薦樹全貌",
+        "tags": [
+          "Admin - Observability"
         ]
       }
     },
@@ -16764,7 +18072,46 @@
             "adminBearer": []
           }
         ],
-        "summary": "稽核並下載固定快照的財務覆核 CSV；非銀行匯款檔",
+        "summary": "稽核並下載固定快照的財務覆核 CSV 或銀行 XLS",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/payout-batches/{id}/bank-exports": {
+      "post": {
+        "operationId": "adminExportBankPayout",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BankExportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依銀行原始 XLS 範本產生匯款檔；不執行轉帳",
         "tags": [
           "Admin - Returns / Workflows / Payout Operations"
         ]
@@ -17329,15 +18676,11 @@
           },
           {
             "name": "endExclusive",
-            "in": "query",
             "required": false,
-            "description": "傳 true 時，結束時間採不含上界。",
+            "in": "query",
+            "description": "true 表示排除結束時間",
             "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
+              "type": "string"
             }
           }
         ],
@@ -17399,33 +18742,29 @@
           },
           {
             "name": "from",
-            "in": "query",
             "required": false,
+            "in": "query",
+            "description": "起始時間；與 to 一起提供，使用 ISO 8601 格式",
             "schema": {
-              "type": "string",
-              "format": "date-time"
+              "type": "string"
             }
           },
           {
             "name": "to",
-            "in": "query",
             "required": false,
+            "in": "query",
+            "description": "結束時間；與 from 一起提供，使用 ISO 8601 格式",
             "schema": {
-              "type": "string",
-              "format": "date-time"
+              "type": "string"
             }
           },
           {
             "name": "endExclusive",
-            "in": "query",
             "required": false,
-            "description": "傳 true 時，結束時間採不含上界。",
+            "in": "query",
+            "description": "true 表示排除結束時間",
             "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
+              "type": "string"
             }
           }
         ],
@@ -19024,6 +20363,35 @@
         ]
       }
     },
+    "/api/v1/admin/bonus/qualifications/{qualificationId}/opportunities": {
+      "get": {
+        "operationId": "adminListBonusOpportunities",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "未取得獎金機會與 LINE 發送證據",
+        "tags": [
+          "Admin - Bonus Engine"
+        ]
+      }
+    },
     "/api/v1/admin/bonus/lifecycle/mature": {
       "post": {
         "operationId": "adminMatureDueAwards",
@@ -19361,6 +20729,121 @@
         ]
       }
     },
+    "/api/v1/member/content-insights": {
+      "get": {
+        "operationId": "MemberContentInsightsController_get",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Content"
+        ]
+      }
+    },
+    "/api/v1/admin/content-insights": {
+      "get": {
+        "operationId": "AdminContentInsightsController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Content"
+        ]
+      }
+    },
+    "/api/v1/member/content-share-links": {
+      "post": {
+        "operationId": "MemberContentShareController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Content"
+        ]
+      }
+    },
+    "/api/v1/member/content-share-links/{id}/revoke": {
+      "post": {
+        "operationId": "MemberContentShareController_revoke",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsightsQuery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Content"
+        ]
+      }
+    },
     "/api/v1/admin/content": {
       "get": {
         "operationId": "AdminContentController_list",
@@ -19401,6 +20884,42 @@
             }
           }
         },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Content"
+        ]
+      }
+    },
+    "/api/v1/admin/content/{id}/archive": {
+      "post": {
+        "operationId": "AdminContentController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "201": {
             "description": ""
@@ -19560,6 +21079,341 @@
         ],
         "tags": [
           "Member - Content"
+        ]
+      }
+    },
+    "/api/v1/public/content/{id}": {
+      "get": {
+        "operationId": "PublicContentController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public - Content"
+        ]
+      }
+    },
+    "/api/v1/public/daily-greetings/publications/{id}/{hash}/image.png": {
+      "get": {
+        "operationId": "publishedDailyGreetingImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hash",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Public - Daily greetings"
+        ]
+      }
+    },
+    "/api/v1/public/daily-greetings/publications/{id}/{hash}/share": {
+      "get": {
+        "operationId": "publishedDailyGreetingShare",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hash",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Public - Daily greetings"
+        ]
+      }
+    },
+    "/api/v1/public/daily-greetings/current": {
+      "get": {
+        "operationId": "currentDailyGreeting",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Date, copy, public PNG and share URLs, release and next refresh times"
+          }
+        },
+        "summary": "Current 07:00 Asia/Taipei public greeting poster; no personal data",
+        "tags": [
+          "Public - Daily greetings"
+        ]
+      }
+    },
+    "/api/v1/public/daily-greetings/{date}/image.png": {
+      "get": {
+        "operationId": "dailyGreetingImage",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Public 1080px greeting PNG for the specified published Taipei date",
+        "tags": [
+          "Public - Daily greetings"
+        ]
+      }
+    },
+    "/api/v1/public/daily-greetings/{date}/share": {
+      "get": {
+        "operationId": "dailyGreetingShare",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Public greeting share page with Open Graph image metadata",
+        "tags": [
+          "Public - Daily greetings"
+        ]
+      }
+    },
+    "/api/v1/admin/daily-greetings": {
+      "get": {
+        "operationId": "listDailyGreetingPublications",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Daily greetings"
+        ]
+      },
+      "post": {
+        "operationId": "createDailyGreetingDraft",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GreetingDraftDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Daily greetings"
+        ]
+      }
+    },
+    "/api/v1/admin/daily-greetings/{id}/preview": {
+      "get": {
+        "operationId": "previewDailyGreetingPublication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Daily greetings"
+        ]
+      }
+    },
+    "/api/v1/admin/daily-greetings/{id}/publish": {
+      "post": {
+        "operationId": "publishDailyGreetingPublication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GreetingApprovalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Daily greetings"
+        ]
+      }
+    },
+    "/api/v1/admin/daily-greetings/{id}/archive": {
+      "post": {
+        "operationId": "archiveDailyGreetingPublication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Daily greetings"
+        ]
+      }
+    },
+    "/api/v1/integrations/dot/daily-greetings/drafts": {
+      "post": {
+        "operationId": "reservedDotDailyGreetingDraft",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Integrations - Daily greetings"
         ]
       }
     },
@@ -20592,110 +22446,12 @@
           "Admin - UAT Evidence"
         ]
       }
-    },
-    "/api/v1/auth/member/contact-verification/policy": {
-      "get": {
-        "description": "Public contact requirements by purpose. Registration may defer contact verification by explicit configuration; deferred contacts remain unverified. Profile requirements are unchanged.",
-        "operationId": "getContactVerificationPolicy",
-        "parameters": [
-          {
-            "name": "purpose",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "REGISTRATION",
-                "PROFILE"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Member - Contact Verification"
-        ]
-      }
-    },
-    "/api/v1/auth/member/contact-verification/challenges": {
-      "post": {
-        "description": "Requires a local account identifier or server-verified Google or LINE identity. Sends contact verification code with persistent destination and subject quotas. No membership is created.",
-        "operationId": "sendRegistrationContactCode",
-        "parameters": [
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegistrationContactDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Member - Contact Verification"
-        ]
-      }
-    },
-    "/api/v1/auth/member/contact-verification/verify": {
-      "post": {
-        "description": "Verifies a code bound to identity, destination, channel and purpose; returns a short-lived proof consumed atomically by registration.",
-        "operationId": "verifyRegistrationContactCode",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegistrationVerifyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "",
-        "tags": [
-          "Member - Contact Verification"
-        ]
-      }
     }
   },
   "info": {
     "title": "UCell R1.0B API",
     "description": "UCell Core API — Rule Version R1.0B FROZEN",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "contact": {}
   },
   "tags": [],
@@ -20714,6 +22470,439 @@
       }
     },
     "schemas": {
+      "RegistrationContactDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "SMS",
+              "EMAIL"
+            ]
+          },
+          "destination": {
+            "type": "string",
+            "maxLength": 254
+          },
+          "localAccount": {
+            "type": "string"
+          },
+          "googleIdToken": {
+            "type": "string"
+          },
+          "lineIdToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel",
+          "destination"
+        ]
+      },
+      "RegistrationVerifyDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "SMS",
+              "EMAIL"
+            ]
+          },
+          "destination": {
+            "type": "string",
+            "maxLength": 254
+          },
+          "localAccount": {
+            "type": "string"
+          },
+          "googleIdToken": {
+            "type": "string"
+          },
+          "lineIdToken": {
+            "type": "string"
+          },
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          }
+        },
+        "required": [
+          "channel",
+          "destination",
+          "challengeId",
+          "code"
+        ]
+      },
+      "MemberContactDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "SMS",
+              "EMAIL"
+            ]
+          },
+          "destination": {
+            "type": "string",
+            "maxLength": 254
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "REGISTRATION",
+              "PROFILE"
+            ]
+          }
+        },
+        "required": [
+          "channel",
+          "destination",
+          "purpose"
+        ]
+      },
+      "MemberVerifyDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "SMS",
+              "EMAIL"
+            ]
+          },
+          "destination": {
+            "type": "string",
+            "maxLength": 254
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "REGISTRATION",
+              "PROFILE"
+            ]
+          },
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          }
+        },
+        "required": [
+          "channel",
+          "destination",
+          "purpose",
+          "challengeId",
+          "code"
+        ]
+      },
+      "CreateOtpChallengeDto": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "NETWORK_REGISTRATION"
+            ]
+          },
+          "destination": {
+            "type": "string",
+            "example": "+886912345678"
+          },
+          "registrationSessionId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "purpose",
+          "destination",
+          "registrationSessionId"
+        ]
+      },
+      "VerifyOtpChallengeDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "NetworkRegistrationDto": {
+        "type": "object",
+        "properties": {
+          "mobileVerificationProof": {
+            "type": "string"
+          },
+          "emailVerificationProof": {
+            "type": "string"
+          },
+          "contractVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "legalName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "alias": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "gender": {
+            "type": "string",
+            "description": "Version-neutral gender code; display labels are client/localization concerns.",
+            "maxLength": 32
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "nationalityCode": {
+            "type": "string",
+            "description": "ISO-style nationality/country code",
+            "example": "TW"
+          },
+          "identityDocumentType": {
+            "type": "string",
+            "enum": [
+              "NATIONAL_ID",
+              "RESIDENCE_PERMIT",
+              "PASSPORT",
+              "OTHER"
+            ]
+          },
+          "identityDocumentNumber": {
+            "type": "string",
+            "description": "Identity document number corresponding to the selected type",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "mobile": {
+            "type": "string",
+            "example": "+886912345678"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          }
+        },
+        "required": [
+          "contractVersionId",
+          "accepted",
+          "legalName",
+          "alias",
+          "gender",
+          "birthDate",
+          "nationalityCode",
+          "identityDocumentType",
+          "identityDocumentNumber",
+          "mobile",
+          "email"
+        ]
+      },
+      "GoogleExchangeDto": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "idToken"
+        ]
+      },
+      "PasswordLoginDto": {
+        "type": "object",
+        "properties": {
+          "memberNo": {
+            "type": "string",
+            "description": "Local account, member number, email or mobile login identifier; field name retained for existing clients"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "memberNo",
+          "password"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ]
+      },
+      "CompleteWebRegistrationDto": {
+        "type": "object",
+        "properties": {
+          "localAccount": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{3,31}$",
+            "description": "Case-insensitive local account. Supply exactly one localAccount, Google token or LINE token."
+          },
+          "mobileVerificationProof": {
+            "type": "string"
+          },
+          "emailVerificationProof": {
+            "type": "string"
+          },
+          "contractVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "legalName": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "alias": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "gender": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "nationalityCode": {
+            "type": "string",
+            "example": "TW"
+          },
+          "identityDocumentType": {
+            "type": "string",
+            "enum": [
+              "NATIONAL_ID",
+              "RESIDENCE_PERMIT",
+              "PASSPORT",
+              "OTHER"
+            ]
+          },
+          "identityDocumentNumber": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "mobile": {
+            "type": "string",
+            "example": "+886912345678"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 256
+          },
+          "googleIdToken": {
+            "type": "string",
+            "maxLength": 16384,
+            "description": "Present exactly one localAccount, Google or LINE ID token; verified server-side before registration."
+          },
+          "lineIdToken": {
+            "type": "string",
+            "maxLength": 16384,
+            "description": "LINE ID token from LIFF; server verifies issuer, channel audience, expiry and subject. Cannot link an existing Person via registration."
+          }
+        },
+        "required": [
+          "contractVersionId",
+          "accepted",
+          "legalName",
+          "alias",
+          "gender",
+          "birthDate",
+          "nationalityCode",
+          "identityDocumentType",
+          "identityDocumentNumber",
+          "mobile",
+          "email",
+          "password"
+        ]
+      },
+      "LinkGoogleDto": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "idToken"
+        ]
+      },
+      "AccountSecurityReasonDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "LineRebindRequestDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RequestDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CompleteDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CreateSettlementJobDto": {
         "type": "object",
         "properties": {}
@@ -21437,6 +23626,55 @@
         },
         "required": [
           "data"
+        ]
+      },
+      "CreateShipmentExchangeDto": {
+        "type": "object",
+        "properties": {
+          "serialNos": {
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "本案件實際退回的原出貨商品序號",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "shipmentReference": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "requestKey": {
+            "type": "string",
+            "format": "uuid",
+            "description": "同一申請重試沿用原始 UUID，避免重複建立案件"
+          }
+        },
+        "required": [
+          "serialNos",
+          "shipmentReference",
+          "reason",
+          "requestKey"
+        ]
+      },
+      "ExchangeReceiptDto": {
+        "type": "object",
+        "properties": {
+          "serialNos": {
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "本案件實際退回的原出貨商品序號",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "serialNos"
         ]
       },
       "FulfillmentScanDto": {
@@ -22609,299 +24847,6 @@
           "reasonCode"
         ]
       },
-      "CreateOtpChallengeDto": {
-        "type": "object",
-        "properties": {
-          "purpose": {
-            "type": "string",
-            "enum": [
-              "NETWORK_REGISTRATION"
-            ]
-          },
-          "destination": {
-            "type": "string",
-            "example": "+886912345678"
-          },
-          "registrationSessionId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "purpose",
-          "destination",
-          "registrationSessionId"
-        ]
-      },
-      "VerifyOtpChallengeDto": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string",
-            "pattern": "^[0-9]{6}$"
-          }
-        },
-        "required": [
-          "code"
-        ]
-      },
-      "NetworkRegistrationDto": {
-        "type": "object",
-        "properties": {
-          "contractVersionId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "accepted": {
-            "type": "boolean",
-            "enum": [
-              true
-            ]
-          },
-          "legalName": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 80
-          },
-          "alias": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 80
-          },
-          "gender": {
-            "type": "string",
-            "description": "Version-neutral gender code; display labels are client/localization concerns.",
-            "maxLength": 32
-          },
-          "birthDate": {
-            "type": "string",
-            "format": "date"
-          },
-          "nationalityCode": {
-            "type": "string",
-            "description": "ISO-style nationality/country code",
-            "example": "TW"
-          },
-          "identityDocumentType": {
-            "type": "string",
-            "enum": [
-              "NATIONAL_ID",
-              "RESIDENCE_PERMIT",
-              "PASSPORT",
-              "OTHER"
-            ]
-          },
-          "identityDocumentNumber": {
-            "type": "string",
-            "description": "Identity document number corresponding to the selected type",
-            "minLength": 2,
-            "maxLength": 64
-          },
-          "mobile": {
-            "type": "string",
-            "example": "+886912345678"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "maxLength": 254
-          }
-        },
-        "required": [
-          "contractVersionId",
-          "accepted",
-          "legalName",
-          "alias",
-          "gender",
-          "birthDate",
-          "nationalityCode",
-          "identityDocumentType",
-          "identityDocumentNumber",
-          "mobile",
-          "email"
-        ]
-      },
-      "GoogleExchangeDto": {
-        "type": "object",
-        "properties": {
-          "idToken": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "idToken"
-        ]
-      },
-      "PasswordLoginDto": {
-        "type": "object",
-        "properties": {
-          "memberNo": {
-            "type": "string",
-            "description": "Local account, member number, email or mobile login identifier; field name retained for existing clients"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 6,
-            "maxLength": 256
-          }
-        },
-        "required": [
-          "memberNo",
-          "password"
-        ]
-      },
-      "ForgotPasswordDto": {
-        "type": "object",
-        "properties": {
-          "identifier": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "identifier"
-        ]
-      },
-      "ResetPasswordDto": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string"
-          },
-          "newPassword": {
-            "type": "string",
-            "minLength": 12,
-            "maxLength": 256
-          }
-        },
-        "required": [
-          "token",
-          "newPassword"
-        ]
-      },
-      "CompleteWebRegistrationDto": {
-        "type": "object",
-        "properties": {
-          "localAccount": {
-            "type": "string",
-            "pattern": "^[A-Za-z][A-Za-z0-9_]{3,31}$",
-            "description": "Case-insensitive local account. Supply exactly one localAccount, Google token or LINE token."
-          },
-          "mobileVerificationProof": {
-            "type": "string"
-          },
-          "emailVerificationProof": {
-            "type": "string"
-          },
-          "contractVersionId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "accepted": {
-            "type": "boolean",
-            "enum": [
-              true
-            ]
-          },
-          "legalName": {
-            "type": "string",
-            "maxLength": 80
-          },
-          "alias": {
-            "type": "string",
-            "maxLength": 80
-          },
-          "gender": {
-            "type": "string",
-            "maxLength": 32
-          },
-          "birthDate": {
-            "type": "string",
-            "format": "date"
-          },
-          "nationalityCode": {
-            "type": "string",
-            "example": "TW"
-          },
-          "identityDocumentType": {
-            "type": "string",
-            "enum": [
-              "NATIONAL_ID",
-              "RESIDENCE_PERMIT",
-              "PASSPORT",
-              "OTHER"
-            ]
-          },
-          "identityDocumentNumber": {
-            "type": "string",
-            "maxLength": 64
-          },
-          "mobile": {
-            "type": "string",
-            "example": "+886912345678"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "maxLength": 254
-          },
-          "password": {
-            "type": "string",
-            "minLength": 6,
-            "maxLength": 256
-          },
-          "googleIdToken": {
-            "type": "string",
-            "maxLength": 16384,
-            "description": "Present exactly one localAccount, Google or LINE ID token; verified server-side before registration."
-          },
-          "lineIdToken": {
-            "type": "string",
-            "maxLength": 16384,
-            "description": "LINE ID token from LIFF; server verifies issuer, channel audience, expiry and subject. Cannot link an existing Person via registration."
-          }
-        },
-        "required": [
-          "contractVersionId",
-          "accepted",
-          "legalName",
-          "alias",
-          "gender",
-          "birthDate",
-          "nationalityCode",
-          "identityDocumentType",
-          "identityDocumentNumber",
-          "mobile",
-          "email",
-          "password"
-        ]
-      },
-      "LinkGoogleDto": {
-        "type": "object",
-        "properties": {
-          "idToken": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "idToken"
-        ]
-      },
-      "AccountSecurityReasonDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "LineRebindRequestDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "RequestDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "CompleteDto": {
-        "type": "object",
-        "properties": {}
-      },
       "PeriodJobDto": {
         "type": "object",
         "properties": {
@@ -23388,6 +25333,11 @@
             "description": "Null means pre-V1.1 legacy state has not been classified; never inferred from Qualification."
           },
           "mobileVerifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "emailVerifiedAt": {
             "type": "string",
             "format": "date-time",
             "nullable": true
@@ -25170,6 +27120,12 @@
       "MemberProfileDto": {
         "type": "object",
         "properties": {
+          "mobileVerificationProof": {
+            "type": "string"
+          },
+          "emailVerificationProof": {
+            "type": "string"
+          },
           "name": {
             "type": "string",
             "maxLength": 80,
@@ -25424,6 +27380,12 @@
       "MemberCreateOrderDto": {
         "type": "object",
         "properties": {
+          "couponCode": {
+            "type": "string"
+          },
+          "quoteHash": {
+            "type": "string"
+          },
           "qualificationId": {
             "type": "string",
             "format": "uuid",
@@ -26057,6 +28019,18 @@
         "type": "object",
         "properties": {}
       },
+      "CouponDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "QuoteDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "FeeRefundDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CreateQualificationDto": {
         "type": "object",
         "properties": {
@@ -26166,6 +28140,27 @@
         "required": [
           "binaryParentBallNo",
           "side"
+        ]
+      },
+      "QualificationReturnReviewDto": {
+        "type": "object",
+        "properties": {
+          "planLevelCode": {
+            "type": "string",
+            "enum": [
+              "STARTER",
+              "ELITE",
+              "LEADER"
+            ]
+          },
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "planLevelCode",
+          "reasonCode"
         ]
       },
       "AdminPlaceQualificationDto": {
@@ -26602,6 +28597,64 @@
           "revision"
         ]
       },
+      "BankRecipientDto": {
+        "type": "object",
+        "properties": {
+          "payoutLineId": {
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Digit string preserving leading zeros"
+          },
+          "bankBranchCode": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "remark": {
+            "type": "string",
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "payoutLineId",
+          "accountName",
+          "accountNumber"
+        ]
+      },
+      "BankExportDto": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "BULK_REMITTANCE",
+              "CENTER_TRANSFER"
+            ]
+          },
+          "exportReference": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BankRecipientDto"
+            }
+          }
+        },
+        "required": [
+          "format",
+          "exportReference",
+          "recipients"
+        ]
+      },
       "TaskDto": {
         "type": "object",
         "properties": {
@@ -26928,6 +28981,40 @@
           "lines"
         ]
       },
+      "ShareDto": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productSku": {
+            "type": "string"
+          },
+          "eventCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "qualificationId"
+        ]
+      },
+      "InsightsQuery": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "qualificationId"
+        ]
+      },
       "ContentDto": {
         "type": "object",
         "properties": {
@@ -26955,7 +29042,8 @@
           "audiencePolicy": {
             "type": "string",
             "enum": [
-              "NETWORK_MEMBER"
+              "NETWORK_MEMBER",
+              "PUBLIC"
             ]
           },
           "shareable": {
@@ -26983,6 +29071,54 @@
         "properties": {
           "approvalReference": {
             "type": "string"
+          }
+        },
+        "required": [
+          "approvalReference"
+        ]
+      },
+      "GreetingDraftDto": {
+        "type": "object",
+        "properties": {
+          "imageMode": {
+            "type": "string",
+            "enum": [
+              "background",
+              "artwork"
+            ],
+            "description": "artwork preserves the complete canvas; background adds the trusted brand footer"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Publication date in Asia/Taipei"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "contentBase64": {
+            "type": "string",
+            "description": "RGB/RGBA PNG bytes, base64, at most 3145728 decoded bytes"
+          }
+        },
+        "required": [
+          "date",
+          "title",
+          "message",
+          "contentBase64"
+        ]
+      },
+      "GreetingApprovalDto": {
+        "type": "object",
+        "properties": {
+          "approvalReference": {
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
@@ -27222,74 +29358,6 @@
           "evidenceHash",
           "artifactReference",
           "executedAt"
-        ]
-      },
-      "RegistrationContactDto": {
-        "type": "object",
-        "properties": {
-          "channel": {
-            "type": "string",
-            "enum": [
-              "SMS",
-              "EMAIL"
-            ]
-          },
-          "destination": {
-            "type": "string",
-            "maxLength": 254
-          },
-          "localAccount": {
-            "type": "string"
-          },
-          "googleIdToken": {
-            "type": "string"
-          },
-          "lineIdToken": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "channel",
-          "destination"
-        ]
-      },
-      "RegistrationVerifyDto": {
-        "type": "object",
-        "properties": {
-          "channel": {
-            "type": "string",
-            "enum": [
-              "SMS",
-              "EMAIL"
-            ]
-          },
-          "destination": {
-            "type": "string",
-            "maxLength": 254
-          },
-          "localAccount": {
-            "type": "string"
-          },
-          "googleIdToken": {
-            "type": "string"
-          },
-          "lineIdToken": {
-            "type": "string"
-          },
-          "challengeId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "code": {
-            "type": "string",
-            "pattern": "^[0-9]{6}$"
-          }
-        },
-        "required": [
-          "channel",
-          "destination",
-          "challengeId",
-          "code"
         ]
       }
     }

@@ -56,6 +56,15 @@ export class ReturnService {
         if(!recognitionAt||new Date(dto.occurredAt)<recognitionAt)throw new UnprocessableEntityException({code:'RETURN_BEFORE_RECOGNITION'});
       }
 
+      // Preserve qualification advisory -> order lock ordering above. Exchanges
+      // also lock this order and use Serializable isolation, so refund posting
+      // cannot race a new physical claim from an older transaction snapshot.
+      await tx.$queryRaw`SELECT order_id FROM commerce."order" WHERE order_id=${orderId}::uuid FOR UPDATE`;
+      const currentOrder=await tx.order.findUniqueOrThrow({where:{orderId},select:{status:true}});
+      if(!['PAID','FULFILLED','PARTIAL_RETURN'].includes(currentOrder.status))throw new ConflictException({code:'ORDER_LOCKED'});
+      const openExchange=await tx.shipmentExchangeCase.count({where:{originalFulfillment:{orderId},items:{some:{shipmentBinding:{allocation:{sourceAllocation:{orderLineId:{in:dto.lines.map(line=>line.orderLineId)}}}}}},OR:[{status:{in:['REQUESTED','RECEIVED']}},{status:'REPLACEMENT_CREATED',replacementFulfillment:{status:{notIn:['SHIPPED','DELIVERED']}}}]}});
+      if(openExchange)throw new ConflictException({code:'RETURN_PENDING_EXCHANGE',message:'此品項尚有未完成的換貨；請先完成補寄出貨，或撤銷尚未驗收的換貨申請。'});
+
       if(new Set(dto.lines.map(line=>line.orderLineId)).size!==dto.lines.length)
         throw new UnprocessableEntityException({code:'DUPLICATE_RETURN_LINE',message:'Each original line may appear only once per return event.'});
       const reused=await tx.returnCase.findUnique({where:{idempotencyKey:key}});

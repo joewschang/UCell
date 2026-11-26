@@ -6,7 +6,8 @@ describe('ReturnService pre-placement reversal',()=>{
   const line={orderLineId:'line',quantity:new Prisma.Decimal(1),lineAmount:new Prisma.Decimal(100),gpvAmountSnapshot:new Prisma.Decimal(0)};
   const createdReturn={returnCaseId:'return-1'};
   const tx:any={
-   order:{findUnique:jest.fn().mockResolvedValue({orderId:'order',status:'PAID',paidAt:new Date('2044-01-01T00:00:00.000Z'),netAmount:new Prisma.Decimal(100),qualificationId:'qualification',ruleVersionCode:'R1',lines:[line]}),update:jest.fn()},
+   $queryRaw:jest.fn().mockResolvedValue([]),shipmentExchangeCase:{count:jest.fn().mockResolvedValue(0)},
+   order:{findUniqueOrThrow:jest.fn().mockResolvedValue({status:'PAID'}),findUnique:jest.fn().mockResolvedValue({orderId:'order',status:'PAID',paidAt:new Date('2044-01-01T00:00:00.000Z'),netAmount:new Prisma.Decimal(100),qualificationId:'qualification',ruleVersionCode:'R1',lines:[line]}),update:jest.fn()},
    returnCase:{findUnique:jest.fn().mockResolvedValue(null),create:jest.fn().mockResolvedValue(createdReturn),findUniqueOrThrow:jest.fn().mockResolvedValue({...createdReturn,lines:[]})},
    returnLine:{aggregate:jest.fn().mockResolvedValue({_sum:{returnAmount:new Prisma.Decimal(0),quantity:new Prisma.Decimal(0)}}),create:jest.fn()},
    settlementBatch:{findMany:jest.fn().mockResolvedValue([])},settlementRecalculationRequest:{createMany:jest.fn()},

@@ -1,0 +1,12 @@
+.after-sales-actions{margin-block:1rem;padding:1rem;border:1px solid var(--ucell-border);border-left:3px solid var(--ucell-primary);border-radius:var(--ucell-radius-sm);background:var(--ucell-surface-secondary)}
+.after-sales-actions h4,.exchange-case h4{margin:.8rem 0 .5rem;line-height:1.5}
+.after-sales-actions p,.exchange-case p{line-height:1.65}
+.after-sales-actions fieldset,.exchange-case fieldset{display:grid;gap:.7rem;min-width:0;margin:.8rem 0;padding:1rem;border:1px solid var(--ucell-border);border-radius:var(--ucell-radius-sm)}
+.after-sales-actions legend,.exchange-case legend{padding-inline:.4rem;font-weight:600}
+.after-sales-actions textarea{min-height:5rem;font:inherit}
+.exchange-serial{display:flex;align-items:center;gap:.65rem;min-height:2.75rem;line-height:1.5;overflow-wrap:anywhere}
+.exchange-serial input[type=checkbox]{flex:0 0 auto;width:1.15rem;height:1.15rem;margin:0;padding:0}
+.exchange-case{margin-block:1rem;padding:1rem;border:1px solid var(--ucell-border);border-radius:var(--ucell-radius-sm)}
+.exchange-case li{margin-block:.45rem;line-height:1.5}
+.after-sales-actions button,.exchange-case button{width:fit-content;max-width:100%}
+.exchange-case button+button{margin-left:.5rem}

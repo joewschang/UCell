@@ -471,12 +471,14 @@ export class OrderService {
   }
 
 
-  async search(input:{status?:string;qualificationId?:string;q?:string;take?:number}={}){
+  async search(input:{orderNo?:string;status?:string;qualificationId?:string;q?:string;take?:number}={}){
+    if(input.orderNo!==undefined&&(!/^\d{1,19}$/.test(input.orderNo)||BigInt(input.orderNo)>9223372036854775807n))throw new UnprocessableEntityException({code:'INVALID_ORDER_NO'});
     const take=Math.min(Math.max(input.take ?? 50,1),100);
     const q=input.q?.trim();
 
     const orders=await this.prisma.order.findMany({
       where:{
+        ...(input.orderNo!==undefined?{orderNo:BigInt(input.orderNo)}:{}),
         ...(input.status?{status:input.status as any}:{}),
         ...(input.qualificationId?{qualificationId:input.qualificationId}:{}),
         ...(q?{
